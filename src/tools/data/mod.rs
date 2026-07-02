@@ -1,0 +1,11 @@
+pub mod bmkg;
+pub mod firms;
+pub mod gfw;
+pub mod openweather;
+pub mod open_meteo;
+pub mod nasa_power;
+pub mod satu_data;
+pub mod climate_trace;
+pub mod magma;
+pub mod bps;
+pub mod inarisk;
