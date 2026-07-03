@@ -89,6 +89,42 @@ pub struct GeotiffCropParam { pub input_path: String, pub output_path: String, p
 pub struct WatershedParam { pub dem_path: String, pub pour_x: f64, pub pour_y: f64, pub output_path: String }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IdwParam { pub points: Vec<Vec<f64>>, pub target_x: f64, pub target_y: f64, pub power: Option<f64> }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Terrain3dParam { pub dem_path: String, pub output_path: String, pub title: String, pub exaggeration: Option<f64> }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Timeseries4dParam { pub values: String, pub output_path: String, pub title: String, pub labels: Option<String>, pub ylabel: Option<String> }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Flood3dParam { pub dem_path: String, pub output_path: String, pub water_level_m: f64, pub title: String, pub exaggeration: Option<f64> }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Flood4dParam { pub dem_path: String, pub output_path: String, pub water_start_m: f64, pub water_end_m: f64, pub steps: Option<u32>, pub title: String, pub exaggeration: Option<f64> }
+
+// Air Quality Dispersion Params
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StabilityParam { pub wind_speed_ms: f64, pub solar_radiation: String, pub cloud_cover_eighths: u32 }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PlumeRiseParam { pub stack_height_m: f64, pub exit_velocity_ms: f64, pub exit_temp_k: f64, pub ambient_temp_k: f64, pub wind_speed_ms: f64 }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Dispersion2dParam { pub sources_json: String, pub wind_speed: f64, pub wind_dir: f64, pub stability: String, pub output_path: String, pub title: String, pub grid_size: Option<u32> }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Dispersion4dParam { pub sources_json: String, pub wind_speeds: String, pub wind_dirs: String, pub stability: String, pub output_path: String, pub title: String, pub grid_size: Option<u32> }
+
+// Ocean Modeling Params
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OceanBathyParam { pub lat: f64, pub lon: f64, pub output_path: String, pub title: String }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OceanCurrentParam { pub lat: f64, pub lon: f64, pub wind_speed: f64, pub wind_dir: f64, pub output_path: String, pub title: String }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OceanThermalParam { pub discharge_temp: f64, pub ambient_temp: f64, pub output_path: String, pub title: String }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OceanPollutionParam { pub current_speeds: String, pub current_dirs: String, pub output_path: String, pub title: String }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct WaveParam { pub wind_speed_ms: f64, pub fetch_m: f64, pub depth_m: f64 }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CoralDhwParam { pub sst_weekly: String, pub sst_max_monthly_mean: f64 }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SedimentParam { pub hs_m: f64, pub wave_angle_deg: f64, pub beach_slope_deg: f64 }
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OilSpillParam { pub volume_m3: f64, pub oil_type: String, pub wind_speed: f64, pub wind_dir: f64, pub current_speed: f64, pub current_dir: f64, pub hours: u32, pub output_path: String }
 
 static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -702,6 +738,105 @@ impl EnvNtbServer {
     fn spatial_interpolation_idw(&self, Parameters(p): Parameters<IdwParam>) -> String {
         let points: Vec<(f64, f64, f64)> = p.points.iter().map(|pt| (pt[0], pt[1], pt[2])).collect();
         tools::processing::interpolation::idw(&points, p.target_x, p.target_y, p.power.unwrap_or(2.0))
+    }
+
+    #[tool(description = "3D Terrain Visualization dari DEM GeoTIFF. Render surface 3D dengan color map elevasi.")]
+    fn terrain_3d(&self, Parameters(p): Parameters<Terrain3dParam>) -> String {
+        tools::processing::terrain3d::render(&p.dem_path, &p.output_path, &p.title, p.exaggeration.unwrap_or(2.0))
+    }
+
+    #[tool(description = "4D Terrain Rotation Animation (GIF). Rotasi 360° dari terrain 3D — simulasi perspektif temporal.")]
+    fn terrain_4d_rotation(&self, Parameters(p): Parameters<Terrain3dParam>) -> String {
+        tools::processing::viz4d::terrain_rotation(&p.dem_path, &p.output_path, &p.title, p.exaggeration.unwrap_or(2.0), 36)
+    }
+
+    #[tool(description = "4D Time Series Animation (GIF). Animasi data lingkungan berkembang seiring waktu. values: comma-separated, labels: comma-separated.")]
+    fn timeseries_4d(&self, Parameters(p): Parameters<Timeseries4dParam>) -> String {
+        tools::processing::viz4d::timeseries_animation(&p.values, &p.labels.clone().unwrap_or_default(), &p.output_path, &p.title, &p.ylabel.clone().unwrap_or("Value".into()))
+    }
+
+    #[tool(description = "3D Flood Simulation: terrain + genangan air pada level tertentu. Menghitung area genangan & kedalaman.")]
+    fn flood_3d(&self, Parameters(p): Parameters<Flood3dParam>) -> String {
+        tools::processing::flood_sim::flood_3d(&p.dem_path, &p.output_path, p.water_level_m, &p.title, p.exaggeration.unwrap_or(2.0))
+    }
+
+    #[tool(description = "4D Flood Animation (GIF): simulasi kenaikan level air dari start ke end. Temporal flood inundation model.")]
+    fn flood_4d(&self, Parameters(p): Parameters<Flood4dParam>) -> String {
+        tools::processing::flood_sim::flood_4d(&p.dem_path, &p.output_path, p.water_start_m, p.water_end_m, p.steps.unwrap_or(15), &p.title, p.exaggeration.unwrap_or(2.0))
+    }
+
+    // =======================================
+    // AIR QUALITY DISPERSION MODELING
+    // =======================================
+
+    #[tool(description = "Stability Class (Turner 1970). Estimasi kelas Pasquill-Gifford dari data met. solar_radiation: strong/moderate/slight/night")]
+    fn stability_class(&self, Parameters(p): Parameters<StabilityParam>) -> String {
+        tools::airquality::stability::estimate(p.wind_speed_ms, &p.solar_radiation, p.cloud_cover_eighths)
+    }
+
+    #[tool(description = "Briggs Plume Rise. Hitung effective stack height. Ref: Briggs (1969-1975), AERMOD.")]
+    fn plume_rise(&self, Parameters(p): Parameters<PlumeRiseParam>) -> String {
+        tools::airquality::plume_rise::calculate(p.stack_height_m, p.exit_velocity_ms, p.exit_temp_k, p.ambient_temp_k, p.wind_speed_ms)
+    }
+
+    #[tool(description = "2D Air Dispersion Contour Map (PNG). Multi-source Gaussian plume grid. sources: JSON [{Q_gs,H_m,x_m,y_m}]")]
+    fn dispersion_2d(&self, Parameters(p): Parameters<Dispersion2dParam>) -> String {
+        tools::airquality::dispersion::render_2d(&p.sources_json, p.wind_speed, p.wind_dir, &p.stability, &p.output_path, &p.title, p.grid_size.unwrap_or(5000))
+    }
+
+    #[tool(description = "3D Air Dispersion Plume Visualization (PNG). 3D surface plot konsentrasi polutan.")]
+    fn dispersion_3d(&self, Parameters(p): Parameters<Dispersion2dParam>) -> String {
+        tools::airquality::dispersion::render_3d(&p.sources_json, p.wind_speed, p.wind_dir, &p.stability, &p.output_path, &p.title, p.grid_size.unwrap_or(5000))
+    }
+
+    #[tool(description = "4D Air Dispersion Animation (GIF). Simulasi perubahan arah/kecepatan angin temporal. wind_speeds & wind_dirs: comma-separated.")]
+    fn dispersion_4d(&self, Parameters(p): Parameters<Dispersion4dParam>) -> String {
+        tools::airquality::dispersion::render_4d(&p.sources_json, &p.wind_speeds, &p.wind_dirs, &p.stability, &p.output_path, &p.title, p.grid_size.unwrap_or(5000))
+    }
+
+    // =======================================
+    // OCEAN MODELING 2D/3D/4D
+    // =======================================
+
+    #[tool(description = "3D Bathymetry: Visualisasi relief dasar laut. Input: lat, lon pusat area.")]
+    fn ocean_bathymetry_3d(&self, Parameters(p): Parameters<OceanBathyParam>) -> String {
+        tools::ocean_modeling::ocean_viz::bathymetry_3d(p.lat, p.lon, &p.output_path, &p.title)
+    }
+
+    #[tool(description = "2D Ocean Current: Peta vector field arus laut berbasis angin (Ekman). Input: lat, lon, wind.")]
+    fn ocean_current_2d(&self, Parameters(p): Parameters<OceanCurrentParam>) -> String {
+        tools::ocean_modeling::ocean_viz::current_2d(p.lat, p.lon, p.wind_speed, p.wind_dir, &p.output_path, &p.title)
+    }
+
+    #[tool(description = "3D Thermal Mixing: Visualisasi mixing zone polusi termal PLTU di laut. Baku mutu: DeltaT max 3C.")]
+    fn ocean_thermal_3d(&self, Parameters(p): Parameters<OceanThermalParam>) -> String {
+        tools::ocean_modeling::ocean_viz::thermal_3d(p.discharge_temp, p.ambient_temp, &p.output_path, &p.title)
+    }
+
+    #[tool(description = "4D Marine Pollution: Animasi GIF Lagrangian particle tracking polutan di laut. current_speeds & current_dirs: comma-separated.")]
+    fn ocean_pollution_4d(&self, Parameters(p): Parameters<OceanPollutionParam>) -> String {
+        tools::ocean_modeling::ocean_viz::pollution_4d(&p.current_speeds, &p.current_dirs, &p.output_path, &p.title)
+    }
+
+    #[tool(description = "JONSWAP Wave Height: Hitung Hs dari angin, fetch, dan kedalaman. Ref: Hasselmann 1973.")]
+    fn wave_jonswap(&self, Parameters(p): Parameters<WaveParam>) -> String {
+        tools::ocean_modeling::wave::jonswap(p.wind_speed_ms, p.fetch_m, p.depth_m)
+    }
+
+    #[tool(description = "Coral Bleaching DHW: Degree Heating Weeks dari data SST mingguan. Ref: NOAA Coral Reef Watch.")]
+    fn coral_bleaching_dhw(&self, Parameters(p): Parameters<CoralDhwParam>) -> String {
+        let sst: Vec<f64> = p.sst_weekly.split(',').filter_map(|s| s.trim().parse().ok()).collect();
+        tools::ocean_modeling::wave::coral_bleaching_dhw(&sst, p.sst_max_monthly_mean)
+    }
+
+    #[tool(description = "CERC Sediment Transport: Longshore transport rate. Ref: SPM 1984, USACE.")]
+    fn sediment_transport_cerc(&self, Parameters(p): Parameters<SedimentParam>) -> String {
+        tools::ocean_modeling::sediment::cerc_transport(p.hs_m, p.wave_angle_deg, p.beach_slope_deg)
+    }
+
+    #[tool(description = "Oil Spill Trajectory & Fate: Drift (3% wind + current) + evaporasi + spreading. oil_type: crude/diesel/gasoline/bunker.")]
+    fn oil_spill_model(&self, Parameters(p): Parameters<OilSpillParam>) -> String {
+        tools::ocean_modeling::oil_spill::simulate_4d(p.volume_m3, &p.oil_type, p.wind_speed, p.wind_dir, p.current_speed, p.current_dir, p.hours, &p.output_path)
     }
 }
 

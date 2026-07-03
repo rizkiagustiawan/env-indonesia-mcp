@@ -8,3 +8,5 @@ pub mod physics_validator;
 pub mod calculators;
 pub mod compliance;
 pub mod processing;
+pub mod airquality;
+pub mod ocean_modeling;
