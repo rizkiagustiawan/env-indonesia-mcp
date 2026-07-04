@@ -1,0 +1,235 @@
+{
+  "reference": "PermenLHK No. 15 Tahun 2019 tentang Baku Mutu Emisi Sumber Tidak Bergerak",
+  "industries": {
+    "pltu_batubara": {
+      "name": "Pembangkit Listrik Tenaga Uap Batubara",
+      "parameters": {
+        "TSP_mg_nm3": 50,
+        "SO2_mg_nm3": 200,
+        "NO2_mg_nm3": 200,
+        "CO_mg_nm3": null,
+        "opacity_pct": 10,
+        "Hg_mg_nm3": 0.03
+      },
+      "notes": "Kapasitas > 25 MW, O2 referensi 7%"
+    },
+    "pltu_batubara_kecil": {
+      "name": "PLTU Batubara Kapasitas ≤ 25 MW",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 400,
+        "NO2_mg_nm3": 400,
+        "opacity_pct": 20
+      },
+      "notes": "O2 referensi 7%"
+    },
+    "pembangkit_gas": {
+      "name": "Pembangkit Listrik Tenaga Gas/Uap Gas",
+      "parameters": {
+        "TSP_mg_nm3": 30,
+        "SO2_mg_nm3": 50,
+        "NO2_mg_nm3": 320,
+        "CO_mg_nm3": 100,
+        "opacity_pct": 10
+      },
+      "notes": "O2 referensi 15% untuk turbin gas"
+    },
+    "pembangkit_diesel": {
+      "name": "Pembangkit Listrik Tenaga Diesel",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 800,
+        "NO2_mg_nm3": 1000,
+        "opacity_pct": 20
+      },
+      "notes": "O2 referensi 7%"
+    },
+    "semen": {
+      "name": "Industri Semen",
+      "parameters": {
+        "TSP_mg_nm3": 50,
+        "SO2_mg_nm3": 150,
+        "NO2_mg_nm3": 400,
+        "CO_mg_nm3": null,
+        "opacity_pct": 10,
+        "HCl_mg_nm3": 10,
+        "HF_mg_nm3": 1
+      },
+      "notes": "Kiln dan cooler, O2 referensi 10%"
+    },
+    "smelter_besi_baja": {
+      "name": "Industri Peleburan Besi dan Baja",
+      "parameters": {
+        "TSP_mg_nm3": 50,
+        "SO2_mg_nm3": 500,
+        "NO2_mg_nm3": 700,
+        "CO_mg_nm3": null,
+        "opacity_pct": 10,
+        "Pb_mg_nm3": 5,
+        "Zn_mg_nm3": 10
+      },
+      "notes": "O2 referensi sesuai proses"
+    },
+    "smelter_tembaga": {
+      "name": "Industri Peleburan Tembaga",
+      "parameters": {
+        "TSP_mg_nm3": 80,
+        "SO2_mg_nm3": 500,
+        "NO2_mg_nm3": 700,
+        "opacity_pct": 10,
+        "As_mg_nm3": 1,
+        "Cu_mg_nm3": 5
+      },
+      "notes": "O2 referensi sesuai proses"
+    },
+    "smelter_aluminium": {
+      "name": "Industri Peleburan Aluminium",
+      "parameters": {
+        "TSP_mg_nm3": 50,
+        "SO2_mg_nm3": 200,
+        "NO2_mg_nm3": 400,
+        "HF_mg_nm3": 1,
+        "opacity_pct": 10
+      }
+    },
+    "smelter_nikel": {
+      "name": "Industri Peleburan Nikel",
+      "parameters": {
+        "TSP_mg_nm3": 80,
+        "SO2_mg_nm3": 500,
+        "NO2_mg_nm3": 700,
+        "CO_mg_nm3": null,
+        "opacity_pct": 10,
+        "Ni_mg_nm3": 5
+      }
+    },
+    "industri_kimia": {
+      "name": "Industri Kimia Dasar",
+      "parameters": {
+        "TSP_mg_nm3": 80,
+        "SO2_mg_nm3": 200,
+        "NO2_mg_nm3": 400,
+        "CO_mg_nm3": 100,
+        "opacity_pct": 10,
+        "HCl_mg_nm3": 5,
+        "Cl2_mg_nm3": 10,
+        "NH3_mg_nm3": 50
+      }
+    },
+    "industri_pupuk": {
+      "name": "Industri Pupuk",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 300,
+        "NO2_mg_nm3": 500,
+        "NH3_mg_nm3": 50,
+        "CO_mg_nm3": null,
+        "opacity_pct": 10
+      }
+    },
+    "industri_pulp_kertas": {
+      "name": "Industri Pulp dan Kertas",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 400,
+        "NO2_mg_nm3": 400,
+        "CO_mg_nm3": null,
+        "opacity_pct": 20,
+        "H2S_mg_nm3": 10,
+        "TRS_mg_nm3": 15,
+        "Cl2_mg_nm3": 10
+      },
+      "notes": "Recovery boiler dan lime kiln"
+    },
+    "incinerator": {
+      "name": "Incinerator / Pembakaran Limbah",
+      "parameters": {
+        "TSP_mg_nm3": 50,
+        "SO2_mg_nm3": 50,
+        "NO2_mg_nm3": 150,
+        "CO_mg_nm3": 50,
+        "HCl_mg_nm3": 50,
+        "HF_mg_nm3": 2,
+        "Hg_mg_nm3": 0.05,
+        "Cd_mg_nm3": 0.05,
+        "Pb_mg_nm3": 0.5,
+        "dioxin_furan_ng_nm3": 0.1,
+        "opacity_pct": 10
+      },
+      "notes": "O2 referensi 11%, temperatur pembakaran minimal 850°C"
+    },
+    "kiln_kapur": {
+      "name": "Kiln Pembakaran Kapur",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 200,
+        "NO2_mg_nm3": 500,
+        "CO_mg_nm3": null,
+        "opacity_pct": 15
+      }
+    },
+    "kiln_keramik": {
+      "name": "Kiln Industri Keramik / Bata",
+      "parameters": {
+        "TSP_mg_nm3": 150,
+        "SO2_mg_nm3": 300,
+        "NO2_mg_nm3": 500,
+        "HF_mg_nm3": 5,
+        "opacity_pct": 20
+      }
+    },
+    "kilang_minyak": {
+      "name": "Kilang Minyak Bumi",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 300,
+        "NO2_mg_nm3": 400,
+        "CO_mg_nm3": null,
+        "H2S_mg_nm3": 10,
+        "opacity_pct": 10
+      }
+    },
+    "industri_kaca": {
+      "name": "Industri Kaca / Gelas",
+      "parameters": {
+        "TSP_mg_nm3": 80,
+        "SO2_mg_nm3": 500,
+        "NO2_mg_nm3": 700,
+        "HCl_mg_nm3": 30,
+        "HF_mg_nm3": 5,
+        "Pb_mg_nm3": 5,
+        "opacity_pct": 10
+      }
+    },
+    "industri_makanan": {
+      "name": "Industri Makanan dan Minuman",
+      "parameters": {
+        "TSP_mg_nm3": 150,
+        "SO2_mg_nm3": 400,
+        "NO2_mg_nm3": 400,
+        "opacity_pct": 20
+      },
+      "notes": "Boiler proses"
+    },
+    "industri_tekstil": {
+      "name": "Industri Tekstil",
+      "parameters": {
+        "TSP_mg_nm3": 150,
+        "SO2_mg_nm3": 400,
+        "NO2_mg_nm3": 400,
+        "opacity_pct": 20
+      },
+      "notes": "Boiler proses"
+    },
+    "industri_karet": {
+      "name": "Industri Karet / Ban",
+      "parameters": {
+        "TSP_mg_nm3": 100,
+        "SO2_mg_nm3": 400,
+        "NO2_mg_nm3": 400,
+        "H2S_mg_nm3": 10,
+        "opacity_pct": 20
+      }
+    }
+  }
+}

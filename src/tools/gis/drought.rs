@@ -24,7 +24,7 @@ pub fn index(precip: f64, avg: f64, std: f64) -> String {
     };
 
     format!(
-        "=== Drought Index (SPI) ===\nPrecipitation: {:.1} mm\nLong-term Average: {:.1} mm\nStandard Deviation: {:.1} mm\n\nSPI: {:.2}\nCategory: {}\n\nRisk Assessment:\n{}\n\nSPI Scale:\n  ≤ -2.0: Extreme Drought\n  -2.0 to -1.5: Severe Drought\n  -1.5 to -1.0: Moderate Drought\n  -1.0 to -0.5: Mild Drought\n  -0.5 to 0.5: Normal\n  0.5 to 1.0: Mildly Wet\n  ≥ 2.0: Extremely Wet\n\nNTB Context:\n  - Sumbawa Timur & Dompu paling rawan kekeringan\n  - Musim kemarau (Juni-Oktober) kritis\n  - Data historis: CHIRPS (1981-now) via GEE",
+        "=== Drought Index (SPI) ===\nPrecipitation: {:.1} mm\nLong-term Average: {:.1} mm\nStandard Deviation: {:.1} mm\n\nSPI: {:.2}\nCategory: {}\n\nRisk Assessment:\n{}\n\nSPI Scale:\n  ≤ -2.0: Extreme Drought\n  -2.0 to -1.5: Severe Drought\n  -1.5 to -1.0: Moderate Drought\n  -1.0 to -0.5: Mild Drought\n  -0.5 to 0.5: Normal\n  0.5 to 1.0: Mildly Wet\n  ≥ 2.0: Extremely Wet\n\nIndonesia Context:\\n  - NTT, NTB timur, Jawa Timur = zona kering, paling rawan kekeringan\\n  - Musim kemarau (Juni-Oktober) kritis\\n  - Data historis: CHIRPS (1981-now) via GEE",
         precip, avg, std, spi, category, risk
     )
 }

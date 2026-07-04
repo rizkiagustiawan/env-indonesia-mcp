@@ -7,3 +7,8 @@ pub mod chirps;
 pub mod grace;
 pub mod dynamic_world;
 pub mod era5;
+pub mod timelapse;
+pub mod hyperspectral;
+pub mod sar;
+pub mod burned_area;
+pub mod mangrove;

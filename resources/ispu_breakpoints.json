@@ -1,0 +1,26 @@
+{
+  "reference": "PermenLHK No. 73 Tahun 2019 tentang Indeks Standar Pencemar Udara",
+  "categories": [
+    {"range": [0, 50], "label": "Baik", "color": "Hijau"},
+    {"range": [51, 100], "label": "Sedang", "color": "Biru"},
+    {"range": [101, 200], "label": "Tidak Sehat", "color": "Kuning"},
+    {"range": [201, 300], "label": "Sangat Tidak Sehat", "color": "Merah"},
+    {"range": [301, null], "label": "Berbahaya", "color": "Hitam"}
+  ],
+  "breakpoints": {
+    "PM10_ug_m3": [[0, 50], [50, 150], [150, 350], [350, 420], [420, 500]],
+    "PM2.5_ug_m3": [[0, 15.5], [15.5, 55.4], [55.5, 150.4], [150.5, 250.4], [250.5, 500]],
+    "SO2_ug_m3": [[0, 52], [52, 180], [180, 400], [400, 800], [800, 1200]],
+    "CO_ug_m3": [[0, 4000], [4000, 10000], [10000, 17000], [17000, 34000], [34000, 46000]],
+    "O3_ug_m3": [[0, 120], [120, 235], [235, 400], [400, 800], [800, 1000]],
+    "NO2_ug_m3": [[0, 80], [80, 200], [200, 1130], [1130, 2260], [2260, 3000]]
+  },
+  "notes": {
+    "PM10_averaging": "24 jam",
+    "PM2.5_averaging": "24 jam",
+    "SO2_averaging": "24 jam",
+    "CO_averaging": "8 jam",
+    "O3_averaging": "1 jam",
+    "NO2_averaging": "1 jam"
+  }
+}

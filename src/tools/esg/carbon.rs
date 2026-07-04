@@ -19,7 +19,7 @@ pub fn calculate(activity: &str, amount: f64) -> String {
     let carbon_price_idr = co2_ton * 30.0 * 15500.0; // NEK ~$30/tCO2 * IDR rate
 
     format!(
-        "=== Carbon Footprint Calculator ===\nActivity: {} = {:.2} units\n{}: {:.2}\n\nEmissions:\n  {:.2} kgCO2e\n  {:.4} tCO2e\n\nCarbon Valuation (NEK Indonesia):\n  ~Rp {:.0} (@ Rp 465,000/tCO2e, Perpres 98/2021)\n\nGHG Protocol Scope: {}\n\nContext NTB:\n  - Avg household electricity: ~150 kWh/month = {:.0} kgCO2/month\n  - Avg motorcycle: 12,000 km/year = {:.0} kgCO2/year\n  - 1 ha deforestasi Rinjani = {:.0} tCO2 released",
+        "=== Carbon Footprint Calculator ===\nActivity: {} = {:.2} units\n{}: {:.2}\n\nEmissions:\n  {:.2} kgCO2e\n  {:.4} tCO2e\n\nCarbon Valuation (NEK Indonesia):\n  ~Rp {:.0} (@ Rp 465,000/tCO2e, Perpres 98/2021)\n\nGHG Protocol Scope: {}\n\nContext Indonesia:\\n  - Avg household electricity: ~150 kWh/month = {:.0} kgCO2/month\\n  - Avg motorcycle: 12,000 km/year = {:.0} kgCO2/year\\n  - 1 ha deforestasi hutan tropis = {:.0} tCO2 released",
         activity, amount, source, co2_kg,
         co2_kg, co2_ton,
         carbon_price_idr,

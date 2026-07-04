@@ -1,3 +1,5 @@
+use std::process::Command;
+
 pub fn analyze(geojson_str: &str) -> String {
     match serde_json::from_str::<serde_json::Value>(geojson_str) {
         Ok(gj) => {
@@ -23,6 +25,17 @@ pub fn analyze(geojson_str: &str) -> String {
                         serde_json::to_string(coords).unwrap_or_default().chars().take(200).collect::<String>()));
                 }
             }
+            
+            // Panggil Geopandas Python script untuk hitung Area
+            let py_script = "/home/awan/Documents/env-indonesia-mcp/src/tools/gis/geojson_area.py";
+            match Command::new("python3").arg(py_script).arg(geojson_str).output() {
+                Ok(output) => {
+                    let py_out = String::from_utf8_lossy(&output.stdout);
+                    out.push_str(&py_out);
+                },
+                Err(_) => {}
+            }
+
             out
         }
         Err(e) => format!("Invalid GeoJSON: {}", e),

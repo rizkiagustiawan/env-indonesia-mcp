@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn generate_map(geojson: &str, output_path: &str, title: &str, realtime: bool) -> String {
-    let py_script = "/home/awan/Documents/env-ntb-mcp/src/tools/gis/cartography.py";
+    let py_script = "/home/awan/Documents/env-indonesia-mcp/src/tools/gis/cartography.py";
     
     let mut cmd = Command::new("python3");
     cmd.arg(py_script)

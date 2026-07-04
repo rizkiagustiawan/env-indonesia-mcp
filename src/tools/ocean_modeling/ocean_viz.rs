@@ -1,7 +1,7 @@
 use std::process::Command;
 
 fn run_ocean_viz(mode: &str, args: &[(&str, &str)]) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/ocean_modeling/ocean_viz.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/ocean_modeling/ocean_viz.py";
     let mut cmd = Command::new("python3");
     cmd.arg(script).arg("--mode").arg(mode);
     for (k, v) in args { cmd.arg(format!("--{}", k)).arg(v); }

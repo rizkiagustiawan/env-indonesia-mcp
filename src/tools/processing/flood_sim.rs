@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn flood_3d(dem_path: &str, output_path: &str, water_level: f64, title: &str, exaggeration: f64) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/flood_sim.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/flood_sim.py";
     match Command::new("python3").arg(script)
         .arg("--mode").arg("3d")
         .arg("--dem").arg(dem_path)
@@ -20,7 +20,7 @@ pub fn flood_3d(dem_path: &str, output_path: &str, water_level: f64, title: &str
 }
 
 pub fn flood_4d(dem_path: &str, output_path: &str, water_start: f64, water_end: f64, steps: u32, title: &str, exaggeration: f64) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/flood_sim.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/flood_sim.py";
     match Command::new("python3").arg(script)
         .arg("--mode").arg("4d")
         .arg("--dem").arg(dem_path)

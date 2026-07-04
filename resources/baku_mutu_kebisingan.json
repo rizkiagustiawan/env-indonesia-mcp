@@ -1,0 +1,22 @@
+{
+  "reference": "KepmenLH No. 48 Tahun 1996 tentang Baku Tingkat Kebisingan",
+  "zones": {
+    "perumahan": {"name": "Perumahan dan Pemukiman", "max_db": 55},
+    "perdagangan": {"name": "Perdagangan dan Jasa", "max_db": 70},
+    "perkantoran": {"name": "Perkantoran dan Perdagangan", "max_db": 65},
+    "ruang_terbuka_hijau": {"name": "Ruang Terbuka Hijau", "max_db": 50},
+    "industri": {"name": "Industri", "max_db": 70},
+    "pemerintahan": {"name": "Pemerintahan dan Fasilitas Umum", "max_db": 60},
+    "rekreasi": {"name": "Rekreasi", "max_db": 70},
+    "rumah_sakit": {"name": "Rumah Sakit / Sejenisnya", "max_db": 55},
+    "sekolah": {"name": "Sekolah / Sejenisnya", "max_db": 55},
+    "ibadah": {"name": "Tempat Ibadah / Sejenisnya", "max_db": 55}
+  },
+  "measurement_method": {
+    "duration_minutes": 10,
+    "interval": "setiap 5 detik",
+    "height_m": 1.2,
+    "distance_from_source_m": "di titik penerima",
+    "unit": "dB(A)"
+  }
+}

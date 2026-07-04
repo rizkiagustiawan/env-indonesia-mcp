@@ -22,7 +22,7 @@ pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: 
             else if wind_speed_ms < 5.0 { 'E' } else { 'D' }
         }
     } else {
-        match (wind_speed_ms as u32, solar) {
+        match (wind_speed_ms.round() as u32, solar) {
             (0..=1, 3) => 'A',
             (0..=1, 2) => 'A',
             (0..=1, 1) => 'B',

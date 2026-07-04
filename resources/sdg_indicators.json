@@ -1,1 +1,162 @@
-{"sdgs":[{"id":1,"name":"No Poverty"},{"id":2,"name":"Zero Hunger"},{"id":3,"name":"Good Health"},{"id":4,"name":"Quality Education"},{"id":5,"name":"Gender Equality"},{"id":6,"name":"Clean Water & Sanitation"},{"id":7,"name":"Affordable & Clean Energy"},{"id":8,"name":"Decent Work & Economic Growth"},{"id":9,"name":"Industry, Innovation & Infrastructure"},{"id":10,"name":"Reduced Inequalities"},{"id":11,"name":"Sustainable Cities"},{"id":12,"name":"Responsible Consumption & Production"},{"id":13,"name":"Climate Action"},{"id":14,"name":"Life Below Water"},{"id":15,"name":"Life on Land"},{"id":16,"name":"Peace, Justice & Strong Institutions"},{"id":17,"name":"Partnerships for the Goals"}]}
+{
+  "sdgs": [
+    {
+      "id": 1,
+      "name": "No Poverty",
+      "targets": [
+        {"id": "1.1", "description": "Eradicate extreme poverty (<$2.15/day)", "indicators": ["1.1.1 Population below international poverty line"]},
+        {"id": "1.5", "description": "Build resilience of poor to climate shocks", "indicators": ["1.5.1 Deaths/affected by disasters per 100k", "1.5.2 Direct economic loss from disasters as % of GDP"]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Zero Hunger",
+      "targets": [
+        {"id": "2.1", "description": "End hunger, ensure food access year-round", "indicators": ["2.1.1 Prevalence of undernourishment", "2.1.2 Food Insecurity Experience Scale"]},
+        {"id": "2.4", "description": "Sustainable food production & resilient agriculture", "indicators": ["2.4.1 Proportion of agricultural area under productive and sustainable agriculture"]}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Good Health and Well-being",
+      "targets": [
+        {"id": "3.9", "description": "Reduce deaths from hazardous chemicals, pollution", "indicators": ["3.9.1 Mortality rate from air pollution", "3.9.2 Mortality rate from unsafe water/sanitation"]},
+        {"id": "3.d", "description": "Early warning for health risks", "indicators": ["3.d.1 IHR capacity and health emergency preparedness"]}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Quality Education",
+      "targets": [
+        {"id": "4.7", "description": "Education for sustainable development", "indicators": ["4.7.1 Extent ESD is mainstreamed in education policies and curricula"]},
+        {"id": "4.a", "description": "Build/upgrade inclusive, safe learning facilities", "indicators": ["4.a.1 Schools with access to electricity, internet, water, sanitation"]}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Gender Equality",
+      "targets": [
+        {"id": "5.a", "description": "Equal rights to economic resources, land ownership", "indicators": ["5.a.1 Women with ownership/secure rights over agricultural land", "5.a.2 Legal frameworks guaranteeing women's equal rights to land"]},
+        {"id": "5.5", "description": "Full participation in leadership & decision-making", "indicators": ["5.5.1 Proportion of seats held by women in national parliaments"]}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Clean Water and Sanitation",
+      "targets": [
+        {"id": "6.1", "description": "Universal safe and affordable drinking water", "indicators": ["6.1.1 Proportion using safely managed drinking water services"]},
+        {"id": "6.3", "description": "Improve water quality — reduce pollution, eliminate dumping, minimize hazardous chemicals", "indicators": ["6.3.1 Proportion of domestic/industrial wastewater safely treated", "6.3.2 Proportion of water bodies with good ambient water quality"]},
+        {"id": "6.4", "description": "Increase water-use efficiency, ensure sustainable freshwater withdrawals", "indicators": ["6.4.1 Change in water-use efficiency over time", "6.4.2 Level of water stress: freshwater withdrawal as proportion of available freshwater"]},
+        {"id": "6.5", "description": "Implement integrated water resources management (IWRM)", "indicators": ["6.5.1 Degree of IWRM implementation (0-100)", "6.5.2 Proportion of transboundary basin area with operational cooperation"]},
+        {"id": "6.6", "description": "Protect and restore water-related ecosystems", "indicators": ["6.6.1 Change in extent of water-related ecosystems over time"]}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Affordable and Clean Energy",
+      "targets": [
+        {"id": "7.1", "description": "Universal access to affordable, reliable, modern energy", "indicators": ["7.1.1 Proportion of population with access to electricity", "7.1.2 Proportion relying on clean fuels and technology"]},
+        {"id": "7.2", "description": "Increase share of renewable energy in global energy mix", "indicators": ["7.2.1 Renewable energy share in total final energy consumption"]},
+        {"id": "7.3", "description": "Double the global rate of improvement in energy efficiency", "indicators": ["7.3.1 Energy intensity (MJ per unit GDP PPP)"]},
+        {"id": "7.a", "description": "Enhance international cooperation for clean energy research and technology", "indicators": ["7.a.1 International financial flows to developing countries for clean energy (USD)"]}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Decent Work and Economic Growth",
+      "targets": [
+        {"id": "8.4", "description": "Improve resource efficiency in consumption and production", "indicators": ["8.4.1 Material footprint per capita and per GDP", "8.4.2 Domestic material consumption per capita and per GDP"]},
+        {"id": "8.9", "description": "Promote sustainable tourism creating jobs and local culture", "indicators": ["8.9.1 Tourism direct GDP as proportion of total GDP"]}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Industry, Innovation and Infrastructure",
+      "targets": [
+        {"id": "9.2", "description": "Promote inclusive and sustainable industrialization", "indicators": ["9.2.1 Manufacturing value added as proportion of GDP and per capita", "9.2.2 Manufacturing employment as proportion of total employment"]},
+        {"id": "9.4", "description": "Upgrade infrastructure and retrofit industries for sustainability with clean technologies", "indicators": ["9.4.1 CO2 emission per unit of value added"]},
+        {"id": "9.5", "description": "Enhance scientific research and upgrade technological capabilities", "indicators": ["9.5.1 Research and development expenditure as proportion of GDP", "9.5.2 Researchers (FTE) per million inhabitants"]}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Reduced Inequalities",
+      "targets": [
+        {"id": "10.1", "description": "Progressively achieve income growth of bottom 40%", "indicators": ["10.1.1 Growth rates of household expenditure among bottom 40% vs total population"]},
+        {"id": "10.2", "description": "Empower and promote inclusion of all", "indicators": ["10.2.1 Proportion living below 50% of median income by sex, age, disability"]}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Sustainable Cities and Communities",
+      "targets": [
+        {"id": "11.3", "description": "Inclusive and sustainable urbanization", "indicators": ["11.3.1 Ratio of land consumption rate to population growth rate", "11.3.2 Proportion of cities with civil society participation in urban planning"]},
+        {"id": "11.5", "description": "Reduce deaths and economic losses from disasters", "indicators": ["11.5.1 Deaths/missing/affected by disasters per 100k", "11.5.2 Direct economic loss from disasters relative to GDP"]},
+        {"id": "11.6", "description": "Reduce per capita environmental impact of cities (air quality, waste management)", "indicators": ["11.6.1 Proportion of municipal solid waste collected and managed", "11.6.2 Annual mean levels of PM2.5 in cities (population-weighted)"]},
+        {"id": "11.7", "description": "Provide universal access to safe, inclusive green and public spaces", "indicators": ["11.7.1 Average share of open space for public use in built-up area of cities"]}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Responsible Consumption and Production",
+      "targets": [
+        {"id": "12.2", "description": "Sustainable management and efficient use of natural resources", "indicators": ["12.2.1 Material footprint per capita and per GDP", "12.2.2 Domestic material consumption per capita and per GDP"]},
+        {"id": "12.4", "description": "Environmentally sound management of chemicals and wastes throughout lifecycle", "indicators": ["12.4.1 Parties meeting obligations under multilateral environmental agreements on hazardous waste", "12.4.2 Hazardous waste generated per capita and proportion treated"]},
+        {"id": "12.5", "description": "Substantially reduce waste generation through prevention, reduction, recycling, reuse", "indicators": ["12.5.1 National recycling rate, tons of material recycled"]},
+        {"id": "12.6", "description": "Encourage companies to adopt sustainable practices and sustainability reporting", "indicators": ["12.6.1 Number of companies publishing sustainability reports"]},
+        {"id": "12.8", "description": "Ensure people have information and awareness for sustainable development", "indicators": ["12.8.1 Extent to which ESD is mainstreamed in education and curricula"]}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Climate Action",
+      "targets": [
+        {"id": "13.1", "description": "Strengthen resilience and adaptive capacity to climate-related hazards", "indicators": ["13.1.1 Deaths/missing/affected by disasters per 100k", "13.1.2 Countries with national/local DRR strategies", "13.1.3 Proportion of local governments adopting DRR strategies"]},
+        {"id": "13.2", "description": "Integrate climate change measures into national policies and planning", "indicators": ["13.2.1 Countries with NDCs, long-term strategies, national adaptation plans", "13.2.2 Total greenhouse gas emissions per year"]},
+        {"id": "13.3", "description": "Improve education, awareness-raising on climate change mitigation and adaptation", "indicators": ["13.3.1 Extent to which ESD and climate education is mainstreamed"]},
+        {"id": "13.a", "description": "Mobilize $100B/yr for developing countries for climate action", "indicators": ["13.a.1 Amounts provided and mobilized per year (USD) toward $100B commitment"]}
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Life Below Water",
+      "targets": [
+        {"id": "14.1", "description": "Prevent and significantly reduce marine pollution", "indicators": ["14.1.1 Index of coastal eutrophication and floating plastic debris density"]},
+        {"id": "14.2", "description": "Sustainably manage and protect marine and coastal ecosystems", "indicators": ["14.2.1 Number of countries using ecosystem-based approaches to manage marine areas"]},
+        {"id": "14.3", "description": "Minimize and address ocean acidification", "indicators": ["14.3.1 Average marine acidity (pH) at agreed suite of representative sampling stations"]},
+        {"id": "14.4", "description": "Regulate harvesting to restore fish stocks to sustainable levels", "indicators": ["14.4.1 Proportion of fish stocks within biologically sustainable levels"]},
+        {"id": "14.5", "description": "Conserve at least 10% of coastal and marine areas", "indicators": ["14.5.1 Coverage of protected areas in relation to marine areas"]},
+        {"id": "14.7", "description": "Increase economic benefits from sustainable use of marine resources for SIDS/LDCs", "indicators": ["14.7.1 Sustainable fisheries as proportion of GDP in SIDS/LDCs"]}
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Life on Land",
+      "targets": [
+        {"id": "15.1", "description": "Ensure conservation, restoration, sustainable use of terrestrial ecosystems", "indicators": ["15.1.1 Forest area as proportion of total land area", "15.1.2 Proportion of important sites for terrestrial/freshwater biodiversity covered by protected areas"]},
+        {"id": "15.2", "description": "Promote sustainable management of all types of forests, halt deforestation", "indicators": ["15.2.1 Progress towards sustainable forest management"]},
+        {"id": "15.3", "description": "Combat desertification, restore degraded land and soil", "indicators": ["15.3.1 Proportion of land that is degraded over total land area"]},
+        {"id": "15.4", "description": "Ensure conservation of mountain ecosystems and their biodiversity", "indicators": ["15.4.1 Coverage by protected areas of important mountain biodiversity sites", "15.4.2 Mountain Green Cover Index"]},
+        {"id": "15.5", "description": "Reduce degradation of natural habitats, halt biodiversity loss, protect threatened species", "indicators": ["15.5.1 Red List Index"]},
+        {"id": "15.9", "description": "Integrate ecosystem and biodiversity values into national/local planning and development", "indicators": ["15.9.1 Countries with national targets for Aichi Biodiversity Target 2 and progress"]}
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Peace, Justice and Strong Institutions",
+      "targets": [
+        {"id": "16.6", "description": "Develop effective, accountable, transparent institutions", "indicators": ["16.6.1 Primary government expenditures as proportion of original approved budget", "16.6.2 Population satisfied with last public service experience"]},
+        {"id": "16.10", "description": "Ensure public access to information and protect fundamental freedoms", "indicators": ["16.10.2 Number of countries with constitutional/statutory/policy guarantees for public access to information"]}
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Partnerships for the Goals",
+      "targets": [
+        {"id": "17.6", "description": "Enhance regional/international cooperation on science, technology, innovation", "indicators": ["17.6.1 Fixed Internet broadband subscriptions per 100 inhabitants"]},
+        {"id": "17.14", "description": "Enhance policy coherence for sustainable development", "indicators": ["17.14.1 Countries with mechanisms to enhance policy coherence for sustainable development"]},
+        {"id": "17.19", "description": "Build capacity for measuring progress on sustainable development", "indicators": ["17.19.1 Dollar value of resources for strengthening statistical capacity in developing countries"]}
+      ]
+    }
+  ]
+}

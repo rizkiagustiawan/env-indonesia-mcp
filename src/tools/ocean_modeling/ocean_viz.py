@@ -145,9 +145,71 @@ def pollution_4d(output_path, source_x, source_y, current_speeds, current_dirs, 
     plt.close()
     return f"SUCCESS: 4D Pollution animation disimpan di {output_path} ({n_frames+1} frames)"
 
+def oil_spill_viz(output_path, volume_m3, oil_type, wind_speed, wind_dir, current_speed, current_dir, hours, title="Oil Spill Trajectory"):
+    """Animated GIF showing oil spill particle drift over time"""
+    n_particles = 300
+    dt = 3600  # 1 hour timestep
+    n_frames = min(hours, 72)  # cap frames
+
+    # Evaporation rate by oil type
+    k_evap = {"crude": 0.02, "mentah": 0.02, "diesel": 0.08, "gasoline": 0.20, "bensin": 0.20, "bunker": 0.005, "hfo": 0.005}.get(oil_type.lower(), 0.02)
+
+    # Wind drift (3% of wind) + current
+    drift_wind = 0.03 * wind_speed
+    ux = drift_wind * np.sin(np.radians(wind_dir)) + current_speed * np.sin(np.radians(current_dir))
+    uy = drift_wind * np.cos(np.radians(wind_dir)) + current_speed * np.cos(np.radians(current_dir))
+
+    # Initialize particles at origin
+    px = np.random.normal(0, 20, n_particles)
+    py = np.random.normal(0, 20, n_particles)
+
+    all_px = [px.copy()]
+    all_py = [py.copy()]
+    all_evap = [0.0]
+
+    for t in range(1, n_frames + 1):
+        spread = 5.0 + 2.0 * t  # increasing diffusion over time
+        px = px + ux * dt + np.random.normal(0, spread, n_particles)
+        py = py + uy * dt + np.random.normal(0, spread, n_particles)
+        evap_pct = (1.0 - np.exp(-k_evap * t)) * 100
+        all_px.append(px.copy())
+        all_py.append(py.copy())
+        all_evap.append(evap_pct)
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    def update(frame):
+        ax.clear()
+        # Trail
+        for t in range(max(0, frame - 4), frame + 1):
+            alpha = 0.1 + 0.15 * (t - max(0, frame - 4))
+            evap_frac = all_evap[t] / 100.0
+            color_val = plt.cm.YlOrBr(0.3 + 0.5 * evap_frac)
+            ax.scatter(all_px[t] / 1000, all_py[t] / 1000, s=4, color=color_val, alpha=alpha)
+        # Current frame - oil slick
+        evap_frac = all_evap[frame] / 100.0
+        remaining = 1.0 - evap_frac
+        color = plt.cm.YlOrBr(0.3 + 0.5 * evap_frac)
+        ax.scatter(all_px[frame] / 1000, all_py[frame] / 1000, s=8 * remaining + 2, color=color, alpha=0.7, edgecolors='k', linewidths=0.2)
+        ax.plot(0, 0, 'r^', markersize=14, label='Spill Source')
+        vol_remain = volume_m3 * np.exp(-k_evap * frame)
+        ax.set_title(f'{title}\nT+{frame}h | Evap: {all_evap[frame]:.0f}% | Vol: {vol_remain:.0f} m3 | {oil_type}', fontsize=11, fontweight='bold')
+        ax.set_xlabel('East-West (km)')
+        ax.set_ylabel('North-South (km)')
+        ax.legend(loc='upper left')
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        fig.text(0.02, 0.02, f'Wind: {wind_dir} deg @ {wind_speed} m/s | Current: {current_dir} deg @ {current_speed} m/s | ZeroClaw AI', fontsize=7, style='italic')
+        return []
+
+    anim = FuncAnimation(fig, update, frames=n_frames + 1, interval=500, blit=False)
+    anim.save(output_path, writer=PillowWriter(fps=2))
+    plt.close()
+    return f"SUCCESS: Oil spill animation saved to {output_path} ({n_frames + 1} frames)"
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", required=True, choices=["bathymetry3d", "current2d", "thermal3d", "pollution4d"])
+    parser.add_argument("--mode", required=True, choices=["bathymetry3d", "current2d", "thermal3d", "pollution4d", "oil_spill_viz"])
     parser.add_argument("--output", required=True)
     parser.add_argument("--title", default="Ocean Visualization")
     parser.add_argument("--lat", type=float, default=-8.5)
@@ -159,6 +221,11 @@ if __name__ == "__main__":
     parser.add_argument("--discharge_rate", type=float, default=5)
     parser.add_argument("--current_speeds", default="0.3,0.35,0.4,0.3,0.25,0.2")
     parser.add_argument("--current_dirs", default="180,190,200,210,220,230")
+    parser.add_argument("--volume_m3", type=float, default=100)
+    parser.add_argument("--oil_type", default="crude")
+    parser.add_argument("--current_speed", type=float, default=0.3)
+    parser.add_argument("--current_dir", type=float, default=180)
+    parser.add_argument("--hours", type=int, default=24)
     args = parser.parse_args()
     
     if args.mode == "bathymetry3d":
@@ -171,3 +238,5 @@ if __name__ == "__main__":
         cs = [float(v) for v in args.current_speeds.split(',')]
         cd = [float(v) for v in args.current_dirs.split(',')]
         print(pollution_4d(args.output, 0, 0, cs, cd, title=args.title))
+    elif args.mode == "oil_spill_viz":
+        print(oil_spill_viz(args.output, args.volume_m3, args.oil_type, args.wind_speed, args.wind_dir, args.current_speed, args.current_dir, args.hours, title=args.title))

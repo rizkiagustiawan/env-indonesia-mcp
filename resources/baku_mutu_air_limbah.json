@@ -1,0 +1,293 @@
+{
+  "reference": "PermenLH No. 5 Tahun 2014 tentang Baku Mutu Air Limbah",
+  "industries": {
+    "tekstil": {
+      "name": "Industri Tekstil",
+      "parameters": {
+        "BOD_mg_l": 60,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 50,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "phenol_mg_l": 0.5,
+        "Cr_total_mg_l": 1.0,
+        "Cr6_mg_l": 0.1,
+        "NH3N_mg_l": 8.0,
+        "sulfida_mg_l": 0.3,
+        "minyak_lemak_mg_l": 3.0
+      },
+      "debit_max_m3_per_ton": 100
+    },
+    "sawit": {
+      "name": "Industri Minyak Kelapa Sawit",
+      "parameters": {
+        "BOD_mg_l": 100,
+        "COD_mg_l": 350,
+        "TSS_mg_l": 250,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "minyak_lemak_mg_l": 25.0,
+        "NH3N_mg_l": 5.0,
+        "total_nitrogen_mg_l": 50
+      },
+      "debit_max_m3_per_ton_tbs": 2.5
+    },
+    "karet": {
+      "name": "Industri Pengolahan Karet",
+      "parameters": {
+        "BOD_mg_l": 60,
+        "COD_mg_l": 200,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "NH3N_mg_l": 5.0,
+        "total_nitrogen_mg_l": 10.0
+      },
+      "debit_max_m3_per_ton": 40
+    },
+    "tapioka": {
+      "name": "Industri Tapioka",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 250,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "CN_mg_l": 0.05,
+        "minyak_lemak_mg_l": 5.0
+      },
+      "debit_max_m3_per_ton": 30
+    },
+    "gula": {
+      "name": "Industri Gula",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 75,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "minyak_lemak_mg_l": 5.0
+      },
+      "debit_max_m3_per_ton": 0.7
+    },
+    "pulp_kertas": {
+      "name": "Industri Pulp dan Kertas",
+      "parameters": {
+        "BOD_mg_l": 80,
+        "COD_mg_l": 250,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "AOX_mg_l": 0.5,
+        "phenol_mg_l": 0.5
+      },
+      "debit_max_m3_per_ton": 100
+    },
+    "farmasi": {
+      "name": "Industri Farmasi",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 75,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "total_nitrogen_mg_l": 30,
+        "phenol_mg_l": 1.0
+      },
+      "debit_max_m3_per_ton": null
+    },
+    "electroplating": {
+      "name": "Industri Pelapisan Logam (Electroplating)",
+      "parameters": {
+        "BOD_mg_l": null,
+        "COD_mg_l": null,
+        "TSS_mg_l": 20,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "Cr6_mg_l": 0.1,
+        "Cr_total_mg_l": 0.5,
+        "Cu_mg_l": 0.6,
+        "Zn_mg_l": 1.0,
+        "Ni_mg_l": 0.5,
+        "Cd_mg_l": 0.05,
+        "Pb_mg_l": 0.1,
+        "CN_total_mg_l": 0.2,
+        "CN_bebas_mg_l": 0.05
+      },
+      "debit_max_l_per_m2": 30
+    },
+    "pupuk": {
+      "name": "Industri Pupuk",
+      "parameters": {
+        "BOD_mg_l": 50,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "NH3N_mg_l": 10,
+        "fluorida_mg_l": 15,
+        "minyak_lemak_mg_l": 10
+      },
+      "debit_max_m3_per_ton": null
+    },
+    "pestisida": {
+      "name": "Industri Pestisida",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 50,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "phenol_mg_l": 0.5,
+        "organoklorin_mg_l": 0.05,
+        "organofosfat_mg_l": 0.1,
+        "minyak_lemak_mg_l": 3.0,
+        "total_nitrogen_mg_l": 20
+      },
+      "debit_max_m3_per_ton": null
+    },
+    "cat": {
+      "name": "Industri Cat",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 180,
+        "TSS_mg_l": 60,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "Pb_mg_l": 0.3,
+        "Cr6_mg_l": 0.1,
+        "Zn_mg_l": 5.0,
+        "minyak_lemak_mg_l": 5.0
+      },
+      "debit_max_m3_per_ton": null
+    },
+    "baterai": {
+      "name": "Industri Baterai/Aki",
+      "parameters": {
+        "BOD_mg_l": null,
+        "COD_mg_l": null,
+        "TSS_mg_l": 50,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "Pb_mg_l": 0.1,
+        "Cd_mg_l": 0.05,
+        "Hg_mg_l": 0.002,
+        "Ni_mg_l": 0.5,
+        "Zn_mg_l": 1.0,
+        "Mn_mg_l": 1.0,
+        "Cu_mg_l": 0.6
+      },
+      "debit_max_m3_per_ton": null
+    },
+    "rumah_sakit": {
+      "name": "Rumah Sakit",
+      "parameters": {
+        "BOD_mg_l": 30,
+        "COD_mg_l": 80,
+        "TSS_mg_l": 30,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "NH3N_mg_l": 10,
+        "phosphat_mg_l": 2.0,
+        "total_coliform_mpn_per_100ml": 3000,
+        "minyak_lemak_mg_l": 5.0
+      },
+      "debit_max_l_per_bed_per_hari": 500
+    },
+    "hotel": {
+      "name": "Hotel",
+      "parameters": {
+        "BOD_mg_l": 30,
+        "COD_mg_l": 50,
+        "TSS_mg_l": 30,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "minyak_lemak_mg_l": 5.0,
+        "NH3N_mg_l": 10,
+        "total_coliform_mpn_per_100ml": 3000,
+        "sisa_klor_mg_l": 0.1
+      },
+      "debit_max_l_per_orang_per_hari": null
+    },
+    "peternakan": {
+      "name": "Peternakan (Sapi/Babi)",
+      "parameters": {
+        "BOD_mg_l": 100,
+        "COD_mg_l": 200,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "NH3N_mg_l": 25,
+        "minyak_lemak_mg_l": null
+      },
+      "debit_max_m3_per_ekor_per_hari": null
+    },
+    "domestik": {
+      "name": "Air Limbah Domestik",
+      "parameters": {
+        "BOD_mg_l": 30,
+        "COD_mg_l": 100,
+        "TSS_mg_l": 30,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "minyak_lemak_mg_l": 5.0,
+        "NH3N_mg_l": 10,
+        "total_coliform_mpn_per_100ml": 3000
+      },
+      "notes": "PermenLHK No. 68 Tahun 2016"
+    },
+    "pertambangan_emas": {
+      "name": "Pertambangan Emas",
+      "parameters": {
+        "TSS_mg_l": 200,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "Cu_mg_l": 2.0,
+        "Cd_mg_l": 0.1,
+        "Zn_mg_l": 5.0,
+        "Pb_mg_l": 1.0,
+        "As_mg_l": 0.5,
+        "Hg_mg_l": 0.002,
+        "CN_bebas_mg_l": 0.5,
+        "CN_total_mg_l": 1.0
+      }
+    },
+    "pertambangan_batubara": {
+      "name": "Pertambangan Batubara",
+      "parameters": {
+        "TSS_mg_l": 200,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "Fe_total_mg_l": 7.0,
+        "Mn_total_mg_l": 4.0
+      }
+    },
+    "minyak_gas": {
+      "name": "Kegiatan Minyak dan Gas Bumi",
+      "parameters": {
+        "BOD_mg_l": null,
+        "COD_mg_l": 200,
+        "TSS_mg_l": null,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "minyak_lemak_mg_l": 25.0,
+        "sulfida_mg_l": 0.5,
+        "NH3N_mg_l": 10,
+        "phenol_mg_l": 2.0
+      }
+    },
+    "pengolahan_ikan": {
+      "name": "Pengolahan Hasil Perikanan",
+      "parameters": {
+        "BOD_mg_l": 75,
+        "COD_mg_l": 150,
+        "TSS_mg_l": 100,
+        "pH_min": 6.0,
+        "pH_max": 9.0,
+        "NH3N_mg_l": 5.0,
+        "minyak_lemak_mg_l": 15.0
+      },
+      "debit_max_m3_per_ton": 20
+    }
+  }
+}

@@ -1,16 +1,8 @@
 use reqwest::Client;
-use crate::ntb;
+use crate::indonesia;
 
 pub async fn weather(client: &Client, location: &str) -> String {
-    let loc_lower = location.to_lowercase();
-    let adm4 = match loc_lower.as_str() {
-        "mataram" | "kota mataram" => ntb::MATARAM_ADM4,
-        "bima" | "kota bima" => ntb::BIMA_ADM4,
-        "sumbawa" => ntb::SUMBAWA_ADM4,
-        "dompu" => ntb::DOMPU_ADM4,
-        "lombok_barat" | "lombok barat" => ntb::LOMBOK_BARAT_ADM4,
-        other => other, // assume adm4 code passed directly
-    };
+    let adm4 = indonesia::bmkg_adm4(location);
 
     let url = format!("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={}", adm4);
     match client.get(&url).send().await {
@@ -18,7 +10,7 @@ pub async fn weather(client: &Client, location: &str) -> String {
             Ok(body) => {
                 // Parse JSON and extract key info
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&body) {
-                    let mut out = String::from("=== BMKG Weather Forecast NTB ===\n");
+                    let mut out = String::from("=== BMKG Weather Forecast Indonesia ===\n");
                     if let Some(data) = v.get("data").and_then(|d| d.as_array()) {
                         for loc in data.iter().take(1) {
                             if let Some(name) = loc.get("lokasi").and_then(|l| l.get("desa")).and_then(|d| d.as_str()) {

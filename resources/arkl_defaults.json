@@ -1,0 +1,42 @@
+{
+  "reference": "Pedoman Analisis Risiko Kesehatan Lingkungan (ARKL), Kemenkes RI 2012",
+  "exposure_parameters": {
+    "dewasa": {
+      "body_weight_kg": 55,
+      "inhalation_rate_m3_day": 20,
+      "water_ingestion_l_day": 2,
+      "skin_surface_area_cm2": 5000,
+      "soil_ingestion_mg_day": 50
+    },
+    "anak": {
+      "body_weight_kg": 15,
+      "inhalation_rate_m3_day": 12,
+      "water_ingestion_l_day": 1,
+      "skin_surface_area_cm2": 2800,
+      "soil_ingestion_mg_day": 200
+    }
+  },
+  "exposure_scenarios": {
+    "residensial": {
+      "frequency_days_yr": 350,
+      "duration_years": 30
+    },
+    "okupasional": {
+      "frequency_days_yr": 250,
+      "duration_years": 25
+    },
+    "sekolah": {
+      "frequency_days_yr": 240,
+      "duration_years": 6
+    }
+  },
+  "averaging_time": {
+    "non_karsinogen": "Dt (same as exposure duration)",
+    "karsinogen": 70
+  },
+  "comparison_us_epa": {
+    "body_weight_adult_kg": 70,
+    "inhalation_rate_m3_day": 20,
+    "note": "Using US EPA BW=70 kg instead of Indonesian BW=55 kg underestimates CDI by 21% and proportionally underestimates risk"
+  }
+}

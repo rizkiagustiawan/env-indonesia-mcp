@@ -1,5 +1,5 @@
 use reqwest::Client;
-use crate::ntb;
+use crate::indonesia;
 
 pub async fn fire_hotspots(client: &Client, days: u32, bbox_opt: Option<String>) -> String {
     let days = days.min(10).max(1);
@@ -15,12 +15,12 @@ pub async fn fire_hotspots(client: &Client, days: u32, bbox_opt: Option<String>)
     );
     
     // Fallback: use web scraping approach
-    let alt_url = format!(
+    let _alt_url = format!(
         "https://firms.modaps.eosdis.nasa.gov/api/country/csv/FIRMS_MAP_KEY/VIIRS_SNPP_NRT/IDN/{}",
         days
     );
     
-    let mut out = format!("=== NASA FIRMS Fire Hotspots — NTB Region ({} days) ===\n", days);
+    let mut out = format!("=== NASA FIRMS Fire Hotspots — Indonesia ({} days) ===\n", days);
     out.push_str(&format!("Bounding Box: {}\n", bbox));
     out.push_str("Source: VIIRS S-NPP Near Real-Time\n");
     out.push_str("Note: For full API access, register at https://firms.modaps.eosdis.nasa.gov/api/area/\n");
@@ -48,7 +48,7 @@ pub async fn fire_hotspots(client: &Client, days: u32, bbox_opt: Option<String>)
                     out.push_str("2. Get your MAP_KEY\n");
                     out.push_str("3. Set env: FIRMS_MAP_KEY=your_key\n");
                     out.push_str("\nAlternative: Use web interface at https://firms.modaps.eosdis.nasa.gov/map/\n");
-                    out.push_str(&format!("Direct link for NTB: https://firms.modaps.eosdis.nasa.gov/map/#t:adv;d:today;l:noaa21-viirs-c2;@{},{},9z\n", ntb::NTB_CENTER[1], ntb::NTB_CENTER[0]));
+                    out.push_str(&format!("Direct link for Indonesia: https://firms.modaps.eosdis.nasa.gov/map/#t:adv;d:today;l:noaa21-viirs-c2;@{},{},5z\n", indonesia::INDONESIA_CENTER[1], indonesia::INDONESIA_CENTER[0]));
                 }
                 Err(e) => out.push_str(&format!("Error: {}\n", e)),
             }

@@ -3,3 +3,8 @@ pub mod carbon;
 pub mod sdg;
 pub mod ojk;
 pub mod tcfd;
+pub mod cost_benefit;
+pub mod material_flow;
+pub mod scope123;
+pub mod circular_economy;
+pub mod externality_cost;

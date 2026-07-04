@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn terrain_rotation(dem_path: &str, output_path: &str, title: &str, exaggeration: f64, frames: u32) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/viz4d.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/viz4d.py";
     match Command::new("python3").arg(script)
         .arg("--mode").arg("terrain")
         .arg("--dem").arg(dem_path)
@@ -20,7 +20,7 @@ pub fn terrain_rotation(dem_path: &str, output_path: &str, title: &str, exaggera
 }
 
 pub fn timeseries_animation(values: &str, labels: &str, output_path: &str, title: &str, ylabel: &str) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/viz4d.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/viz4d.py";
     let mut cmd = Command::new("python3");
     cmd.arg(script)
        .arg("--mode").arg("timeseries")

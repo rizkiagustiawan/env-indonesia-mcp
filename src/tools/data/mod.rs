@@ -9,3 +9,4 @@ pub mod climate_trace;
 pub mod magma;
 pub mod bps;
 pub mod inarisk;
+pub mod waqi;

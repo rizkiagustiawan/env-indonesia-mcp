@@ -5,15 +5,16 @@ Ref: PP 22/2021, template AMDAL KLHK"""
 import sys
 import json
 import argparse
+import os
 from fpdf import FPDF
 from datetime import datetime
 
 class EnvReport(FPDF):
     def header(self):
         self.set_font('Helvetica', 'B', 14)
-        self.cell(0, 10, self._sanitize(self.title), new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 10, self._sanitize(self.title), new_x="LMARGIN", new_y="NEXT", align='C')
         self.set_font('Helvetica', '', 9)
-        self.cell(0, 5, f'Dicetak: {datetime.now().strftime("%d %B %Y, %H:%M WITA")} | ZeroClaw Environmental AI', new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 5, f'Dicetak: {datetime.now().strftime("%d %B %Y, %H:%M WITA")} | ZeroClaw Environmental AI', new_x="LMARGIN", new_y="NEXT", align='C')
         self.line(10, self.get_y()+2, 200, self.get_y()+2)
         self.ln(5)
 
@@ -32,7 +33,22 @@ class EnvReport(FPDF):
 
     def chapter_body(self, text):
         self.set_font('Helvetica', '', 10)
-        self.multi_cell(0, 5, self._sanitize(text))
+        
+        # Check if the text is an image tag [IMG:path_to_image]
+        if text.startswith("[IMG:") and text.endswith("]"):
+            img_path = text[5:-1].strip()
+            if os.path.exists(img_path):
+                # Calculate width to fit page, maintaining aspect ratio
+                # A4 width is 210mm, margins are 10mm each side, so max width is 190mm
+                try:
+                    self.image(img_path, w=170)
+                    self.ln(3)
+                except Exception as e:
+                    self.multi_cell(0, 5, f"[Error loading image: {img_path} - {e}]")
+            else:
+                 self.multi_cell(0, 5, f"[Image not found: {img_path}]")
+        else:
+            self.multi_cell(0, 5, self._sanitize(text))
         self.ln(3)
 
     @staticmethod
@@ -54,24 +70,35 @@ class EnvReport(FPDF):
         return text.encode('latin-1', errors='replace').decode('latin-1')
 
 def generate_report(title, sections, output_path):
-    pdf = EnvReport()
-    pdf.alias_nb_pages()
-    pdf.title = title
-    pdf.add_page()
+    try:
+        pdf = EnvReport()
+        pdf.alias_nb_pages()
+        pdf.title = title
+        pdf.add_page()
 
-    for sec_title, sec_body in sections:
-        pdf.chapter_title(sec_title)
-        pdf.chapter_body(sec_body)
+        for sec_title, sec_body in sections:
+            pdf.chapter_title(sec_title)
+            # Support multiple paragraphs/images in one section
+            if isinstance(sec_body, list):
+                 for item in sec_body:
+                     pdf.chapter_body(item)
+            else:
+                 pdf.chapter_body(sec_body)
 
-    pdf.output(output_path)
-    return f"SUCCESS: Laporan PDF berhasil disimpan di {output_path}"
+        pdf.output(output_path)
+        return f"SUCCESS: Laporan PDF berhasil disimpan di {output_path}"
+    except Exception as e:
+        return f"ERROR generating PDF: {e}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--title", required=True)
-    parser.add_argument("--sections", required=True, help="JSON array of [title, body] pairs")
+    parser.add_argument("--sections", required=True, help="JSON array of [title, body] pairs. Body can be string or array of strings/images.")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
-    sections = json.loads(args.sections)
-    print(generate_report(args.title, sections, args.output))
+    try:
+        sections = json.loads(args.sections)
+        print(generate_report(args.title, sections, args.output))
+    except Exception as e:
+        print(f"ERROR parsing inputs: {e}")

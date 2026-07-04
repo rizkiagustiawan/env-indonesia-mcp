@@ -5,3 +5,6 @@ pub mod geojson_ops;
 pub mod coords;
 pub mod advanced;
 pub mod cartography;
+pub mod landcover;
+pub mod spatial_ops;
+pub mod viewshed;

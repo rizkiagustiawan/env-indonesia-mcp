@@ -13,7 +13,7 @@ pub fn render_4d(sources_json: &str, wind_speeds: &str, wind_dirs: &str, stabili
 }
 
 fn run_engine(mode: &str, sources: &str, ws: f64, wd: f64, stab: &str, output: &str, title: &str, grid: u32, ws_list: &str, wd_list: &str) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/airquality/dispersion_engine.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/airquality/dispersion_engine.py";
     let mut cmd = Command::new("python3");
     cmd.arg(script)
        .arg("--mode").arg(mode)

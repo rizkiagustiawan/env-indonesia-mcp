@@ -44,7 +44,7 @@ pub async fn solar(client: &Client, lat: f64, lon: f64, start: Option<String>, e
                     out.push_str("  GHI 4.0-5.0 = Good\n");
                     out.push_str("  GHI 3.0-4.0 = Moderate\n");
                     out.push_str("  GHI < 3.0 = Low\n");
-                    out.push_str("  NTB typically: 5.0-6.5 kWh/m²/day (excellent)\n");
+                    out.push_str("  Indonesia typically: 4.5-6.5 kWh/m²/day (varies by latitude/altitude)\n");
                 } else {
                     out.push_str(&format!("Response: {}\n", serde_json::to_string_pretty(&v).unwrap_or_default().chars().take(2000).collect::<String>()));
                 }

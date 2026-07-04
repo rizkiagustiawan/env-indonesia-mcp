@@ -1,1 +1,57 @@
-Aturan OJK POJK 51/2017: Wajib Laporan Keberlanjutan
+{
+  "reference": "POJK No. 51/POJK.03/2017 tentang Penerapan Keuangan Berkelanjutan bagi Lembaga Jasa Keuangan, Emiten, dan Perusahaan Publik",
+  "effective_date": "2017-07-27",
+  "scope": ["Bank", "Asuransi", "Sekuritas", "Pembiayaan", "Dana Pensiun", "Emiten", "Perusahaan Publik"],
+  "key_requirements": {
+    "rencana_aksi_keuangan_berkelanjutan": {
+      "pasal": "3-7",
+      "description": "Wajib menyusun Rencana Aksi Keuangan Berkelanjutan (RAKB) jangka pendek (1 tahun) dan menengah (5 tahun)",
+      "components": ["Visi dan Misi Keberlanjutan", "Tata Kelola Keberlanjutan", "Kategori Sektor Kegiatan Usaha Berkelanjutan", "Rencana Pengembangan Produk/Jasa Keuangan Berkelanjutan", "Target dan Indikator"]
+    },
+    "laporan_keberlanjutan": {
+      "pasal": "8-11",
+      "description": "Wajib menyusun dan mempublikasikan Laporan Keberlanjutan",
+      "deadline": "Bersamaan dengan Laporan Tahunan atau paling lambat 5 bulan setelah tahun buku berakhir",
+      "contents": ["Penjelasan Strategi Keberlanjutan", "Ikhtisar Aspek Keberlanjutan (Ekonomi, Lingkungan, Sosial)", "Profil Singkat", "Penjelasan Dewan Komisaris/Direksi", "Kinerja Keberlanjutan (ekonomi, lingkungan, sosial)", "Verifikasi Pihak Independen (jika ada)", "Umpan Balik dari Pembaca"]
+    },
+    "environmental_disclosures": {
+      "description": "Aspek Lingkungan Hidup yang wajib dilaporkan",
+      "indicators": [
+        "Penggunaan energi (listrik, BBM) dan intensitas energi",
+        "Pengurangan emisi gas rumah kaca",
+        "Penggunaan dan efisiensi air",
+        "Pengurangan limbah dan efluent",
+        "Perlindungan keanekaragaman hayati",
+        "Portofolio penyaluran dana ke sektor ramah lingkungan"
+      ]
+    },
+    "social_disclosures": {
+      "description": "Aspek Sosial yang wajib dilaporkan",
+      "indicators": [
+        "Ketenagakerjaan (jumlah karyawan, turnover, pelatihan)",
+        "Kesehatan dan keselamatan kerja",
+        "Pengembangan masyarakat (CSR)",
+        "Tanggung jawab produk kepada konsumen"
+      ]
+    },
+    "governance_disclosures": {
+      "description": "Aspek Tata Kelola yang wajib dilaporkan",
+      "indicators": [
+        "Komite terkait keberlanjutan",
+        "Mekanisme whistleblowing",
+        "Anti-korupsi dan anti-pencucian uang",
+        "Kebijakan remunerasi terkait kinerja keberlanjutan"
+      ]
+    }
+  },
+  "sanctions": {
+    "pasal": "14",
+    "types": ["Peringatan tertulis", "Penurunan tingkat kesehatan", "Pembatasan kegiatan usaha", "Pembekuan kegiatan usaha"]
+  },
+  "transition": {
+    "bank_buku_3_4": "Mulai berlaku 2019 (Laporan Keberlanjutan wajib tahun buku 2019)",
+    "bank_buku_1_2": "Mulai berlaku 2020",
+    "non_bank": "Mulai berlaku 2021",
+    "emiten": "Mulai berlaku 2020"
+  }
+}

@@ -50,5 +50,37 @@ pub fn simulate_4d(volume_m3: f64, oil_type: &str, wind_speed: f64, wind_dir: f6
     out.push_str("  3A-4: Pantai pasir halus (rentan sedang)\n");
     out.push_str("  5-7: Pantai berlumpur (sulit dibersihkan)\n");
     out.push_str("  8-10: Mangrove/rawa (SANGAT SENSITIF — pembersihan bertahun-tahun)\n");
+
+    // Generate GIF visualization if output path provided
+    if !output.is_empty() {
+        let viz_script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src/tools/ocean_modeling/ocean_viz.py");
+        let result = Command::new("python3")
+            .arg(viz_script.to_str().unwrap_or("ocean_viz.py"))
+            .arg("--mode").arg("oil_spill_viz")
+            .arg("--output").arg(output)
+            .arg("--volume_m3").arg(format!("{}", volume_m3))
+            .arg("--oil_type").arg(oil_type)
+            .arg("--wind_speed").arg(format!("{}", wind_speed))
+            .arg("--wind_dir").arg(format!("{}", wind_dir))
+            .arg("--current_speed").arg(format!("{}", current_speed))
+            .arg("--current_dir").arg(format!("{}", current_dir))
+            .arg("--hours").arg(format!("{}", hours))
+            .arg("--title").arg("Oil Spill Trajectory")
+            .output();
+        match result {
+            Ok(o) => {
+                let stdout = String::from_utf8_lossy(&o.stdout);
+                let stderr = String::from_utf8_lossy(&o.stderr);
+                if o.status.success() {
+                    out.push_str(&format!("\n🎬 {}\n", stdout.trim()));
+                } else {
+                    out.push_str(&format!("\n⚠️ GIF generation failed: {}\n", stderr.trim()));
+                }
+            }
+            Err(e) => out.push_str(&format!("\n⚠️ Could not run ocean_viz.py: {}\n", e)),
+        }
+    }
+
     out
 }

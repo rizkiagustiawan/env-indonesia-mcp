@@ -15,6 +15,6 @@ pub fn calculate(ph: f64, pco2_uatm: f64, temp_c: f64, salinity_psu: f64) -> Str
 
     let mut out = format!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Ocean Acidification\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nRef: Zeebe & Wolf-Gladrow (2001)\n⚠️ Model DISEDERHANAKAN. Untuk akurasi riset gunakan CO2SYS package.\n\npH = {:.2}\npCO₂ = {:.0} µatm\nSuhu = {:.1}°C\nSalinitas = {:.1} PSU\n\nΩ aragonite ≈ {:.2}\nStatus: {}\n\n", ph, pco2_uatm, temp_c, salinity_psu, omega_arag, status);
     out.push_str("Pre-industrial pH: ~8.18, Current: ~8.05\nΩ < 1: Coral TIDAK bisa membentuk cangkang CaCO₃\nΩ > 3.5: Optimal untuk pertumbuhan coral\n");
-    if omega_arag < 3.5 { out.push_str("\n⚠️ Coral reef Indonesia (termasuk Gili) terancam.\n"); }
+    if omega_arag < 3.5 { out.push_str("\n⚠️ Coral reef Indonesia (termasuk terumbu karang Indonesia) terancam.\n"); }
     out
 }

@@ -1,8 +1,8 @@
 [package]
-name = "env-ntb-mcp"
-version = "0.1.0"
+name = "env-indonesia-mcp"
+version = "1.0.0"
 edition = "2021"
-description = "Environmental AI MCP Server for NTB Indonesia — GIS, Remote Sensing, ESG Analytics"
+description = "Environmental AI MCP Server for Indonesia — 224 tools covering all 20 domains of Environmental Engineering"
 
 [dependencies]
 # MCP SDK

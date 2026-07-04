@@ -34,9 +34,17 @@ pub async fn search(client: &Client, query: &str, limit: u32) -> String {
 }
 
 fn urlencoding(s: &str) -> String {
-    s.chars().map(|c| match c {
-        'a'..='z' | 'A'..='Z' | '0'..='9' | '_' | '-' | '.' | '~' => c.to_string(),
-        ' ' => "+".into(),
-        _ => format!("%{:02X}", c as u8),
-    }).collect()
+    let mut encoded = String::new();
+    for byte in s.bytes() {
+        match byte {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' | b'-' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            b' ' => encoded.push('+'),
+            _ => {
+                encoded.push_str(&format!("%{:02X}", byte));
+            }
+        }
+    }
+    encoded
 }

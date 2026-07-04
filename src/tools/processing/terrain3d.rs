@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn render(dem_path: &str, output_path: &str, title: &str, exaggeration: f64) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/terrain3d.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/terrain3d.py";
     match Command::new("python3").arg(script)
         .arg("--dem").arg(dem_path)
         .arg("--output").arg(output_path)

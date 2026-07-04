@@ -71,7 +71,7 @@ pub fn coral_bleaching_dhw(sst_weekly: &[f64], sst_max_monthly_mean: f64) -> Str
 
     out.push_str(&format!("\nDHW = {:.1} °C-weeks\nRisiko: {}\n", dhw, risk));
     if dhw >= 4.0 {
-        out.push_str("\n⚠️ Terumbu karang Indonesia (Gili, Lombok) terancam bleaching.\n");
+        out.push_str("\n⚠️ Terumbu karang Indonesia (perairan Indonesia) terancam bleaching.\n");
     }
     out
 }

@@ -1,7 +1,9 @@
+#![allow(dead_code)]
+
 use anyhow::Result;
 use rmcp::ServiceExt;
 
-mod ntb;
+mod indonesia;
 mod server;
 mod tools;
 
@@ -11,9 +13,9 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    tracing::info!("env-ntb-mcp v0.1.0 — Environmental AI MCP Server for NTB Indonesia");
+    tracing::info!("env-indonesia-mcp v1.0.0 — Environmental AI MCP Server for Indonesia");
 
-    let server = server::EnvNtbServer::new();
+    let server = server::EnvIndonesiaServer::new();
     let service = server.serve(rmcp::transport::io::stdio()).await?;
     service.waiting().await?;
 

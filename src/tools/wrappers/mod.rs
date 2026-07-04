@@ -1,5 +1,5 @@
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::json;
 
 // Port mapping berdasarkan project yang sudah ada
 const GEO_ESG_PORT: &str = "8000";

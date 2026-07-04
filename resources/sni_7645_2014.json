@@ -1,0 +1,48 @@
+{
+  "reference": "SNI 7645:2014 Klasifikasi Penutup Lahan",
+  "level_i": [
+    {"code": "1000", "name": "Daerah Bervegetasi", "description": "Area yang didominasi vegetasi"},
+    {"code": "2000", "name": "Daerah Tidak Bervegetasi", "description": "Area tanpa vegetasi signifikan"},
+    {"code": "3000", "name": "Daerah Berair/Basah", "description": "Area yang dipengaruhi air"},
+    {"code": "4000", "name": "Lahan Terbangun", "description": "Area permukiman dan infrastruktur"},
+    {"code": "5000", "name": "Tubuh Air", "description": "Sungai, danau, laut, waduk"},
+    {"code": "6000", "name": "Lahan Terbuka", "description": "Tanah terbuka tanpa tutupan"},
+    {"code": "7000", "name": "Awan/No Data", "description": "Area tertutup awan"}
+  ],
+  "level_ii": [
+    {"code": "1001", "name": "Hutan Lahan Kering Primer", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1002", "name": "Hutan Lahan Kering Sekunder", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1003", "name": "Hutan Tanaman", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1004", "name": "Hutan Mangrove Primer", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1005", "name": "Hutan Mangrove Sekunder", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1006", "name": "Hutan Rawa Primer", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1007", "name": "Hutan Rawa Sekunder", "level_i": "1000", "ipcc": "Forest Land"},
+    {"code": "1008", "name": "Semak/Belukar", "level_i": "1000", "ipcc": "Grassland"},
+    {"code": "1009", "name": "Belukar Rawa", "level_i": "1000", "ipcc": "Wetland"},
+    {"code": "1010", "name": "Savana/Padang Rumput", "level_i": "1000", "ipcc": "Grassland"},
+    {"code": "2001", "name": "Sawah", "level_i": "2000", "ipcc": "Cropland"},
+    {"code": "2002", "name": "Pertanian Lahan Kering", "level_i": "2000", "ipcc": "Cropland"},
+    {"code": "2003", "name": "Pertanian Lahan Kering Campur", "level_i": "2000", "ipcc": "Cropland"},
+    {"code": "2004", "name": "Perkebunan", "level_i": "2000", "ipcc": "Cropland"},
+    {"code": "2005", "name": "Tambak", "level_i": "3000", "ipcc": "Wetland"},
+    {"code": "3001", "name": "Rawa", "level_i": "3000", "ipcc": "Wetland"},
+    {"code": "4001", "name": "Permukiman/Pemukiman", "level_i": "4000", "ipcc": "Settlement"},
+    {"code": "4002", "name": "Transmigrasi", "level_i": "4000", "ipcc": "Settlement"},
+    {"code": "4003", "name": "Area Industri", "level_i": "4000", "ipcc": "Settlement"},
+    {"code": "5001", "name": "Tubuh Air (Sungai/Danau/Waduk)", "level_i": "5000", "ipcc": "Wetland"},
+    {"code": "5002", "name": "Laut", "level_i": "5000", "ipcc": "Wetland"},
+    {"code": "6001", "name": "Tanah Terbuka", "level_i": "6000", "ipcc": "Other Land"},
+    {"code": "6002", "name": "Pertambangan", "level_i": "6000", "ipcc": "Other Land"}
+  ],
+  "dynamic_world_mapping": {
+    "water": ["5001", "5002"],
+    "trees": ["1001", "1002", "1003", "1004", "1005", "1006", "1007"],
+    "grass": ["1010"],
+    "flooded_vegetation": ["1006", "1007", "1009", "3001"],
+    "crops": ["2001", "2002", "2003", "2004"],
+    "shrub_and_scrub": ["1008", "1009"],
+    "built": ["4001", "4002", "4003"],
+    "bare": ["6001", "6002"],
+    "snow_and_ice": []
+  }
+}

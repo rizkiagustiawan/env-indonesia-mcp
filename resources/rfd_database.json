@@ -1,0 +1,104 @@
+{
+  "reference": "US EPA IRIS Database (verified 2024-2025)",
+  "contaminants": [
+    {
+      "name": "Arsenic",
+      "cas": "7440-38-2",
+      "oral_rfd_mg_kg_day": 6e-5,
+      "inhalation_rfc_mg_m3": null,
+      "oral_csf": 1.5,
+      "inhalation_csf": null,
+      "notes": "Updated 2025"
+    },
+    {
+      "name": "Chromium(VI)",
+      "cas": "18540-29-9",
+      "oral_rfd_mg_kg_day": 9e-4,
+      "inhalation_rfc_mg_m3": 3e-5,
+      "oral_csf": null,
+      "inhalation_csf": 42,
+      "notes": "Updated 2024"
+    },
+    {
+      "name": "Cadmium",
+      "cas": "7440-43-9",
+      "oral_rfd_mg_kg_day": 5e-4,
+      "inhalation_rfc_mg_m3": null,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Mercury (elemental)",
+      "cas": "7439-97-6",
+      "oral_rfd_mg_kg_day": null,
+      "inhalation_rfc_mg_m3": 3e-4,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Methylmercury",
+      "cas": "22967-92-6",
+      "oral_rfd_mg_kg_day": 1e-4,
+      "inhalation_rfc_mg_m3": null,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Benzene",
+      "cas": "71-43-2",
+      "oral_rfd_mg_kg_day": 4e-3,
+      "inhalation_rfc_mg_m3": 3e-2,
+      "oral_csf": null,
+      "inhalation_csf": 0.029
+    },
+    {
+      "name": "Toluene",
+      "cas": "108-88-3",
+      "oral_rfd_mg_kg_day": 8e-2,
+      "inhalation_rfc_mg_m3": 5.0,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Xylenes",
+      "cas": "1330-20-7",
+      "oral_rfd_mg_kg_day": 2e-1,
+      "inhalation_rfc_mg_m3": 1e-1,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Phenol",
+      "cas": "108-95-2",
+      "oral_rfd_mg_kg_day": 3e-1,
+      "inhalation_rfc_mg_m3": null,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Formaldehyde",
+      "cas": "50-00-0",
+      "oral_rfd_mg_kg_day": 2e-1,
+      "inhalation_rfc_mg_m3": 7e-3,
+      "oral_csf": null,
+      "inhalation_csf": null,
+      "notes": "RfC updated 2024"
+    },
+    {
+      "name": "Ammonia",
+      "cas": "7664-41-7",
+      "oral_rfd_mg_kg_day": null,
+      "inhalation_rfc_mg_m3": 5e-1,
+      "oral_csf": null,
+      "inhalation_csf": null
+    },
+    {
+      "name": "Vinyl Chloride",
+      "cas": "75-01-4",
+      "oral_rfd_mg_kg_day": 3e-3,
+      "inhalation_rfc_mg_m3": 1e-1,
+      "oral_csf": 1.4,
+      "inhalation_csf": 0.72
+    }
+  ]
+}

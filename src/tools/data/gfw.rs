@@ -1,7 +1,7 @@
 use reqwest::Client;
 
 pub async fn deforestation_alerts(client: &Client) -> String {
-    let mut out = String::from("=== Global Forest Watch — NTB Deforestation Data ===\n\n");
+    let mut out = String::from("=== Global Forest Watch — Indonesia Deforestation Data ===\n\n");
 
     // GFW dashboard data for NTB (province code 17 in GFW)
     let url = "https://data-api.globalforestwatch.org/dataset/gfw_integrated_alerts/latest";
@@ -20,14 +20,17 @@ pub async fn deforestation_alerts(client: &Client) -> String {
         Err(e) => out.push_str(&format!("Connection error: {}\n", e)),
     }
 
-    out.push_str("\n--- NTB Forest Statistics (Reference Data) ---\n");
-    out.push_str("Province: Nusa Tenggara Barat (NTB)\n");
-    out.push_str("Total forest area: ~1.1 million hectares\n");
-    out.push_str("Key protected areas:\n");
-    out.push_str("  - Taman Nasional Gunung Rinjani (41,330 ha)\n");
-    out.push_str("  - Taman Nasional Tambora (71,645 ha)\n");
-    out.push_str("  - Hutan Lindung Pelangan (various)\n");
-    out.push_str("\nDashboard: https://www.globalforestwatch.org/dashboards/country/IDN/17/\n");
+    out.push_str("\n--- Indonesia Forest Statistics (Reference Data) ---\n");
+    out.push_str("Country: Indonesia\n");
+    out.push_str("Total forest area (2000): ~160 million hectares\n");
+    out.push_str("Tree cover loss 2001-2024: ~32 million hectares\n");
+    out.push_str("Primary driver: palm oil plantation expansion (~70%)\n");
+    out.push_str("Top deforestation provinces:\n");
+    out.push_str("  - Riau\n");
+    out.push_str("  - Kalimantan Tengah\n");
+    out.push_str("  - Kalimantan Barat\n");
+    out.push_str("  - Papua\n");
+    out.push_str("\nDashboard: https://www.globalforestwatch.org/dashboards/country/IDN/\n");
     out.push_str("Weekly GLAD alerts available at dashboard link above.\n");
     out
 }

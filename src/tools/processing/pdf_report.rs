@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn generate(title: &str, sections_json: &str, output_path: &str) -> String {
-    let script = "/home/awan/Documents/env-ntb-mcp/src/tools/processing/pdf_report.py";
+    let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/processing/pdf_report.py";
     match Command::new("python3").arg(script)
         .arg("--title").arg(title)
         .arg("--sections").arg(sections_json)

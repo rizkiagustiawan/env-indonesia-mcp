@@ -1,0 +1,33 @@
+{
+  "reference": "UTM Zones for Indonesia (UU 4/2011, BIG Standards)",
+  "datum": "WGS84 / DGN95",
+  "zones": [
+    {"zone": 46, "hemisphere": "N", "epsg": 32646, "lon_range": [90, 96], "provinces": ["Aceh (utara)"]},
+    {"zone": 46, "hemisphere": "S", "epsg": 32746, "lon_range": [90, 96], "provinces": ["Aceh (selatan)"]},
+    {"zone": 47, "hemisphere": "N", "epsg": 32647, "lon_range": [96, 102], "provinces": ["Sumatera Utara (utara)", "Riau (utara)"]},
+    {"zone": 47, "hemisphere": "S", "epsg": 32747, "lon_range": [96, 102], "provinces": ["Sumatera Utara (selatan)", "Sumatera Barat", "Riau (selatan)", "Jambi", "Bengkulu"]},
+    {"zone": 48, "hemisphere": "N", "epsg": 32648, "lon_range": [102, 108], "provinces": ["Kep. Riau", "Kalimantan Barat (utara)"]},
+    {"zone": 48, "hemisphere": "S", "epsg": 32748, "lon_range": [102, 108], "provinces": ["Sumatera Selatan", "Lampung", "Bangka Belitung", "DKI Jakarta", "Banten", "Jawa Barat"]},
+    {"zone": 49, "hemisphere": "S", "epsg": 32749, "lon_range": [108, 114], "provinces": ["Jawa Tengah", "DI Yogyakarta", "Jawa Timur (barat)", "Kalimantan Tengah"]},
+    {"zone": 50, "hemisphere": "S", "epsg": 32750, "lon_range": [114, 120], "provinces": ["Jawa Timur (timur)", "Bali", "NTB", "Kalimantan Selatan", "Kalimantan Timur", "Sulawesi Selatan"]},
+    {"zone": 51, "hemisphere": "S", "epsg": 32751, "lon_range": [120, 126], "provinces": ["NTT", "Sulawesi Tengah", "Sulawesi Tenggara", "Sulawesi Utara", "Gorontalo", "Maluku"]},
+    {"zone": 52, "hemisphere": "S", "epsg": 32752, "lon_range": [126, 132], "provinces": ["Maluku", "Maluku Utara"]},
+    {"zone": 53, "hemisphere": "S", "epsg": 32753, "lon_range": [132, 138], "provinces": ["Papua Barat", "Papua (barat)"]},
+    {"zone": 54, "hemisphere": "S", "epsg": 32754, "lon_range": [138, 144], "provinces": ["Papua (timur)"]}
+  ],
+  "tm3_zones": {
+    "description": "Indonesia TM-3 (Transverse Mercator 3-degree zones) for large-scale mapping",
+    "epsg_range": "EPSG:23830-23845",
+    "scale_factor": 0.9999,
+    "false_easting": 200000,
+    "false_northing": 1500000,
+    "zones": [
+      {"epsg": 23830, "cm": 90}, {"epsg": 23831, "cm": 93}, {"epsg": 23832, "cm": 96},
+      {"epsg": 23833, "cm": 99}, {"epsg": 23834, "cm": 102}, {"epsg": 23835, "cm": 105},
+      {"epsg": 23836, "cm": 108}, {"epsg": 23837, "cm": 111}, {"epsg": 23838, "cm": 114},
+      {"epsg": 23839, "cm": 117}, {"epsg": 23840, "cm": 120}, {"epsg": 23841, "cm": 123},
+      {"epsg": 23842, "cm": 126}, {"epsg": 23843, "cm": 129}, {"epsg": 23844, "cm": 132},
+      {"epsg": 23845, "cm": 141}
+    ]
+  }
+}

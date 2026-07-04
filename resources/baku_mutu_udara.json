@@ -1,0 +1,15 @@
+{
+  "reference": "PP 41/1999 tentang Pengendalian Pencemaran Udara",
+  "parameters": [
+    {"name": "SO2", "unit": "µg/m³", "1_hour": 900, "24_hour": 365, "annual": 60},
+    {"name": "CO", "unit": "µg/m³", "1_hour": 30000, "8_hour": 10000, "24_hour": null, "annual": null},
+    {"name": "NO2", "unit": "µg/m³", "1_hour": 400, "24_hour": 150, "annual": 100},
+    {"name": "O3", "unit": "µg/m³", "1_hour": 235, "8_hour": null, "annual": 50},
+    {"name": "PM10", "unit": "µg/m³", "24_hour": 150, "annual": 50},
+    {"name": "PM2.5", "unit": "µg/m³", "24_hour": 65, "annual": 15},
+    {"name": "Pb", "unit": "µg/m³", "24_hour": 2, "annual": null},
+    {"name": "TSP", "unit": "µg/m³", "24_hour": 230, "annual": 90},
+    {"name": "HC", "unit": "µg/m³", "3_hour": 160},
+    {"name": "Dustfall", "unit": "ton/km²/bulan", "30_day": 10}
+  ]
+}
