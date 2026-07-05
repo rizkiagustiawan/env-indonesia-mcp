@@ -1,50 +1,50 @@
 # Env-Indonesia-MCP: God Tier Environmental Engineering AI Agent
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Tools](https://img.shields.io/badge/tools-224-orange.svg)
-![Language](https://img.shields.io/badge/language-Rust-red.svg)
+![Tools](https://img.shields.io/badge/tools-219-orange.svg)
+![Language](https://img.shields.io/badge/language-Rust_|_Python-red.svg)
+![Integration](https://img.shields.io/badge/integration-Google_Earth_Engine-green.svg)
 
 ## Deskripsi
 
-Env-Indonesia-MCP menyediakan 224 tools Model Context Protocol (MCP) yang mencakup 20 domain teknik lingkungan. Sistem terkunci khusus domain Indonesia.
+Env-Indonesia-MCP menyediakan 219 tools Model Context Protocol (MCP) tingkat lanjut yang mencakup secara komprehensif 20 domain teknik lingkungan. Sistem ini 100% terkunci dan divalidasi khusus untuk domain geografis dan regulasi Indonesia (38 provinsi).
 
-## 20 Domain Teknik Lingkungan
+## Daftar 20 Domain Teknik Lingkungan
 
 | Kategori | Domain |
 |---|---|
-| Kualitas Air | 1. Water Quality & Hydrology<br>2. Wastewater Treatment |
-| Udara & Atmosfer | 3. Air Quality & Meteorology<br>4. Greenhouse Gases (GHG) & Carbon<br>5. Noise, Odor & Vibration |
-| Tanah & B3 | 6. Solid Waste Management<br>7. Hazardous Waste (B3)<br>8. Soil & Groundwater Remediation<br>9. Land Reclamation & Mining |
-| Ekologi & Spasial | 10. Ecology & Biodiversity<br>11. GIS & Spatial Analysis |
-| Dampak & Risiko | 12. Environmental Impact Assessment (AMDAL/EIA)<br>13. Health & Ecological Risk Assessment (ARKL)<br>14. Climate Change Adaptation |
-| Keberlanjutan | 15. Life Cycle Assessment (LCA)<br>16. Environmental Economics<br>17. Resource Efficiency & Circular Economy |
-| Industri & K3 | 18. Industrial Ecology & Symbiosis<br>19. Occupational Health, Safety & Environment (HSE)<br>20. Green Building & Infrastructure |
+| **Air** | 1. Water Quality & Hydrology<br>2. Wastewater Treatment |
+| **Udara & Atmosfer** | 3. Air Quality & Meteorology<br>4. Greenhouse Gases (GHG) & Carbon<br>5. Noise, Odor & Vibration |
+| **Tanah & B3** | 6. Solid Waste Management<br>7. Hazardous Waste (B3)<br>8. Soil & Groundwater Remediation<br>9. Land Reclamation & Mining |
+| **Ekologi & Spasial** | 10. Ecology & Biodiversity<br>11. GIS & Spatial Analysis (Google Earth Engine) |
+| **Dampak & Risiko** | 12. Environmental Impact Assessment (AMDAL/EIA)<br>13. Health & Ecological Risk Assessment (ARKL)<br>14. Climate Change Adaptation |
+| **Keberlanjutan** | 15. Life Cycle Assessment (LCA)<br>16. Environmental Economics<br>17. Resource Efficiency & Circular Economy |
+| **Industri & K3** | 18. Industrial Ecology & Symbiosis<br>19. Occupational Health, Safety & Environment (HSE)<br>20. Green Building & Infrastructure |
 
 ## Kepatuhan Regulasi Indonesia
 
-Tunduk standar nasional:
-- PP 22/2021
-- PP 41/1999
-- PermenLHK 4/5/15/68/73/102
-- KepMen LH 48/49/50/51/115
-- SNI 7645:2014
-- SNI 8202:2015
-- Dll.
+Alat ini secara ketat merujuk pada standar dan peraturan nasional Indonesia:
+- **PP No. 22 Tahun 2021** (Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup)
+- **PP No. 41 Tahun 1999** (Pengendalian Pencemaran Udara)
+- **PermenLHK No. 4/5/15/68/73/102** (Termasuk baku mutu emisi, AMDAL, pengelolaan B3)
+- **KepMen LH No. 48/49/50/51/115** (Baku tingkat kebisingan, getaran, kebauan, status mutu air)
+- **SNI 7645:2014** (Klasifikasi penutup lahan)
+- **SNI 8202:2015** (Ketelitian peta tata ruang)
 
 ## Parameter Khusus Indonesia
 
-Asumsi tropis lokal:
-- ARKL Kemenkes: BW = 55kg
-- Hidrologi Tropis: K1/K2 sungai tropis.
+Seluruh algoritma disesuaikan dengan kondisi lokal dan tropis Indonesia:
+- **ARKL (Analisis Risiko Kesehatan Lingkungan) Kemenkes 2012**: Menggunakan berat badan rata-rata (BW) = 55 kg.
+- **Hidrologi & Kualitas Air Tropis**: Konstanta deoksigenasi (K1) dan reaeresi (K2) disesuaikan untuk karakteristik sungai tropis dengan laju dekomposisi organik tinggi.
 
 ## Instalasi & Setup
 
-Build release:
+Bangun executable dari source:
 ```bash
 cargo build --release
 ```
 
-Konfigurasi ZeroClaw:
+Konfigurasi untuk ZeroClaw (atau MCP client lain):
 ```json
 {
   "mcp_servers": {
@@ -60,9 +60,10 @@ Konfigurasi ZeroClaw:
 
 | Variabel | Fungsi |
 |---|---|
-| `FIRMS_MAP_KEY` | Akses hotspot |
-| `BPS_API_KEY` | Akses data demografi BPS |
+| `FIRMS_MAP_KEY` | Akses data titik panas (hotspot) kebakaran hutan/lahan |
+| `BPS_API_KEY` | Akses data demografi dan statistik BPS (Badan Pusat Statistik) |
+| `WAQI_API_KEY` | Akses indeks kualitas udara waktu nyata |
 
-## Disclaimer
+## ⚠️ Disclaimer
 
-Tools ini adalah screening-level, bukan pengganti model tervalidasi (AERMOD/HEC-RAS) untuk dokumen final AMDAL.
+Tools ini ditujukan untuk **screening-level analysis** dan evaluasi awal proyek. Hasil dari tools ini **bukan** pengganti dari pemodelan tervalidasi yang memerlukan sertifikasi ahli (misalnya AERMOD, CALPUFF, atau HEC-RAS) yang diwajibkan untuk dokumen final persetujuan lingkungan (AMDAL/UKL-UPL).

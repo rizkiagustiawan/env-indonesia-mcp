@@ -1,0 +1,17 @@
+[Unit]
+Description=Env-Indonesia-MCP Server (God Tier)
+After=network.target
+
+[Service]
+Type=simple
+User=awan
+Group=awan
+WorkingDirectory=/home/awan/Documents/env-indonesia-mcp
+ExecStart=/home/awan/Documents/env-indonesia-mcp/target/release/env-indonesia-mcp
+Restart=on-failure
+RestartSec=5
+Environment="RUST_LOG=info"
+EnvironmentFile=/home/awan/Documents/env-indonesia-mcp/.env
+
+[Install]
+WantedBy=multi-user.target
