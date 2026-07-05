@@ -123,7 +123,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_strip.axis('off')
 
         # Scale bar — far right
-        sb_x = 0.73; sb_w = 0.15; sb_y = 0.30; sb_h = 0.30
+        sb_x = 0.76; sb_w = 0.13; sb_y = 0.30; sb_h = 0.30
         segw = sb_w / 4
         for i in range(4):
             fc = C['bdr'] if i%2==0 else 'white'
@@ -135,7 +135,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
         # North arrow — far right, CONTAINED within strip
-        na_x = 0.96; na_top = 0.75; na_bot = 0.15
+        na_x = 0.95; na_top = 0.75; na_bot = 0.15
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.018,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.018,na_bot),(na_x,na_bot*1.5)],
@@ -143,15 +143,13 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
-        # Garis vertikal kiri penutup area scale/north
-        ax_strip.plot([sb_x - 0.03, sb_x - 0.03], [0, 1], color=C['bdr'], lw=1.5, clip_on=False)
-
         # Line below strip
         sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
 
         # ── VERTICAL SEPARATOR (map | right panel) ──
         rp_x = 0.71  # right panel starts here
-        sep(fig, rp_x, 0.025, rp_x, 0.882, lw=2.5)
+        # Make the vertical line span all the way up to the title separator
+        sep(fig, rp_x, 0.025, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
         ax = fig.add_axes([0.025, 0.025, rp_x-0.025, 0.855])
