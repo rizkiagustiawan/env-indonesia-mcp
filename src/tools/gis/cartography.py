@@ -117,9 +117,9 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, 0.025, 0.935, 0.975, 0.935, lw=3.0)
 
         # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
-        # Batasi ax_strip hanya pada kolom kanan (mulai dari 0.71)
-        # Tinggi dan posisinya diatur agar tepat di atas Inset Map (y=0.885 to 0.930)
-        ax_strip = fig.add_axes([0.71, 0.885, 0.975 - 0.71, 0.045])
+        # Batasi ax_strip hanya pada kolom kanan (mulai dari 0.72)
+        # Tinggi dan posisinya diatur agar tepat di atas Inset Map (y=0.895 to 0.935)
+        ax_strip = fig.add_axes([0.72, 0.895, 0.975 - 0.72, 0.040])
         ax_strip.set_xlim(0,1); ax_strip.set_ylim(0,1)
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
@@ -149,13 +149,14 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
 
         # ── VERTICAL SEPARATOR (map | right panel) ──
-        rp_x = 0.71  # right panel starts here
+        rp_x = 0.72  # right panel starts here
         # Make the vertical line span all the way up to the title separator
-        sep(fig, rp_x, 0.025, rp_x, 0.935, lw=2.5)
+        sep(fig, rp_x, 0.040, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
-        # Expand height from 0.855 to 0.900 to fill the gap left by the removed strip
-        ax = fig.add_axes([0.025, 0.025, rp_x-0.025, 0.900])
+        # Left and bottom margin expanded to 0.045 to give room for coordinate labels
+        # so they don't overlap with the outer neatline
+        ax = fig.add_axes([0.045, 0.045, rp_x-0.045, 0.890])
         ax.set_xlim(xn-px, xx+px); ax.set_ylim(yn-py, yx+py)
 
         # Basemap
@@ -212,8 +213,8 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # RIGHT PANEL — 4 sections
         # ═══════════════════════════════════════════════════════
         rp_w = 0.975 - rp_x  # right panel width
-        rp_bot = 0.025
-        rp_top = 0.882
+        rp_bot = 0.040
+        rp_top = 0.895
 
         # Heights: inset 22%, legend 15%, gap 3%, metadata 45%, logo 15%
         h_inset = (rp_top - rp_bot) * 0.22
