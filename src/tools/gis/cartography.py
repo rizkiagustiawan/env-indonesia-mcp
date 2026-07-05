@@ -155,10 +155,11 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
 
         # ── MAIN MAP ──
         # Left and bottom margin expanded to 0.055 to give room for coordinate labels
-        # so they don't overlap with the outer neatline
+        # so they don't overlap with the outer neatline.
+        # Height is 0.865 and width is reduced by 0.015 so top and right labels fit before separators.
         m_left = 0.055
         m_bot = 0.055
-        ax = fig.add_axes([m_left, m_bot, rp_x - m_left, 0.880])
+        ax = fig.add_axes([m_left, m_bot, rp_x - m_left - 0.015, 0.865])
         ax.set_xlim(xn-px, xx+px); ax.set_ylim(yn-py, yx+py)
 
         # Basemap
@@ -208,12 +209,20 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         lats=np.arange(math.ceil(gla/tki)*tki,glx2,tki)
         ax.set_xticks([tw.transform(lo,clat)[0] for lo in lons])
         ax.set_yticks([tw.transform(clon,la)[1] for la in lats])
-        ax.set_xticklabels([f'{lo:.2f}°' for lo in lons], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
-        ax.set_yticklabels([f'{abs(la):.2f}°{"S" if la<0 else "N"}' for la in lats], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
-        ax.tick_params(direction='out', length=5, width=1.2, pad=5, colors=C['tx2'])
         
-        # Apply white halo/stroke to tick labels to ensure they are always readable
-        for label in ax.get_xticklabels() + ax.get_yticklabels():
+        # Format the text labels
+        x_labels = [f'{lo:.2f}°' for lo in lons]
+        y_labels = [f'{abs(la):.2f}°{"S" if la<0 else "N"}' for la in lats]
+        
+        ax.set_xticklabels(x_labels, fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
+        ax.set_yticklabels(y_labels, fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
+        
+        # Turn on tick marks and labels for TOP and RIGHT axes as well
+        ax.tick_params(top=True, right=True, labeltop=True, labelright=True,
+                       direction='out', length=5, width=1.2, pad=5, colors=C['tx2'])
+        
+        # Apply white halo/stroke to all tick labels to ensure they are always readable
+        for label in ax.get_xticklabels() + ax.get_yticklabels() + ax.get_xticklabels(minor=False) + ax.get_yticklabels(minor=False):
             label.set_path_effects([withStroke(linewidth=2.5, foreground='white')])
         ax.grid(True, ls='--', lw=0.4, color=C['grid'], alpha=0.35, zorder=2)
         ax.set_xlabel(''); ax.set_ylabel('')
