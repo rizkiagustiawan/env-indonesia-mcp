@@ -154,12 +154,14 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, rp_x, 0.040, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
-        # Left and bottom margin expanded to 0.055 to give room for coordinate labels
+        # Left and bottom margin expanded to 0.065 to give room for coordinate labels
         # so they don't overlap with the outer neatline.
-        # Height is 0.865 and width is reduced by 0.015 so top and right labels fit before separators.
-        m_left = 0.055
-        m_bot = 0.055
-        ax = fig.add_axes([m_left, m_bot, rp_x - m_left - 0.015, 0.865])
+        # Height and width are reduced so top and right labels fit before separators.
+        m_left = 0.065
+        m_bot = 0.065
+        map_width = rp_x - m_left - 0.025  # Ends at 0.695
+        map_height = 0.840                 # Ends at 0.905
+        ax = fig.add_axes([m_left, m_bot, map_width, map_height])
         ax.set_xlim(xn-px, xx+px); ax.set_ylim(yn-py, yx+py)
 
         # Basemap
