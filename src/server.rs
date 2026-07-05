@@ -1076,10 +1076,16 @@ pub struct MapGenParam {
     pub geojson: String,
     #[schemars(description = "Path lengkap untuk menyimpan gambar (misal: /tmp/peta_banjir.png)")]
     pub output_path: String,
-    #[schemars(description = "Judul Peta untuk Kop SNI")]
+    #[schemars(description = "Judul Peta")]
     pub title: String,
-    #[schemars(description = "Jika true, otomatis mendownload Sentinel-2 (Bebas awan 30 hari terakhir) via GEE sbg Basemap.")]
+    #[schemars(description = "Jika true, gunakan Sentinel-2 (30 hari terakhir) via GEE sebagai basemap")]
     pub realtime_satellite: Option<bool>,
+    #[schemars(description = "Nama pembuat peta (default: Environmental AI Agent)")]
+    pub author: Option<String>,
+    #[schemars(description = "Tanggal produksi (YYYY-MM-DD, default: hari ini)")]
+    pub date: Option<String>,
+    #[schemars(description = "Tampilkan batas administrasi (default: true)")]
+    pub show_admin: Option<bool>,
 }
 
 // ====== Tool implementations ======
@@ -1337,9 +1343,14 @@ impl EnvIndonesiaServer {
         tools::gis::landcover::classify(-8.65, 116.35, 10.0, "2024-01-01", "2024-06-30", "/tmp/landcover.tif")
     }
 
-    #[tool(description = "Generate layout Peta (PNG) standar kartografi dari GeoJSON menggunakan citra satelit.")]
+    #[tool(description = "Generate peta layout SNI 6502:2010 compliant. 13 elemen kartografi: judul, skala grafis+numerik, legenda, arah utara, grid koordinat (lat/lon), peta inset Indonesia, CRS (UTM auto), sumber data, tanggal, pembuat, batas administrasi, bingkai peta. Ref: SNI 6502:2010, PermenLH 16/2012.")]
     async fn generate_map_sni(&self, Parameters(p): Parameters<MapGenParam>) -> String {
-        tools::gis::cartography::generate_map(&p.geojson, &p.output_path, &p.title, p.realtime_satellite.unwrap_or(false))
+        tools::gis::cartography::generate_map(
+            &p.geojson, &p.output_path, &p.title,
+            p.realtime_satellite.unwrap_or(false),
+            p.author.as_deref(),
+            p.date.as_deref(),
+            p.show_admin.unwrap_or(true))
     }
 
     #[tool(description = "VALIDATOR FISIKA EKUATORIAL: Wajib dipanggil oleh AI sebelum mengonfirmasi angka analisis untuk banjir, polusi udara, atau vegetasi (NDVI) guna memastikan tidak ada hukum alam yang dilanggar.")]
