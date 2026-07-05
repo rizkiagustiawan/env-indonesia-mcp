@@ -117,13 +117,13 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, 0.025, 0.935, 0.975, 0.935, lw=3.0)
 
         # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
-        ax_strip = fig.add_axes([0.025, 0.885, 0.68, 0.045])
+        ax_strip = fig.add_axes([0.025, 0.885, 0.95, 0.045])
         ax_strip.set_xlim(0,1); ax_strip.set_ylim(0,1)
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
 
         # Scale bar — far right
-        sb_x = 0.65; sb_w = 0.22; sb_y = 0.30; sb_h = 0.30
+        sb_x = 0.73; sb_w = 0.15; sb_y = 0.30; sb_h = 0.30
         segw = sb_w / 4
         for i in range(4):
             fc = C['bdr'] if i%2==0 else 'white'
@@ -135,7 +135,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
         # North arrow — far right, CONTAINED within strip
-        na_x = 0.96; na_top = 0.80; na_bot = 0.15
+        na_x = 0.96; na_top = 0.75; na_bot = 0.15
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.018,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.018,na_bot),(na_x,na_bot*1.5)],
@@ -144,7 +144,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
         # Garis vertikal kiri penutup area scale/north
-        ax_strip.plot([sb_x - 0.03, sb_x - 0.03], [0, 1], color=C['bdr'], lw=2.0, clip_on=False)
+        ax_strip.plot([sb_x - 0.03, sb_x - 0.03], [0, 1], color=C['bdr'], lw=1.5, clip_on=False)
 
         # Line below strip
         sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
@@ -214,12 +214,12 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         rp_bot = 0.025
         rp_top = 0.882
 
-        # Heights: inset 22%, legend 15%, gap 3%, metadata 40%, logo 20%
+        # Heights: inset 22%, legend 15%, gap 3%, metadata 45%, logo 15%
         h_inset = (rp_top - rp_bot) * 0.22
         h_legend = (rp_top - rp_bot) * 0.15
         h_gap = (rp_top - rp_bot) * 0.03  # gap between legend and metadata
-        h_meta = (rp_top - rp_bot) * 0.38
-        h_logo = (rp_top - rp_bot) * 0.20
+        h_meta = (rp_top - rp_bot) * 0.45
+        h_logo = (rp_top - rp_bot) * 0.15
 
         y_inset = rp_top - h_inset
         y_legend = y_inset - h_legend
@@ -284,7 +284,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_mt.set_facecolor(C['bg'])
         for sp in ax_mt.spines.values(): sp.set_lw(1.2); sp.set_color(C['bdr'])
         ax_mt.set_xlim(0,1); ax_mt.set_ylim(0,1); ax_mt.set_xticks([]); ax_mt.set_yticks([])
-        ax_mt.text(0.5,0.97,'INFORMASI PETA', transform=ax_mt.transAxes,
+        ax_mt.text(0.5,0.92,'INFORMASI PETA', transform=ax_mt.transAxes,
                    fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
         pd = date_str or datetime.now().strftime('%d %B %Y')
@@ -295,9 +295,9 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
             ('Sumber', src_txt), ('Tanggal', pd), ('Dibuat', author),
             ('Diperiksa', '________________'), ('Disetujui', '________________'),
         ]
-        n=len(rows); rh=1.0/n
+        n=len(rows); table_h=0.85; rh=table_h/n
         for i,(k,v) in enumerate(rows):
-            yy=1.0-(i+1)*rh
+            yy = table_h - (i+1)*rh
             bg = C['row1'] if i%2==0 else C['row2']
             ax_mt.add_patch(Rectangle((0,yy),1,rh, fc=bg, ec=C['grid'], lw=0.4, clip_on=False))
             ax_mt.plot([0.40,0.40],[yy,yy+rh], color=C['grid'], lw=0.5, clip_on=False)
