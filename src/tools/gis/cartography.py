@@ -76,7 +76,7 @@ def dl_s2(lon,lat,bk,out):
 # ── SEPARATOR ────────────────────────────────────────────────────
 def sep(fig, x0, y0, x1, y1, lw=2.5):
     fig.add_artist(plt.Line2D([x0,x1],[y0,y1], transform=fig.transFigure,
-                              color=C['sep'], linewidth=lw, solid_capstyle='round'))
+                              color=C['sep'], linewidth=lw, solid_capstyle='butt', zorder=0))
 
 # ── MAIN ─────────────────────────────────────────────────────────
 def generate_sni_map(geojson_str, output_path, title, realtime=False,
@@ -113,8 +113,8 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         fig.text(0.50, 0.955, title.upper(), fontsize=18, fontweight='heavy',
                  ha='center', va='center', color=C['tx1'], fontfamily=FNT,
                  fontstretch='expanded')
-        # Title underline
-        sep(fig, 0.025, 0.935, 0.975, 0.935, lw=3.0)
+        # Title underline - hits inner neatline at x=0.013 and x=0.987
+        sep(fig, 0.013, 0.935, 0.987, 0.935, lw=3.0)
 
         # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
         # Batasi ax_strip hanya pada kolom kanan (mulai dari 0.72)
@@ -145,13 +145,16 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
+        # Garis vertikal pemisah Scale Bar dan North Arrow
+        sep(fig, 0.89, 0.895, 0.89, 0.935, lw=1.5)
+
         # Line below strip (HAPUS garis horizontal ini untuk menyatukan area peta ke atas)
         # sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
 
         # ── VERTICAL SEPARATOR (map | right panel) ──
         rp_x = 0.72  # right panel starts here
-        # Make the vertical line span all the way up to the title separator
-        sep(fig, rp_x, 0.040, rp_x, 0.935, lw=2.5)
+        # Make the vertical line span all the way from inner bottom neatline (0.013) up to the title separator
+        sep(fig, rp_x, 0.013, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
         # Left and bottom margin expanded to 0.065 to give room for coordinate labels
