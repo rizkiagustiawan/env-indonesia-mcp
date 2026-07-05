@@ -116,37 +116,32 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # Title underline
         sep(fig, 0.025, 0.935, 0.975, 0.935, lw=3.0)
 
-        # ── ROW 1: NORTH ARROW + SCALE BAR (outside basemap) ──
+        # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
         ax_strip = fig.add_axes([0.025, 0.885, 0.68, 0.045])
         ax_strip.set_xlim(0,1); ax_strip.set_ylim(0,1)
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
 
-        # North arrow — left side
-        verts = [(0.04,0.9),(0.025,0.15),(0.04,0.45),(0.055,0.15)]
-        ax_strip.add_patch(Polygon([(0.04,0.9),(0.025,0.15),(0.04,0.45)],
-            closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
-        ax_strip.add_patch(Polygon([(0.04,0.9),(0.055,0.15),(0.04,0.45)],
-            closed=True, fc=C['bdr'], ec=C['bdr'], lw=1.5, clip_on=False))
-        ax_strip.text(0.04, 0.95, 'U', fontsize=13, fontweight='heavy',
-                      ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
-
-        # Scale bar — center
-        sb_x = 0.15; sb_w = 0.25; sb_y = 0.35; sb_h = 0.25
+        # Scale bar — right-center
+        sb_x = 0.55; sb_w = 0.25; sb_y = 0.30; sb_h = 0.30
         segw = sb_w / 4
         for i in range(4):
             fc = C['bdr'] if i%2==0 else 'white'
             ax_strip.add_patch(Rectangle((sb_x+i*segw, sb_y), segw, sb_h,
                 fc=fc, ec=C['bdr'], lw=1.2, clip_on=False))
-        # Scale bar labels
+        # Scale bar labels below bar
         for i, lbl in enumerate(['0', f'{bk/2:.0f}' if bk>=2 else f'{bk/2}', f'{bk:.0f} km' if bk>=1 else f'{int(bk*1000)} m']):
-            ax_strip.text(sb_x + i*sb_w/2, sb_y-0.15, lbl, fontsize=8,
+            ax_strip.text(sb_x + i*sb_w/2, sb_y-0.12, lbl, fontsize=8,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
-        # Numeric scale — right of scale bar
-        scale_str = f'Skala  1 : {ns:,}'.replace(',','.')
-        ax_strip.text(sb_x+sb_w+0.04, 0.5, scale_str, fontsize=11,
-                     fontweight='heavy', va='center', color=C['tx1'], fontfamily=FNT)
+        # North arrow — far right, CONTAINED within strip (no overflow)
+        na_x = 0.92; na_top = 0.80; na_bot = 0.15
+        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.018,na_bot),(na_x,na_bot*1.5)],
+            closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
+        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.018,na_bot),(na_x,na_bot*1.5)],
+            closed=True, fc=C['bdr'], ec=C['bdr'], lw=1.5, clip_on=False))
+        ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
+                      ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
         # Line below strip
         sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
@@ -205,7 +200,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax.set_yticks([tw.transform(clon,la)[1] for la in lats])
         ax.set_xticklabels([f'{lo:.2f}°' for lo in lons], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
         ax.set_yticklabels([f'{abs(la):.2f}°{"S" if la<0 else "N"}' for la in lats], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
-        ax.tick_params(direction='out', length=5, width=1.2, pad=3, colors=C['tx2'])
+        ax.tick_params(direction='out', length=5, width=1.2, pad=5, colors=C['tx2'])
         ax.grid(True, ls='--', lw=0.4, color=C['grid'], alpha=0.35, zorder=2)
         ax.set_xlabel(''); ax.set_ylabel('')
 
@@ -216,15 +211,16 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         rp_bot = 0.025
         rp_top = 0.882
 
-        # Heights: inset 22%, legend 18%, metadata 40%, logo 20%
+        # Heights: inset 22%, legend 15%, gap 3%, metadata 40%, logo 20%
         h_inset = (rp_top - rp_bot) * 0.22
-        h_legend = (rp_top - rp_bot) * 0.18
-        h_meta = (rp_top - rp_bot) * 0.40
+        h_legend = (rp_top - rp_bot) * 0.15
+        h_gap = (rp_top - rp_bot) * 0.03  # gap between legend and metadata
+        h_meta = (rp_top - rp_bot) * 0.38
         h_logo = (rp_top - rp_bot) * 0.20
 
         y_inset = rp_top - h_inset
         y_legend = y_inset - h_legend
-        y_meta = y_legend - h_meta
+        y_meta = y_legend - h_gap - h_meta  # extra gap
         y_logo = rp_bot
 
         pad_r = 0.008  # padding inside right panel
@@ -277,15 +273,15 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                       fontsize=8.5, fontweight='bold', va='center', color=C['tx1'], fontfamily=FNT)
             yp -= 0.32
 
-        # Separator below legend
-        sep(fig, rp_x, y_legend, 0.975, y_legend, lw=2.0)
+        # Separator below legend (with gap before metadata)
+        sep(fig, rp_x, y_meta + h_meta, 0.975, y_meta + h_meta, lw=2.0)
 
         # ── METADATA TABLE ──
         ax_mt = fig.add_axes([rp_x+pad_r, y_meta+pad_r, rp_w-2*pad_r, h_meta-2*pad_r])
         ax_mt.set_facecolor(C['bg'])
         for sp in ax_mt.spines.values(): sp.set_lw(1.2); sp.set_color(C['bdr'])
         ax_mt.set_xlim(0,1); ax_mt.set_ylim(0,1); ax_mt.set_xticks([]); ax_mt.set_yticks([])
-        ax_mt.text(0.5,1.05,'INFORMASI PETA', transform=ax_mt.transAxes,
+        ax_mt.text(0.5,1.02,'INFORMASI PETA', transform=ax_mt.transAxes,
                    fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
         pd = date_str or datetime.now().strftime('%d %B %Y')
@@ -320,9 +316,10 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_lo.text(0.5, 0.35, 'INSTANSI', transform=ax_lo.transAxes, fontsize=10,
                   fontweight='heavy', ha='center', va='center', color=C['tx3'], fontfamily=FNT)
 
-        # Reference
-        fig.text(0.5, 0.008, 'SNI 6502:2010  |  PermenLH 16/2012  |  env-indonesia-mcp v1.0.0',
-                fontsize=6.5, ha='center', color=C['tx3'], fontfamily=FNT, fontstyle='italic')
+        # Reference — inside logo box bottom
+        ax_lo.text(0.5, 0.08, 'SNI 6502:2010 | PermenLH 16/2012',
+                  transform=ax_lo.transAxes, fontsize=5.5, ha='center',
+                  color=C['tx3'], fontfamily=FNT, fontstyle='italic')
 
         # ── SAVE ──
         plt.savefig(output_path, dpi=150, facecolor=C['bg'], pad_inches=0)
