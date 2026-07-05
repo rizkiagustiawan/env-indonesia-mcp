@@ -76,15 +76,72 @@ def flood_detection(lat, lon, buffer_km, pre_date, post_date, output_path):
         .select('VV')
 
     # Pre-event composite
-    pre = s1.filterDate(pre_start, pre_date).median().clip(roi)
+    pre_raw = s1.filterDate(pre_start, pre_date).median().clip(roi)
     # Post-event composite
-    post = s1.filterDate(post_date, post_end).median().clip(roi)
+    post_raw = s1.filterDate(post_date, post_end).median().clip(roi)
+
+    # Speckle filter — 3x3 focal median (standard SAR preprocessing)
+    pre = pre_raw.focal_median(radius=30, kernelType='circle', units='meters')
+    post = post_raw.focal_median(radius=30, kernelType='circle', units='meters')
 
     # Change detection: water appears as decrease in VV backscatter
     diff = pre.subtract(post).rename('diff')
 
-    # Threshold for flood: post VV < -15 dB AND change > 3 dB
-    flood_mask = post.lt(-15).And(diff.gt(3))
+    # Otsu adaptive threshold (Aldiansyah et al. 2024, 95.81% OA)
+    def otsu_threshold(image, region, scale=30):
+        """Compute Otsu threshold from image histogram."""
+        histogram = image.reduceRegion(
+            reducer=ee.Reducer.histogram(256, 0.1),
+            geometry=region,
+            scale=scale,
+            maxPixels=1e9,
+            bestEffort=True
+        ).getInfo()
+
+        hist_key = list(histogram.keys())[0]
+        hist_data = histogram[hist_key]
+        counts = hist_data['histogram']
+        means = hist_data['bucketMeans']
+
+        # Client-side Otsu
+        counts = np.array(counts)
+        means = np.array(means)
+        total = counts.sum()
+
+        best_thresh = means[0]
+        best_variance = 0
+
+        w0 = 0
+        sum0 = 0
+        total_sum = (counts * means).sum()
+
+        for i in range(len(counts)):
+            w0 += counts[i]
+            if w0 == 0:
+                continue
+            w1 = total - w0
+            if w1 == 0:
+                break
+
+            sum0 += counts[i] * means[i]
+            mu0 = sum0 / w0
+            mu1 = (total_sum - sum0) / w1
+
+            variance = w0 * w1 * (mu0 - mu1) ** 2
+            if variance > best_variance:
+                best_variance = variance
+                best_thresh = means[i]
+
+        return best_thresh
+
+    # Use Otsu instead of fixed -15 dB, with fallback
+    try:
+        vv_threshold = otsu_threshold(post, roi)
+    except Exception:
+        vv_threshold = -15  # fallback
+
+    # Threshold for flood: post VV < Otsu threshold AND change > 3 dB
+    flood_mask = post.lt(vv_threshold).And(diff.gt(3))
 
     # Create visualization
     # RGB: R=pre_VV, G=post_VV, B=pre_VV (highlights change in green channel)
@@ -114,7 +171,7 @@ def flood_detection(lat, lon, buffer_km, pre_date, post_date, output_path):
                 f"Post-event: {post_date} - {post_end}\n"
                 f"Estimasi area tergenang: {flood_ha:.1f} Ha\n"
                 f"Visualisasi: R=pre-VV, G=post-VV, B=pre-VV (area hijau = banjir)\n"
-                f"Threshold: VV < -15 dB dan perubahan > 3 dB")
+                f"Threshold: VV < {vv_threshold:.1f} dB (Otsu adaptive) dan perubahan > 3 dB")
     return "ERROR: Gagal mengunduh hasil deteksi banjir."
 
 
@@ -133,8 +190,12 @@ def deforestation_detection(lat, lon, buffer_km, start_date, end_date, output_pa
         (datetime.strptime(end_date, "%Y-%m-%d") - datetime.strptime(start_date, "%Y-%m-%d")) / 2
     mid_str = mid_date.strftime("%Y-%m-%d")
 
-    early = s1.filterDate(start_date, mid_str).median().clip(roi)
-    late = s1.filterDate(mid_str, end_date).median().clip(roi)
+    early_raw = s1.filterDate(start_date, mid_str).median().clip(roi)
+    late_raw = s1.filterDate(mid_str, end_date).median().clip(roi)
+
+    # Speckle filter — 3x3 focal median (standard SAR preprocessing)
+    early = early_raw.focal_median(radius=30, kernelType='circle', units='meters')
+    late = late_raw.focal_median(radius=30, kernelType='circle', units='meters')
 
     # VH backscatter decrease indicates forest loss
     vh_early = early.select('VH')
@@ -221,6 +282,15 @@ def subsidence_screening(lat, lon, buffer_km, start_date, end_date, output_path)
     return "ERROR: Gagal mengunduh hasil screening subsiden."
 
 
+def mask_s2_clouds(image):
+    """Pixel-level cloud masking using SCL band.
+    Removes: cloud shadow(3), cloud medium(8), cloud high(9), cirrus(10), saturated/defective(1)
+    """
+    scl = image.select('SCL')
+    mask = scl.neq(3).And(scl.neq(8)).And(scl.neq(9)).And(scl.neq(10)).And(scl.neq(1))
+    return image.updateMask(mask)
+
+
 def burned_area_mapping(lat, lon, buffer_km, fire_date, output_path):
     """Sentinel-2 dNBR (differenced Normalized Burn Ratio) for burn severity mapping.
     NBR = (NIR - SWIR2) / (NIR + SWIR2) = (B8 - B12) / (B8 + B12)
@@ -244,7 +314,8 @@ def burned_area_mapping(lat, lon, buffer_km, fire_date, output_path):
 
     s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
         .filterBounds(roi) \
-        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30)) \
+        .map(mask_s2_clouds)
 
     def compute_nbr(image):
         return image.normalizedDifference(['B8', 'B12']).rename('NBR')
@@ -297,7 +368,7 @@ def burned_area_mapping(lat, lon, buffer_km, fire_date, output_path):
 
 def mangrove_mapping(lat, lon, buffer_km, output_path):
     """Map mangrove extent using Sentinel-2 spectral indices + elevation filter.
-    Criteria: NDVI > 0.3 AND NDWI > 0 AND elevation < 10m
+    Criteria: NDVI > 0.3 AND MNDWI in [-0.3, 0.3] AND elevation < 10m
     """
     roi = make_roi(lat, lon, buffer_km)
 
@@ -309,21 +380,28 @@ def mangrove_mapping(lat, lon, buffer_km, output_path):
         .filterBounds(roi) \
         .filterDate(start_date, end_date) \
         .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)) \
+        .map(mask_s2_clouds) \
         .median() \
         .clip(roi)
 
     # NDVI = (NIR - Red) / (NIR + Red) = (B8 - B4) / (B8 + B4)
     ndvi = s2.normalizedDifference(['B8', 'B4']).rename('NDVI')
 
-    # NDWI = (Green - NIR) / (Green + NIR) = (B3 - B8) / (B3 + B8)
-    ndwi = s2.normalizedDifference(['B3', 'B8']).rename('NDWI')
+    # NOTE: McFeeters NDWI = (Green-NIR)/(Green+NIR) is NEGATIVE for vegetation
+    # So ndwi.gt(0) would select WATER, not mangrove — contradicts ndvi.gt(0.3)
+    # Instead use MNDWI range to identify the land-water transition zone where mangroves grow
+
+    # MNDWI (Modified NDWI, Xu 2006) = (Green - SWIR1) / (Green + SWIR1)
+    # MNDWI > 0 for water, < 0 for vegetation/soil
+    # Mangrove = vegetation (NDVI>0.3) NEAR water (MNDWI > -0.3) at low elevation
+    mndwi = s2.normalizedDifference(['B3', 'B11']).rename('MNDWI')
 
     # Elevation from SRTM
     srtm = ee.Image('USGS/SRTMGL1_003').clip(roi)
     elevation = srtm.select('elevation')
 
-    # Mangrove criteria: NDVI > 0.3 AND NDWI > 0 AND elevation < 10m
-    mangrove_mask = ndvi.gt(0.3).And(ndwi.gt(0)).And(elevation.lt(10))
+    # Mangrove criteria: NDVI > 0.3 AND MNDWI in [-0.3, 0.3] AND elevation < 10m
+    mangrove_mask = ndvi.gt(0.3).And(mndwi.gt(-0.3)).And(mndwi.lt(0.3)).And(elevation.lt(10))
 
     # Create false color composite with mangrove overlay
     # Base: S2 true color
@@ -358,7 +436,7 @@ def mangrove_mapping(lat, lon, buffer_km, output_path):
         return (f"SUCCESS: Peta mangrove disimpan di {output_path} ({size:.1f} KB)\n"
                 f"Periode citra: {start_date} - {end_date}\n"
                 f"Estimasi luas mangrove: {mangrove_ha:.1f} Ha\n"
-                f"Kriteria: NDVI > 0.3 AND NDWI > 0 AND elevasi < 10m\n"
+                f"Kriteria: NDVI > 0.3 AND MNDWI in [-0.3, 0.3] AND elevasi < 10m\n"
                 f"Overlay: area hijau = mangrove terdeteksi\n"
                 f"Sumber elevasi: SRTM 30m")
     return "ERROR: Gagal mengunduh peta mangrove."

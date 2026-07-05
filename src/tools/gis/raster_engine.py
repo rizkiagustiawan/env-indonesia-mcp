@@ -14,26 +14,27 @@ def band_math_gee(lat, lon, buffer_km, index_type, start_date, end_date, output_
     point = ee.Geometry.Point([lon, lat])
     roi = point.buffer(buffer_km * 1000)
 
-    # Sentinel-2 SR with cloud masking
-    def mask_clouds(img):
-        scl = img.select('SCL')
-        mask = scl.neq(3).And(scl.neq(8)).And(scl.neq(9)).And(scl.neq(10))
-        return img.updateMask(mask)
+    # Cloud Score+ (Google, 2023) — ML-based, superior to SCL for tropical regions
+    csPlus = ee.ImageCollection('GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED')
+    QA_BAND = 'cs_cdf'
+    CLEAR_THRESHOLD = 0.60
 
     s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
         .filterDate(start_date, end_date) \
         .filterBounds(roi) \
         .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30)) \
-        .map(mask_clouds).median()
+        .linkCollection(csPlus, [QA_BAND]) \
+        .map(lambda img: img.updateMask(img.select(QA_BAND).gte(CLEAR_THRESHOLD))) \
+        .median()
 
     # Compute index
     indices = {
         'ndvi': s2.normalizedDifference(['B8', 'B4']),
         'ndwi': s2.normalizedDifference(['B3', 'B8']),
         'mndwi': s2.normalizedDifference(['B3', 'B11']),
-        'savi': s2.expression('((NIR-RED)/(NIR+RED+0.5))*1.5',
+        'savi': s2.expression('((NIR-RED)/(NIR+RED+5000))*1.5',
                               {'NIR': s2.select('B8'), 'RED': s2.select('B4')}),
-        'evi': s2.expression('2.5*((NIR-RED)/(NIR+6*RED-7.5*BLUE+1))',
+        'evi': s2.expression('2.5*((NIR-RED)/(NIR+6*RED-7.5*BLUE+10000))',
                              {'NIR': s2.select('B8'), 'RED': s2.select('B4'),
                               'BLUE': s2.select('B2')}),
         'ndbi': s2.normalizedDifference(['B11', 'B8']),
@@ -41,6 +42,8 @@ def band_math_gee(lat, lon, buffer_km, index_type, start_date, end_date, output_
             '((SWIR+RED)-(NIR+BLUE))/((SWIR+RED)+(NIR+BLUE))',
             {'SWIR': s2.select('B11'), 'RED': s2.select('B4'),
              'NIR': s2.select('B8'), 'BLUE': s2.select('B2')}),
+        # CMRI = NDVI - NDWI (Gupta et al. 2018). CMRI > 0 = mangrove candidate
+        'cmri': s2.normalizedDifference(['B8', 'B4']).subtract(s2.normalizedDifference(['B3', 'B8'])).rename('cmri'),
     }
 
     idx_lower = index_type.lower()
@@ -98,7 +101,7 @@ def band_math_gee(lat, lon, buffer_km, index_type, start_date, end_date, output_
         print(f"Stats: {stats}")
     print(f"Resolution: 10m (Sentinel-2)")
     print(f"Period: {start_date} to {end_date}")
-    print(f"Cloud masking: SCL band (shadow, cloud, cirrus removed)")
+    print(f"Cloud masking: Cloud Score+ (cs_cdf >= {CLEAR_THRESHOLD}, ML-based)")
 
 
 def band_math_local(input_path, expression, output_path):
@@ -242,6 +245,152 @@ def zonal_stats_local(raster_path, vector_path, stats_list):
                 print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 
 
+def topo_correction(lat, lon, buffer_km, start_date, end_date, output_path):
+    """C-correction topographic normalization for Sentinel-2.
+    Ref: Teillet et al. 1982. Applied only where slope > 5 degrees.
+    """
+    import ee, math, requests
+    ee.Initialize()
+
+    point = ee.Geometry.Point([lon, lat])
+    roi = point.buffer(buffer_km * 1000)
+
+    # S2 composite (single image for consistent solar angle)
+    s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+        .filterDate(start_date, end_date).filterBounds(roi) \
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)) \
+        .sort('CLOUDY_PIXEL_PERCENTAGE').first()
+
+    if s2 is None:
+        print("ERROR: No S2 image found for this period")
+        return
+
+    # Solar angles from metadata
+    solar_zenith = ee.Number(s2.get('MEAN_SOLAR_ZENITH_ANGLE'))
+    solar_azimuth = ee.Number(s2.get('MEAN_SOLAR_AZIMUTH_ANGLE'))
+
+    deg2rad = ee.Number(math.pi / 180)
+    theta_s = solar_zenith.multiply(deg2rad)
+    phi_s = solar_azimuth.multiply(deg2rad)
+
+    # DEM terrain
+    dem = ee.Image('USGS/SRTMGL1_003')
+    slope_rad = ee.Terrain.slope(dem).multiply(deg2rad)
+    aspect_rad = ee.Terrain.aspect(dem).multiply(deg2rad)
+
+    # cos(i) = illumination angle
+    cos_i = (slope_rad.cos().multiply(theta_s.cos())
+             .add(slope_rad.sin().multiply(theta_s.sin())
+                  .multiply(phi_s.subtract(aspect_rad).cos())))
+    cos_i = cos_i.rename('cos_i')
+
+    # Mask self-shadowed and flat areas
+    cos_i = cos_i.updateMask(cos_i.gt(0))
+    slope_mask = ee.Terrain.slope(dem).gt(5)  # only correct slopes > 5 deg
+
+    cos_theta_s = ee.Image.constant(theta_s.cos())
+
+    # C-correction per band
+    bands_to_correct = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
+    corrected_bands = []
+
+    for band in bands_to_correct:
+        # Regression: reflectance = a + b * cos(i)
+        regression = cos_i.addBands(s2.select(band)).reduceRegion(
+            reducer=ee.Reducer.linearFit(),
+            geometry=roi, scale=30, maxPixels=1e6, bestEffort=True
+        )
+
+        b_coeff = ee.Number(regression.get('scale'))
+        a_coeff = ee.Number(regression.get('offset'))
+        c_coeff = a_coeff.divide(b_coeff).max(0)  # clamp C >= 0
+
+        # L_corrected = L * (cos(theta_s) + C) / (cos(i) + C)
+        corrected = s2.select(band) \
+            .multiply(cos_theta_s.add(c_coeff)) \
+            .divide(cos_i.add(c_coeff)) \
+            .rename(band)
+
+        # Only apply where slope > 5 degrees
+        corrected = corrected.where(slope_mask.Not(), s2.select(band))
+        corrected_bands.append(corrected)
+
+    result = ee.Image(corrected_bands).clip(roi)
+
+    # Download
+    url = result.getDownloadURL({'scale': 10, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'})
+    r = requests.get(url, timeout=120)
+    tif_path = output_path.replace('.png', '.tif')
+    with open(tif_path, 'wb') as f:
+        f.write(r.content)
+
+    print(f"SUCCESS: Topographic C-correction applied. Output: {tif_path}")
+    print(f"Bands corrected: {', '.join(bands_to_correct)}")
+    print(f"Solar zenith: {solar_zenith.getInfo():.1f}\u00b0")
+    print(f"Correction applied only where slope > 5\u00b0")
+    print(f"Ref: Teillet et al. 1982")
+
+
+def ndvi_timeseries(lat, lon, buffer_km, start_year, end_year, output_path):
+    """NDVI annual trend analysis. Ref: Saifulloh et al. 2025"""
+    import ee, requests
+    ee.Initialize()
+
+    point = ee.Geometry.Point([lon, lat])
+    roi = point.buffer(buffer_km * 1000)
+
+    # Annual NDVI composites
+    years = list(range(start_year, end_year + 1))
+    annual_ndvi = []
+
+    for year in years:
+        s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+            .filterDate(f'{year}-01-01', f'{year}-12-31') \
+            .filterBounds(roi) \
+            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30)) \
+            .median()
+        ndvi = s2.normalizedDifference(['B8', 'B4']).rename(f'NDVI_{year}')
+        annual_ndvi.append(ndvi)
+
+    # Stack and compute linear trend
+    stack = ee.ImageCollection(annual_ndvi)
+
+    # Add time band for regression
+    def add_time(img):
+        year = ee.Number.parse(img.bandNames().get(0).slice(-4))
+        return img.addBands(ee.Image.constant(year).float().rename('year'))
+
+    stack_with_time = stack.map(add_time)
+
+    # Linear fit: NDVI = a + b * year
+    trend = stack_with_time.select(['year', stack.first().bandNames().get(0)]) \
+        .reduce(ee.Reducer.linearFit())
+
+    slope = trend.select('scale').clip(roi)  # NDVI change per year
+
+    # Stats
+    stats = slope.reduceRegion(
+        reducer=ee.Reducer.mean().combine(ee.Reducer.min(), '', True).combine(ee.Reducer.max(), '', True),
+        geometry=roi, scale=30, maxPixels=1e9
+    ).getInfo()
+
+    # Thumbnail
+    thumb = slope.getThumbURL({
+        'region': roi, 'dimensions': 800,
+        'min': -0.05, 'max': 0.05,
+        'palette': ['red', 'white', 'green']
+    })
+    img_data = requests.get(thumb, timeout=30).content
+    with open(output_path, 'wb') as f:
+        f.write(img_data)
+
+    print(f"SUCCESS: NDVI Time Series Trend ({start_year}-{end_year}). Output: {output_path}")
+    print(f"Trend unit: NDVI change per year")
+    print(f"Mean slope: {stats.get('scale_mean', 'N/A')}")
+    print(f"Negative = vegetation loss (red) | Positive = vegetation gain (green)")
+    print(f"Ref: Saifulloh et al. 2025")
+
+
 # CLI dispatcher
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -270,6 +419,14 @@ if __name__ == '__main__':
         elif mode == 'zonal_local':
             # args: raster_path vector_path stats_list(comma-sep)
             zonal_stats_local(sys.argv[2], sys.argv[3], sys.argv[4].split(','))
+        elif mode == 'topo_correct':
+            # args: lat lon buffer_km start_date end_date output_path
+            topo_correction(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]),
+                            sys.argv[5], sys.argv[6], sys.argv[7])
+        elif mode == 'ndvi_timeseries':
+            # args: lat lon buffer_km start_year end_year output_path
+            ndvi_timeseries(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]),
+                            int(sys.argv[5]), int(sys.argv[6]), sys.argv[7])
         else:
             print(f"ERROR: Unknown mode '{mode}'")
     except Exception as e:

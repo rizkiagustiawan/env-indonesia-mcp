@@ -23,3 +23,7 @@ pub fn change_detection(lat: f64, lon: f64, buffer_km: f64, d1_start: &str, d1_e
 pub fn accuracy_assessment(predicted_json: &str, actual_json: &str) -> String {
     run_landcover(&["accuracy", predicted_json, actual_json])
 }
+
+pub fn supervised_classify(lat: f64, lon: f64, buffer_km: f64, training_geojson: &str, start_date: &str, end_date: &str, n_trees: u32, output_path: &str) -> String {
+    run_landcover(&["supervised", &lat.to_string(), &lon.to_string(), &buffer_km.to_string(), training_geojson, start_date, end_date, &n_trees.to_string(), output_path])
+}

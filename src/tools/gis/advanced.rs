@@ -46,3 +46,13 @@ pub fn band_math_local(input_path: &str, expression: &str, output_path: &str) ->
 pub fn zonal_stats_local(raster_path: &str, vector_path: &str, stats: &str) -> String {
     run_raster_engine(&["zonal_local", raster_path, vector_path, stats])
 }
+
+/// Topographic C-correction for Sentinel-2 (Teillet et al. 1982)
+pub fn topo_correction(lat: f64, lon: f64, buffer_km: f64, start_date: &str, end_date: &str, output_path: &str) -> String {
+    run_raster_engine(&["topo_correct", &lat.to_string(), &lon.to_string(), &buffer_km.to_string(), start_date, end_date, output_path])
+}
+
+/// NDVI annual trend analysis (Saifulloh et al. 2025)
+pub fn ndvi_timeseries(lat: f64, lon: f64, buffer_km: f64, start_year: i32, end_year: i32, output_path: &str) -> String {
+    run_raster_engine(&["ndvi_timeseries", &lat.to_string(), &lon.to_string(), &buffer_km.to_string(), &start_year.to_string(), &end_year.to_string(), output_path])
+}

@@ -72,6 +72,11 @@ def viewshed(dem_path, obs_lat, obs_lon, obs_height, max_distance, output_path):
     visibility = np.zeros((nrows, ncols), dtype=np.uint8)
     visibility[obs_row, obs_col] = 1  # Observer always visible
 
+    # Earth curvature + atmospheric refraction correction
+    # Reference: standard geodetic surveying, k=0.13 (atmospheric refraction coefficient)
+    EARTH_RADIUS = 6_371_000  # meters
+    REFRACTION_K = 0.13
+
     # Determine bounding box of analysis
     r_min = max(0, obs_row - max_dist_px)
     r_max = min(nrows - 1, obs_row + max_dist_px)
@@ -97,8 +102,12 @@ def viewshed(dem_path, obs_lat, obs_lon, obs_height, max_distance, output_path):
             if np.isnan(target_elev):
                 continue
 
-            # Angle from observer to target
-            target_angle = np.arctan2(target_elev - obs_total_elev, dist_m)
+            # Apply earth curvature + refraction correction to target
+            curvature_correction_target = (dist_m ** 2) / (2 * EARTH_RADIUS) * (1 - REFRACTION_K)
+            adjusted_target_elev = target_elev - curvature_correction_target
+
+            # Angle from observer to target (curvature-corrected)
+            target_angle = np.arctan2(adjusted_target_elev - obs_total_elev, dist_m)
 
             # Trace ray: check intermediate cells using Bresenham-like stepping
             n_steps = max(abs(dr), abs(dc))
@@ -121,7 +130,11 @@ def viewshed(dem_path, obs_lat, obs_lon, obs_height, max_distance, output_path):
                 if inter_dist_m < 1e-6:
                     continue
 
-                inter_angle = np.arctan2(inter_elev - obs_total_elev, inter_dist_m)
+                # Apply earth curvature + refraction correction to intermediate point
+                curvature_correction_inter = (inter_dist_m ** 2) / (2 * EARTH_RADIUS) * (1 - REFRACTION_K)
+                adjusted_inter_elev = inter_elev - curvature_correction_inter
+
+                inter_angle = np.arctan2(adjusted_inter_elev - obs_total_elev, inter_dist_m)
 
                 if inter_angle > target_angle:
                     is_visible = False

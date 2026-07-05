@@ -221,6 +221,114 @@ def accuracy_assessment(predicted_json, actual_json):
         print(f"{c:<15} {pa:<15.1f} {ua:<15.1f} {f1:<10.1f}")
 
 
+def supervised_rf(lat, lon, buffer_km, training_geojson_str, start_date, end_date, n_trees, output_path):
+    """Random Forest supervised classification via GEE smileRandomForest.
+    Ref: Nur et al. 2025, Amiren et al. 2024
+    """
+    import ee
+    ee.Initialize()
+    import requests
+
+    point = ee.Geometry.Point([lon, lat])
+    roi = point.buffer(buffer_km * 1000)
+
+    # Parse training GeoJSON
+    training_geojson = json.loads(training_geojson_str)
+    features = [ee.Feature(ee.Geometry(f['geometry']), f['properties']) for f in training_geojson['features']]
+    training_fc = ee.FeatureCollection(features)
+
+    # Cloud Score+ masked S2 composite
+    csPlus = ee.ImageCollection('GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED')
+    s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+        .filterDate(start_date, end_date).filterBounds(roi) \
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30)) \
+        .linkCollection(csPlus, ['cs_cdf']) \
+        .map(lambda img: img.updateMask(img.select('cs_cdf').gte(0.60))) \
+        .median().clip(roi)
+
+    # Compute indices
+    ndvi = s2.normalizedDifference(['B8', 'B4']).rename('NDVI')
+    ndwi = s2.normalizedDifference(['B3', 'B8']).rename('NDWI')
+    ndbi = s2.normalizedDifference(['B11', 'B8']).rename('NDBI')
+
+    bands = ['B2','B3','B4','B5','B6','B7','B8','B8A','B11','B12']
+    composite = s2.select(bands).addBands([ndvi, ndwi, ndbi])
+    all_bands = bands + ['NDVI', 'NDWI', 'NDBI']
+
+    # Sample training regions
+    training = composite.sampleRegions(
+        collection=training_fc, properties=['class'], scale=10, tileScale=4
+    )
+
+    # 70/30 split
+    training = training.randomColumn(seed=42)
+    train_set = training.filter(ee.Filter.lt('random', 0.7))
+    test_set = training.filter(ee.Filter.gte('random', 0.7))
+
+    # Train RF
+    classifier = ee.Classifier.smileRandomForest(
+        numberOfTrees=n_trees, seed=42
+    ).train(features=train_set, classProperty='class', inputProperties=all_bands)
+
+    # Classify
+    classified = composite.classify(classifier).clip(roi)
+
+    # Accuracy
+    train_cm = classifier.confusionMatrix()
+    train_oa = train_cm.accuracy().getInfo()
+    train_kappa = train_cm.kappa().getInfo()
+
+    validated = test_set.classify(classifier)
+    test_cm = validated.errorMatrix('class', 'classification')
+    test_oa = test_cm.accuracy().getInfo()
+    test_kappa = test_cm.kappa().getInfo()
+    test_matrix = test_cm.array().getInfo()
+
+    # Feature importance
+    explanation = classifier.explain().getInfo()
+    importance = explanation.get('importance', {})
+    oob = explanation.get('outOfBagErrorEstimate', None)
+
+    # Get unique classes
+    classes = sorted(set(f['properties']['class'] for f in training_geojson['features']))
+    n_classes = len(classes)
+
+    # Thumbnail
+    palette = ['0000FF','00FF00','FF0000','FFFF00','FF00FF','00FFFF','808080','FFA500'][:n_classes]
+    thumb = classified.getThumbURL({
+        'region': roi, 'dimensions': 800,
+        'min': min(classes), 'max': max(classes), 'palette': palette
+    })
+    img_data = requests.get(thumb, timeout=30).content
+    with open(output_path, 'wb') as f:
+        f.write(img_data)
+
+    # GeoTIFF
+    tif_path = output_path.replace('.png', '.tif')
+    try:
+        url = classified.toByte().getDownloadURL({'scale': 10, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'})
+        r = requests.get(url, timeout=120)
+        with open(tif_path, 'wb') as f:
+            f.write(r.content)
+    except Exception:
+        tif_path = "N/A (area terlalu besar, gunakan Export.image.toDrive)"
+
+    # Output
+    print(f"SUCCESS: Random Forest Classification completed. Output: {output_path}")
+    print(f"GeoTIFF: {tif_path}")
+    print(f"Trees: {n_trees} | Bands: {len(all_bands)} | Classes: {n_classes}")
+    print(f"\nTraining Accuracy: OA={train_oa*100:.1f}% | Kappa={train_kappa:.4f}")
+    print(f"Validation Accuracy: OA={test_oa*100:.1f}% | Kappa={test_kappa:.4f}")
+    if oob is not None:
+        print(f"OOB Error Estimate: {oob*100:.1f}%")
+    print(f"\nConfusion Matrix (validation):")
+    print(f"  {test_matrix}")
+    print(f"\nFeature Importance (top 5):")
+    sorted_imp = sorted(importance.items(), key=lambda x: x[1], reverse=True)[:5]
+    for name, val in sorted_imp:
+        print(f"  {name}: {val:.2f}")
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("ERROR: Usage: landcover_engine.py <mode> [args...]")
@@ -236,6 +344,10 @@ if __name__ == '__main__':
                              sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8], sys.argv[9])
         elif mode == 'accuracy':
             accuracy_assessment(sys.argv[2], sys.argv[3])
+        elif mode == 'supervised':
+            # args: lat lon buffer_km training_geojson start_date end_date n_trees output_path
+            supervised_rf(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]),
+                          sys.argv[5], sys.argv[6], sys.argv[7], int(sys.argv[8]), sys.argv[9])
         else:
             print(f"ERROR: Unknown mode '{mode}'")
     except Exception as e:

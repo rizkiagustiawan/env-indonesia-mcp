@@ -46,6 +46,7 @@ pub mod unit_hydrograph;
 pub mod muskingum_routing;
 pub mod time_of_concentration;
 pub mod accuracy_assessment;
+pub mod olofsson;
 
 #[cfg(test)]
 mod tests;

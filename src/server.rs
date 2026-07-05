@@ -887,6 +887,46 @@ pub struct Wgs84ToUtmParam {
     #[schemars(description = "Longitude (WGS84)")] pub lon: f64,
 }
 
+// ====== RESEARCH-GRADE GIS/RS PARAMS ======
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OlofssonParam {
+    #[schemars(description = "JSON array: mapped area per class (ha atau pixel count), e.g. [50000, 30000, 20000]")]
+    pub mapped_areas_json: String,
+    #[schemars(description = "JSON 2D array: confusion matrix dari stratified random sampling, e.g. [[45,3,2],[1,38,1],[2,1,47]]")]
+    pub confusion_matrix_json: String,
+    #[schemars(description = "JSON array: nama kelas, e.g. [\"Hutan\",\"Pertanian\",\"Permukiman\"]")]
+    pub class_names_json: String,
+    #[schemars(description = "Z-score for CI (default 1.96 = 95%)")]
+    pub z_score: Option<f64>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SupervisedRfParam {
+    pub lat: f64, pub lon: f64,
+    #[schemars(description = "Buffer radius (km)")]
+    pub buffer_km: f64,
+    #[schemars(description = "GeoJSON FeatureCollection training polygons dengan property 'class' (integer 0,1,2,...)")]
+    pub training_geojson: String,
+    pub start_date: String, pub end_date: String,
+    #[schemars(description = "Jumlah decision trees (default 100)")]
+    pub n_trees: Option<u32>,
+    pub output_path: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TopoCorrectParam {
+    pub lat: f64, pub lon: f64, pub buffer_km: f64,
+    pub start_date: String, pub end_date: String,
+    pub output_path: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct NdviTimeseriesParam {
+    pub lat: f64, pub lon: f64, pub buffer_km: f64,
+    pub start_year: u32, pub end_year: u32,
+    pub output_path: String,
+}
+
 static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -2372,6 +2412,33 @@ impl EnvIndonesiaServer {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::coords::wgs84_to_utm_auto(p.lat, p.lon)
     }
+
+    // =====================================================
+    // RESEARCH-GRADE GIS/REMOTE SENSING
+    // =====================================================
+
+    #[tool(description = "Olofsson Area-Weighted Accuracy Assessment. Ref: Olofsson et al. 2014 (NASA standard). Unbiased area estimates + CI dari stratified random sampling.")]
+    fn olofsson_accuracy(&self, Parameters(p): Parameters<OlofssonParam>) -> String {
+        tools::calculators::olofsson::calculate(&p.mapped_areas_json, &p.confusion_matrix_json, &p.class_names_json, p.z_score.unwrap_or(1.96))
+    }
+
+    #[tool(description = "Random Forest Supervised Classification via GEE smileRandomForest. Ref: Nur et al. 2025. Input: training GeoJSON polygons + date range.")]
+    fn supervised_classification(&self, Parameters(p): Parameters<SupervisedRfParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: {}", e); }
+        tools::gis::landcover::supervised_classify(p.lat, p.lon, p.buffer_km, &p.training_geojson, &p.start_date, &p.end_date, p.n_trees.unwrap_or(100), &p.output_path)
+    }
+
+    #[tool(description = "Topographic C-Correction. Ref: Teillet et al. 1982. Koreksi efek terrain pada reflectance S2. Otomatis skip area datar (slope<5°).")]
+    fn topo_correction(&self, Parameters(p): Parameters<TopoCorrectParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: {}", e); }
+        tools::gis::advanced::topo_correction(p.lat, p.lon, p.buffer_km, &p.start_date, &p.end_date, &p.output_path)
+    }
+
+    #[tool(description = "NDVI Time Series Trend Analysis. Ref: Saifulloh et al. 2025. Annual composites + linear regression slope per pixel.")]
+    fn ndvi_timeseries(&self, Parameters(p): Parameters<NdviTimeseriesParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: {}", e); }
+        tools::gis::advanced::ndvi_timeseries(p.lat, p.lon, p.buffer_km, p.start_year as i32, p.end_year as i32, &p.output_path)
+    }
 }
 
 #[rmcp::tool_handler]
@@ -2382,6 +2449,6 @@ impl ServerHandler for EnvIndonesiaServer {
                 .enable_tools()
                 .build()
         )
-        .with_instructions("Environmental AI MCP Server for Indonesia — GOD TIER v3. 220+ tools covering ALL 20 domains of Environmental Engineering + GIS/Remote Sensing: Water/Wastewater Treatment Design, Air Quality, Solid/Hazardous Waste, AMDAL/EIA, Environmental Chemistry, Microbiology, Hydrology, Groundwater, Noise/Vibration, Radiation/NORM, Climate/ESG, Regulatory Compliance (30+ regulasi Indonesia), Ecological Engineering, Coastal/Marine, Remote Sensing/GIS (SAR+Optical+Hyperspectral+DEM+Band Math+Zonal Stats+Land Cover+Change Detection+Viewshed+Spatial Ops+Coordinate Transform), Monitoring/QA-QC, Environmental Health (HHRA), Industrial Ecology (MFA/MCI), Environmental Economics (CBA/NPV), Physics-Informed Validation, 2D/3D/4D Visualization. GIS tools: raster_band_math, dem_slope/aspect/hillshade, zonal_statistics, land_cover_classify, land_use_change, accuracy_assessment, buffer/overlay/suitability, viewshed, coordinate_transform_v2, wgs84_to_utm. Domain: Indonesia. ISO 9613, ISO 14046, IPCC 2006, FAO-56, EPA RAGS, GHG Protocol, SNI 7645:2014, SNI 8202:2015.")
+        .with_instructions("Environmental AI MCP Server for Indonesia — GOD TIER v3. 220+ tools covering ALL 20 domains of Environmental Engineering + Research-Grade GIS/Remote Sensing: Water/Wastewater Treatment Design, Air Quality, Solid/Hazardous Waste, AMDAL/EIA, Environmental Chemistry, Microbiology, Hydrology, Groundwater, Noise/Vibration, Radiation/NORM, Climate/ESG, Regulatory Compliance (30+ regulasi Indonesia), Ecological Engineering, Coastal/Marine, Remote Sensing/GIS (SAR+Optical+Hyperspectral+DEM+Band Math+Zonal Stats+Land Cover+Change Detection+Viewshed+Spatial Ops+Coordinate Transform+Olofsson Accuracy+Supervised RF Classification+Topo C-Correction+NDVI Timeseries Trend), Monitoring/QA-QC, Environmental Health (HHRA), Industrial Ecology (MFA/MCI), Environmental Economics (CBA/NPV), Physics-Informed Validation, 2D/3D/4D Visualization. Research-grade GIS/RS: olofsson_accuracy (Olofsson et al. 2014), supervised_classification (smileRandomForest), topo_correction (Teillet C-Correction), ndvi_timeseries (annual trend analysis). Domain: Indonesia. ISO 9613, ISO 14046, IPCC 2006, FAO-56, EPA RAGS, GHG Protocol, SNI 7645:2014, SNI 8202:2015.")
     }
 }
