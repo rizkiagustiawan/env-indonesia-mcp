@@ -38,7 +38,7 @@ pub fn check(parameter: &str, concentration: f64, averaging_time: &str) -> Strin
     };
 
     if concentration < 0.0 {
-        return format!("ERROR: Konsentrasi ({}) tidak boleh negatif.", concentration);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", concentration);
     }
 
     let limit = match limit {

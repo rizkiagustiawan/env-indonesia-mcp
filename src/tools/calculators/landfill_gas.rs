@@ -6,7 +6,7 @@ pub fn calculate(waste_mass_ton: f64, years_open: u32, k: f64, l0: f64) -> Strin
     let mut out = String::from("=== Landfill Gas (CH₄) Estimator ===\n");
     out.push_str("Ref: EPA LandGEM v3.02, AP-42 Chapter 2.4\n\n");
 
-    if waste_mass_ton <= 0.0 { return "ERROR: Massa sampah harus > 0.".into(); }
+    if waste_mass_ton <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Default parameters for tropical wet climate (Indonesia)
     let k_val = if k > 0.0 { k } else { 0.7 }; // /yr, tropical wet (EPA default CAA: 0.05, tropis: 0.7)

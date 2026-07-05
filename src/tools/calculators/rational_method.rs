@@ -6,8 +6,8 @@ pub fn calculate(c_coeff: f64, i_mm_hr: f64, a_ha: f64, land_use: &str) -> Strin
     let mut out = String::from("=== Metode Rasional — Debit Puncak ===\n");
     out.push_str("Ref: Kuichling (1889), Suripin (2004)\n\n");
 
-    if i_mm_hr <= 0.0 { return "ERROR: Intensitas hujan (I) harus > 0.".into(); }
-    if a_ha <= 0.0 { return "ERROR: Luas DAS (A) harus > 0.".into(); }
+    if i_mm_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if a_ha <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Lookup C from land use if c_coeff is 0
     let c = if c_coeff > 0.0 {

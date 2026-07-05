@@ -27,7 +27,7 @@ fn fmt_usd(v: f64) -> String {
 }
 
 pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) -> String {
-    if amount <= 0.0 { return "ERROR: Amount harus > 0.".into(); }
+    if amount <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Location multiplier for health damage (population density effect)
     let (loc_mult, loc_desc) = match location_type.to_lowercase().as_str() {

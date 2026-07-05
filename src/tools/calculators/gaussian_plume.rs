@@ -9,8 +9,8 @@ pub fn calculate(emission_rate_gs: f64, wind_speed_ms: f64, stack_height_m: f64,
     if wind_speed_ms < 0.28 {
         return "ERROR FISIKA: Wind speed < 0.28 m/s. Model Gaussian TIDAK VALID (singularitas). Gunakan AERMOD calm-wind algorithm.".into();
     }
-    if emission_rate_gs <= 0.0 { return "ERROR: Laju emisi harus > 0.".into(); }
-    if distance_m <= 0.0 { return "ERROR: Jarak harus > 0.".into(); }
+    if emission_rate_gs <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if distance_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let x = distance_m;
 

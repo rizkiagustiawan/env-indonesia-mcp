@@ -11,9 +11,9 @@ pub fn calculate(
     product_lifetime_years: f64,
     industry_avg_lifetime: f64,
 ) -> String {
-    if mass_product_kg <= 0.0 { return "ERROR: Massa produk harus > 0 kg.".into(); }
-    if product_lifetime_years <= 0.0 { return "ERROR: Lifetime produk harus > 0 tahun.".into(); }
-    if industry_avg_lifetime <= 0.0 { return "ERROR: Industry avg lifetime harus > 0 tahun.".into(); }
+    if mass_product_kg <= 0.0 { return "ERROR [E102]: Parameter harus > 0 kg.".into(); }
+    if product_lifetime_years <= 0.0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
+    if industry_avg_lifetime <= 0.0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
 
     // Validate percentages
     let total_input_pct = virgin_feedstock_pct + recycled_input_pct + reused_input_pct;

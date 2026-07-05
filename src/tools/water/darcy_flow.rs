@@ -5,9 +5,9 @@ pub fn calculate(k_ms: f64, gradient: f64, area_m2: f64, porosity: f64, distance
     let mut out = String::from("=== Hukum Darcy — Aliran Air Tanah ===\n");
     out.push_str("Ref: Freeze & Cherry (1979), Groundwater\n\n");
 
-    if k_ms <= 0.0 { return "ERROR: Konduktivitas hidraulik (K) harus > 0.".into(); }
-    if gradient <= 0.0 { return "ERROR: Gradien hidraulik (i) harus > 0.".into(); }
-    if area_m2 <= 0.0 { return "ERROR: Luas penampang (A) harus > 0.".into(); }
+    if k_ms <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if gradient <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if porosity <= 0.0 || porosity >= 1.0 { return "ERROR: Porositas harus antara 0 dan 1 (eksklusif).".into(); }
 
     let q_specific = k_ms * gradient; // m/s (specific discharge / Darcy velocity)

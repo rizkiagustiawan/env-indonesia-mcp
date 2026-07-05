@@ -94,25 +94,25 @@ pub fn calculate_ilcr(
     csf: f64,
 ) -> String {
     if concentration < 0.0 {
-        return "ERROR: Konsentrasi tidak boleh negatif.".into();
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
     }
     if intake_rate <= 0.0 {
-        return "ERROR: Laju intake harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if exposure_freq_days <= 0.0 || exposure_freq_days > 365.0 {
         return "ERROR: Frekuensi paparan harus antara 0 dan 365 hari/tahun.".into();
     }
     if exposure_dur_years <= 0.0 {
-        return "ERROR: Durasi paparan harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if body_weight_kg <= 0.0 {
-        return "ERROR: Berat badan harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if avg_time_years <= 0.0 {
-        return "ERROR: Averaging time harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if csf <= 0.0 {
-        return "ERROR: Cancer slope factor harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
 
     let route_lower = exposure_route.to_lowercase();
@@ -254,19 +254,19 @@ pub fn calculate_hq(
     body_weight_kg: f64,
 ) -> String {
     if concentration < 0.0 {
-        return "ERROR: Konsentrasi tidak boleh negatif.".into();
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
     }
     if intake_rate <= 0.0 {
-        return "ERROR: Laju intake harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if exposure_freq_days <= 0.0 || exposure_freq_days > 365.0 {
         return "ERROR: Frekuensi paparan harus 0–365 hari/tahun.".into();
     }
     if exposure_dur_years <= 0.0 {
-        return "ERROR: Durasi paparan harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if body_weight_kg <= 0.0 {
-        return "ERROR: Berat badan harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
 
     let route_lower = route.to_lowercase();
@@ -414,7 +414,7 @@ pub fn calculate_arkl(
     exposure_scenario: &str,
 ) -> String {
     if concentration < 0.0 {
-        return "ERROR: Konsentrasi tidak boleh negatif.".into();
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
     }
 
     let pop = population_type.to_lowercase();

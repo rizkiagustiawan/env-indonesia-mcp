@@ -5,9 +5,9 @@ pub fn calculate(slope_angle_deg: f64, height_m: f64, unit_weight_kn_m3: f64, co
     if slope_angle_deg <= 0.0 || slope_angle_deg >= 90.0 {
         return "ERROR: Sudut lereng harus antara 0 dan 90 derajat (eksklusif).".into();
     }
-    if height_m <= 0.0 { return "ERROR: Tinggi lereng harus > 0.".into(); }
-    if unit_weight_kn_m3 <= 0.0 { return "ERROR: Berat isi (unit weight) harus > 0.".into(); }
-    if cohesion_kpa < 0.0 { return "ERROR: Kohesi tidak boleh negatif.".into(); }
+    if height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if unit_weight_kn_m3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if cohesion_kpa < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if friction_deg < 0.0 || friction_deg > 60.0 {
         return "ERROR: Sudut geser internal harus antara 0 dan 60 derajat.".into();
     }

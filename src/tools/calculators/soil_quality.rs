@@ -4,7 +4,7 @@
 pub fn classify_texture(sand_pct: f64, silt_pct: f64, clay_pct: f64) -> String {
     let total = sand_pct + silt_pct + clay_pct;
     if (total - 100.0).abs() > 1.0 { return format!("ERROR: Sand+Silt+Clay = {:.1}%, harus = 100%.", total); }
-    if sand_pct < 0.0 || silt_pct < 0.0 || clay_pct < 0.0 { return "ERROR: Persentase tidak boleh negatif.".into(); }
+    if sand_pct < 0.0 || silt_pct < 0.0 || clay_pct < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     // USDA texture triangle decision tree
     let kelas = if clay_pct >= 40.0 && sand_pct <= 45.0 && silt_pct < 40.0 { "Clay" }

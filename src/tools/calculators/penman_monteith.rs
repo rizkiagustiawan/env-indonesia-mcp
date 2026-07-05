@@ -4,7 +4,7 @@
 pub fn calculate(t_mean: f64, rh_mean: f64, u2: f64, rn: f64) -> String {
     let mut out = String::from("=== Penman-Monteith ET0 (FAO-56) ===\n\n");
 
-    if u2 < 0.0 { return "ERROR: Kecepatan angin tidak boleh negatif.".into(); }
+    if u2 < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if rh_mean < 0.0 || rh_mean > 100.0 { return format!("ERROR: RH ({}) harus 0-100%.", rh_mean); }
 
     let gamma = 0.0665; // kPa/°C at sea level

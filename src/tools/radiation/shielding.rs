@@ -2,8 +2,8 @@
 /// Ref: ICRP 103 (2007), NCRP 147 (2004), BAPETEN
 
 pub fn calculate(initial_intensity: f64, material: &str, thickness_cm: f64, source: &str) -> String {
-    if initial_intensity <= 0.0 { return "ERROR: Intensitas awal harus > 0.".into(); }
-    if thickness_cm < 0.0 { return "ERROR: Ketebalan perisai tidak boleh negatif.".into(); }
+    if initial_intensity <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if thickness_cm < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     // HVL values in cm for various materials and sources
     // (Half Value Layer — ketebalan yang mengurangi intensitas 50%)

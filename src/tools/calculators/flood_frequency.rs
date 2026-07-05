@@ -2,8 +2,8 @@
 /// Ref: Chow (1951), USGS Bulletin 17C
 
 pub fn gumbel(data: &[f64], return_period: f64) -> String {
-    if data.len() < 10 { return "ERROR: Minimum 10 tahun data untuk analisis frekuensi.".into(); }
-    if return_period <= 1.0 { return "ERROR: Return period harus > 1.".into(); }
+    if data.len() < 10 { return "ERROR [E105]: Minimum 10 tahun data untuk analisis frekuensi.".into(); }
+    if return_period <= 1.0 { return "ERROR [E102]: Parameter harus > 1.".into(); }
 
     let n = data.len() as f64;
     let mean: f64 = data.iter().sum::<f64>() / n;
@@ -25,9 +25,9 @@ pub fn gumbel(data: &[f64], return_period: f64) -> String {
 /// Log-Pearson Type III Flood Frequency Analysis
 /// Ref: USGS Bulletin 17C, SNI 2415:2016
 pub fn log_pearson_iii(data: &[f64], return_period: f64) -> String {
-    if data.len() < 10 { return "ERROR: Minimum 10 tahun data.".into(); }
-    if return_period <= 1.0 { return "ERROR: Return period harus > 1.".into(); }
-    if data.iter().any(|&x| x <= 0.0) { return "ERROR: Semua data harus > 0 untuk Log-Pearson III.".into(); }
+    if data.len() < 10 { return "ERROR [E105]: Minimum 10 tahun data.".into(); }
+    if return_period <= 1.0 { return "ERROR [E102]: Parameter harus > 1.".into(); }
+    if data.iter().any(|&x| x <= 0.0) { return "ERROR [E102]: Parameter harus > 0 untuk Log-Pearson III.".into(); }
 
     let n = data.len() as f64;
     let logs: Vec<f64> = data.iter().map(|q| q.log10()).collect();

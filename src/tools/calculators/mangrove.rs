@@ -15,7 +15,7 @@ pub fn ndmi(nir_b8a: f64, swir_b11: f64) -> String {
 }
 
 pub fn carbon_stock(dbh_cm: f64, wood_density: f64, n_trees_per_ha: f64) -> String {
-    if dbh_cm <= 0.0 { return "ERROR: DBH harus > 0.".into(); }
+    if dbh_cm <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if wood_density <= 0.0 || wood_density > 1.5 { return format!("ERROR: Wood density {} g/cm³ di luar rentang (0-1.5).", wood_density); }
 
     // Komiyama et al. (2005) allometric

@@ -2,7 +2,7 @@
 /// Ref: PerKa BAPETEN No. 4/2013, IAEA Safety Guide RS-G-1.7
 
 pub fn screen(material: &str, activity_bq_g: f64) -> String {
-    if activity_bq_g < 0.0 { return "ERROR: Aktivitas tidak boleh negatif.".into(); }
+    if activity_bq_g < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     struct NormMaterial {
         name: &'static str,

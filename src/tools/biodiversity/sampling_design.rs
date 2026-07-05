@@ -6,10 +6,10 @@ pub fn calculate(confidence_pct: f64, margin_error_pct: f64, std_deviation: f64,
         return "ERROR: Tingkat kepercayaan harus antara 0 dan 100 (eksklusif).".into();
     }
     if margin_error_pct <= 0.0 {
-        return "ERROR: Margin error harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
     if std_deviation <= 0.0 {
-        return "ERROR: Standar deviasi harus > 0.".into();
+        return "ERROR [E102]: Parameter harus > 0.".into();
     }
 
     // Z-value lookup

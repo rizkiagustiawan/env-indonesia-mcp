@@ -6,7 +6,7 @@ pub fn calculate(p_mm: f64, cn: f64) -> String {
     out.push_str("Ref: USDA TR-55 (1986)\n\n");
 
     if cn < 0.0 || cn > 100.0 { return format!("ERROR: CN ({}) harus 0-100.", cn); }
-    if p_mm < 0.0 { return format!("ERROR: Curah hujan ({}) tidak boleh negatif.", p_mm); }
+    if p_mm < 0.0 { return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", p_mm); }
     if cn == 0.0 { return "CN=0: Infiltrasi sempurna. Q=0 mm.".into(); }
 
     let s = (25400.0 / cn) - 254.0;

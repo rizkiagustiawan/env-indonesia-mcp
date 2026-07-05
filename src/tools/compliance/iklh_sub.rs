@@ -9,7 +9,7 @@ pub fn calculate_ika(ip_values: &[f64]) -> String {
 
     for (i, v) in ip_values.iter().enumerate() {
         if *v < 0.0 {
-            return format!("ERROR: Nilai IP ke-{} ({:.2}) tidak boleh negatif.", i + 1, v);
+            return format!("ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}", i + 1, v);
         }
     }
 
@@ -42,7 +42,7 @@ pub fn calculate_iku(ispu_values: &[f64]) -> String {
 
     for (i, v) in ispu_values.iter().enumerate() {
         if *v < 0.0 {
-            return format!("ERROR: Nilai ISPU ke-{} ({:.2}) tidak boleh negatif.", i + 1, v);
+            return format!("ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}", i + 1, v);
         }
     }
 
@@ -72,7 +72,7 @@ pub fn calculate_iktl(forest_cover_pct: f64, target_pct: f64) -> String {
         return format!("ERROR: Persentase tutupan lahan ({:.1}%) harus 0-100.", forest_cover_pct);
     }
     if target_pct <= 0.0 || target_pct > 100.0 {
-        return format!("ERROR: Target tutupan lahan ({:.1}%) harus > 0 dan <= 100.", target_pct);
+        return format!("ERROR [E102]: Parameter harus > 0 dan <= 100. {}", target_pct);
     }
 
     // IKTL = (forest_cover_pct / target_pct) * 100, capped at 100
@@ -118,7 +118,7 @@ pub fn calculate_ikal(sea_quality_params: &str) -> String {
         let lij = p["lij"].as_f64().unwrap_or(0.0);
 
         if lij <= 0.0 {
-            return format!("ERROR: Baku mutu (Lij) untuk {} harus > 0.", name);
+            return format!("ERROR [E102]: Parameter harus > 0. {}", name);
         }
 
         let ratio = ci / lij;

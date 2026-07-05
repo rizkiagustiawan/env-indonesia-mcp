@@ -2,7 +2,7 @@
 /// Ref: Shore Protection Manual (1984), USACE
 
 pub fn cerc_transport(hs_m: f64, wave_angle_deg: f64, _beach_slope_deg: f64) -> String {
-    if hs_m <= 0.0 { return "ERROR: Hs harus > 0.".into(); }
+    if hs_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if wave_angle_deg.abs() > 90.0 { return "ERROR: Wave angle harus -90 to 90 deg.".into(); }
 
     let g = 9.81_f64;

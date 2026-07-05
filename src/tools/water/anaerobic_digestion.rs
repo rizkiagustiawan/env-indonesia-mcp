@@ -6,8 +6,8 @@ pub fn design(q_m3d: f64, vs_concentration_kgm3: f64, vs_destruction_pct: f64, t
     let mut out = String::from("=== Desain Reaktor Anaerobik (Biogas) ===\n");
     out.push_str("Ref: Rittmann & McCarty (2001), Metcalf & Eddy (2003)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
-    if vs_concentration_kgm3 <= 0.0 { return "ERROR: Konsentrasi VS harus > 0.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if vs_concentration_kgm3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if vs_destruction_pct <= 0.0 || vs_destruction_pct > 100.0 { return "ERROR: VS destruction harus antara 0-100%.".into(); }
     if temperature_c < 20.0 || temperature_c > 60.0 { return "ERROR: Suhu harus antara 20-60°C.".into(); }
 

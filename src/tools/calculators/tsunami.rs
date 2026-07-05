@@ -2,8 +2,8 @@
 /// Ref: Shallow water wave theory, Synolakis (1987)
 
 pub fn travel_time(depth_m: f64, distance_km: f64) -> String {
-    if depth_m <= 0.0 { return "ERROR: Kedalaman laut harus > 0.".into(); }
-    if distance_km <= 0.0 { return "ERROR: Jarak harus > 0.".into(); }
+    if depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if distance_km <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let g = 9.81_f64;
     let c = (g * depth_m).sqrt(); // m/s
@@ -23,8 +23,8 @@ pub fn travel_time(depth_m: f64, distance_km: f64) -> String {
 }
 
 pub fn runup(wave_height_m: f64, depth_m: f64, slope_deg: f64) -> String {
-    if wave_height_m <= 0.0 { return "ERROR: Tinggi gelombang harus > 0.".into(); }
-    if depth_m <= 0.0 { return "ERROR: Kedalaman harus > 0.".into(); }
+    if wave_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if slope_deg <= 0.0 || slope_deg >= 90.0 { return "ERROR: Kemiringan pantai harus 0-90 derajat.".into(); }
 
     let beta_rad = slope_deg.to_radians();

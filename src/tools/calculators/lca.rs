@@ -2,7 +2,7 @@
 /// Ref: ISO 14040/14044, IPCC AR6 GWP100
 
 pub fn calculate(material: &str, mass_kg: f64) -> String {
-    if mass_kg <= 0.0 { return "ERROR: Massa harus > 0.".into(); }
+    if mass_kg <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let (ef_co2, ef_water, ef_energy, desc) = match material.to_lowercase().as_str() {
         "baja" | "steel" => (1.85, 20.0, 20.0, "Baja (BOF steelmaking)"),

@@ -7,9 +7,9 @@ pub fn calculate(q_m3s: f64, static_lift_m: f64, friction_loss_m: f64, velocity_
     let mut out = String::from("=== Sizing Pompa ===\n");
     out.push_str("Ref: Cengel & Cimbala, Fluid Mechanics\n\n");
 
-    if q_m3s <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
+    if q_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if efficiency <= 0.0 || efficiency > 1.0 { return "ERROR: Efisiensi pompa harus antara 0 dan 1.".into(); }
-    if static_lift_m < 0.0 { return "ERROR: Static lift tidak boleh negatif.".into(); }
+    if static_lift_m < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let rho = 998.0; // kg/m³ (water at 20°C)
     let g = 9.81;    // m/s²

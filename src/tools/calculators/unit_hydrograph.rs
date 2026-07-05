@@ -6,9 +6,9 @@ pub fn calculate(a_km2: f64, tc_hours: f64, d_hours: f64) -> String {
     let mut out = String::from("=== SCS Triangular Unit Hydrograph ===\n");
     out.push_str("Ref: USDA SCS (1972), NEH Part 630\n\n");
 
-    if a_km2 <= 0.0 { return "ERROR: Luas DAS (A) harus > 0.".into(); }
-    if tc_hours <= 0.0 { return "ERROR: Waktu konsentrasi (tc) harus > 0.".into(); }
-    if d_hours <= 0.0 { return "ERROR: Durasi hujan efektif (D) harus > 0.".into(); }
+    if a_km2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if tc_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if d_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Time to peak
     let t_lag = 0.6 * tc_hours; // SCS lag time

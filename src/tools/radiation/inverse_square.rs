@@ -2,9 +2,9 @@
 /// Ref: ICRP 103 (2007), BAPETEN (Badan Pengawas Tenaga Nuklir)
 
 pub fn calculate(dose_rate_at_d1: f64, d1_m: f64, d2_m: f64) -> String {
-    if dose_rate_at_d1 <= 0.0 { return "ERROR: Laju dosis harus > 0.".into(); }
-    if d1_m <= 0.0 { return "ERROR: Jarak d1 harus > 0.".into(); }
-    if d2_m <= 0.0 { return "ERROR: Jarak d2 harus > 0.".into(); }
+    if dose_rate_at_d1 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if d1_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if d2_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // I₂ = I₁ × (d₁/d₂)²
     let dose_rate_at_d2 = dose_rate_at_d1 * (d1_m / d2_m).powi(2);

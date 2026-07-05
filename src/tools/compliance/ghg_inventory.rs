@@ -6,7 +6,7 @@ pub fn calculate(sector: &str, activity: &str, amount: f64) -> String {
     let a = activity.to_lowercase();
 
     if amount < 0.0 {
-        return format!("ERROR: Jumlah aktivitas ({:.2}) tidak boleh negatif.", amount);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", amount);
     }
 
     // GWP AR5: CO2=1, CH4=28, N2O=265

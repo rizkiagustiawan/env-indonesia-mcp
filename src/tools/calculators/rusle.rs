@@ -6,9 +6,9 @@ pub fn calculate(r: f64, k: f64, ls: f64, c: f64, p: f64) -> String {
     out.push_str("Ref: USDA Agriculture Handbook 703 (Renard et al., 1997)\n\n");
 
     // Validate
-    if r < 0.0 { return format!("ERROR: R-erosivity ({}) tidak boleh negatif.", r); }
+    if r < 0.0 { return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", r); }
     if k < 0.0 || k > 1.0 { return format!("ERROR: K-erodibility ({}) harus 0-1.", k); }
-    if ls < 0.0 { return format!("ERROR: LS-factor ({}) tidak boleh negatif.", ls); }
+    if ls < 0.0 { return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", ls); }
     if c < 0.0 || c > 1.0 { return format!("ERROR: C-cover ({}) harus 0-1.", c); }
     if p < 0.0 || p > 1.0 { return format!("ERROR: P-practice ({}) harus 0-1.", p); }
 

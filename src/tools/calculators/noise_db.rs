@@ -28,7 +28,7 @@ pub fn add_sources(levels_db: &[f64]) -> String {
 }
 
 pub fn attenuation_distance(source_db: f64, distance_m: f64) -> String {
-    if distance_m <= 0.0 { return "ERROR: Jarak harus > 0.".into(); }
+    if distance_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     // Point source: -6 dB per doubling of distance (inverse square law)
     let ref_dist = 1.0; // 1 meter reference
     let atten = 20.0 * (distance_m / ref_dist).log10();

@@ -2,11 +2,11 @@
 /// Ref: Mancini (1978), PP 22/2021 tentang Baku Mutu Air
 
 pub fn calculate(initial_count_per_100ml: f64, temperature_c: f64, time_hours: f64, water_type: &str) -> String {
-    if initial_count_per_100ml <= 0.0 { return "ERROR: Jumlah coliform awal harus > 0.".into(); }
+    if initial_count_per_100ml <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if temperature_c < 0.0 || temperature_c > 45.0 {
         return "ERROR: Suhu harus antara 0 dan 45 °C.".into();
     }
-    if time_hours < 0.0 { return "ERROR: Waktu tidak boleh negatif.".into(); }
+    if time_hours < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let wt_lower = water_type.to_lowercase();
 

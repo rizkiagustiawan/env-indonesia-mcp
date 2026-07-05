@@ -6,12 +6,12 @@ pub fn design(q_m3d: f64, bod_in: f64, bod_target: f64, media_depth_m: f64, reci
     let mut out = String::from("=== Desain Trickling Filter (NRC) ===\n");
     out.push_str("Ref: NRC (1946), Metcalf & Eddy (2003)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
-    if bod_in <= 0.0 { return "ERROR: BOD influent harus > 0.".into(); }
-    if bod_target < 0.0 { return "ERROR: BOD target tidak boleh negatif.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if bod_in <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if bod_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if bod_target >= bod_in { return "ERROR: BOD target harus < BOD influent.".into(); }
     if media_depth_m < 1.0 || media_depth_m > 3.0 { return "ERROR: Kedalaman media 1-3 m (tipikal).".into(); }
-    if recirculation_ratio < 0.0 { return "ERROR: Rasio resirkulasi tidak boleh negatif.".into(); }
+    if recirculation_ratio < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let target_efficiency = (1.0 - bod_target / bod_in) * 100.0;
 

@@ -10,13 +10,13 @@ pub fn calculate(
     parameter: &str,
 ) -> String {
     if q_river_m3s <= 0.0 {
-        return format!("ERROR: Debit sungai ({:.4} m³/s) harus > 0.", q_river_m3s);
+        return format!("ERROR [E102]: Parameter harus > 0. {}", q_river_m3s);
     }
     if q_waste_m3s < 0.0 {
-        return format!("ERROR: Debit limbah ({:.4} m³/s) tidak boleh negatif.", q_waste_m3s);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", q_waste_m3s);
     }
     if c_standard_mgl <= 0.0 {
-        return format!("ERROR: Baku mutu ({:.2} mg/L) harus > 0.", c_standard_mgl);
+        return format!("ERROR [E102]: Parameter harus > 0. {}", c_standard_mgl);
     }
 
     // Mass balance: DTBP = Q_river * (C_standard - C_upstream) - Q_waste * C_waste

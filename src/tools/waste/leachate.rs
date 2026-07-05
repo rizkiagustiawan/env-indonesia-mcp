@@ -2,7 +2,7 @@
 /// Ref: PermenPU 3/2013, Tchobanoglous et al. (1993) Integrated Solid Waste Management
 
 pub fn calculate(area_m2: f64, monthly_rainfall_mm: &[f64], monthly_et_mm: &[f64], soil_storage_mm: f64, runoff_coeff: f64) -> String {
-    if area_m2 <= 0.0 { return "ERROR: Luas area harus > 0.".into(); }
+    if area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if monthly_rainfall_mm.len() != 12 {
         return format!("ERROR: Data curah hujan harus 12 bulan, diberikan {} bulan.", monthly_rainfall_mm.len());
     }
@@ -12,7 +12,7 @@ pub fn calculate(area_m2: f64, monthly_rainfall_mm: &[f64], monthly_et_mm: &[f64
     if runoff_coeff < 0.0 || runoff_coeff > 1.0 {
         return "ERROR: Koefisien runoff harus antara 0 dan 1.".into();
     }
-    if soil_storage_mm < 0.0 { return "ERROR: Kapasitas simpan tanah tidak boleh negatif.".into(); }
+    if soil_storage_mm < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let month_names = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 

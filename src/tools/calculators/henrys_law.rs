@@ -5,7 +5,7 @@ pub fn calculate(compound: &str, concentration_mgl: f64, temperature_c: f64) -> 
     let mut out = String::from("=== Hukum Henry ===\n");
     out.push_str("Ref: Sander (2015), Compilation of Henry's Law Constants\n\n");
 
-    if concentration_mgl < 0.0 { return "ERROR: Konsentrasi tidak boleh negatif.".into(); }
+    if concentration_mgl < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if temperature_c < 0.0 || temperature_c > 80.0 { return "ERROR: Suhu harus antara 0-80°C.".into(); }
 
     let compound_lower = compound.to_lowercase();

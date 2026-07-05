@@ -2,10 +2,10 @@
 /// Ref: WHO Handbook on Indoor Radon (2009), ICRP 126 (2014)
 
 pub fn calculate(soil_radon_bq_m3: f64, floor_area_m2: f64, room_height_m: f64, ventilation_rate_ach: f64, floor_type: &str) -> String {
-    if soil_radon_bq_m3 < 0.0 { return "ERROR: Konsentrasi radon tanah tidak boleh negatif.".into(); }
-    if floor_area_m2 <= 0.0 { return "ERROR: Luas lantai harus > 0.".into(); }
-    if room_height_m <= 0.0 { return "ERROR: Tinggi ruangan harus > 0.".into(); }
-    if ventilation_rate_ach <= 0.0 { return "ERROR: Laju ventilasi (ACH) harus > 0.".into(); }
+    if soil_radon_bq_m3 < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if floor_area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if room_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if ventilation_rate_ach <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let ft_lower = floor_type.to_lowercase();
 

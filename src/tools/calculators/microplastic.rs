@@ -2,7 +2,7 @@
 /// Ref: Emerging contaminant classification
 
 pub fn score(water_type: &str, mp_particles_per_liter: f64) -> String {
-    if mp_particles_per_liter < 0.0 { return "ERROR: Jumlah partikel tidak boleh negatif.".into(); }
+    if mp_particles_per_liter < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let risk = if mp_particles_per_liter < 1.0 { "Rendah" } else if mp_particles_per_liter < 10.0 { "Sedang" } else if mp_particles_per_liter < 100.0 { "Tinggi" } else { "Sangat Tinggi" };
 

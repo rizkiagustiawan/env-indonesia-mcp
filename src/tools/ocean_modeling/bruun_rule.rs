@@ -2,10 +2,10 @@
 /// Ref: Bruun (1962), Dean (1991), IPCC AR6 WG1
 
 pub fn calculate(sea_level_rise_m: f64, profile_length_m: f64, berm_height_m: f64, closure_depth_m: f64) -> String {
-    if sea_level_rise_m <= 0.0 { return "ERROR: Sea level rise harus > 0 m.".into(); }
-    if profile_length_m <= 0.0 { return "ERROR: Profile length harus > 0 m.".into(); }
-    if berm_height_m <= 0.0 { return "ERROR: Berm height harus > 0 m (di atas MSL).".into(); }
-    if closure_depth_m <= 0.0 { return "ERROR: Closure depth harus > 0 m (di bawah MSL).".into(); }
+    if sea_level_rise_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
+    if profile_length_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
+    if berm_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m (di atas MSL).".into(); }
+    if closure_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m (di bawah MSL).".into(); }
 
     // Bruun Rule: R = SLR × L / (B + h*)
     let denominator = berm_height_m + closure_depth_m;

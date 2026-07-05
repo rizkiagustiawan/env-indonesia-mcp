@@ -19,11 +19,11 @@ pub fn design(
     media_depth_m: f64,
     drain_time_hr: f64,
 ) -> String {
-    if q_design_m3s <= 0.0 { return "ERROR: Debit desain harus > 0 m³/s.".into(); }
-    if ksat_m_hr <= 0.0 { return "ERROR: Ksat harus > 0 m/hr.".into(); }
-    if ponding_depth_m <= 0.0 { return "ERROR: Kedalaman genangan (ponding) harus > 0 m.".into(); }
-    if media_depth_m <= 0.0 { return "ERROR: Kedalaman media harus > 0 m.".into(); }
-    if drain_time_hr <= 0.0 { return "ERROR: Waktu drainase harus > 0 jam.".into(); }
+    if q_design_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m³/s.".into(); }
+    if ksat_m_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m/hr.".into(); }
+    if ponding_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
+    if media_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
+    if drain_time_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0 jam.".into(); }
 
     // Design storm volume (simplified: Q × duration assumed 1 hr = 3600s)
     let storm_duration_s = 3600.0; // 1-hour design storm

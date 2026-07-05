@@ -2,7 +2,7 @@
 /// Ref: Critical Load methodology, EMEP
 
 pub fn calculate(so2_ugm3: f64, nox_ugm3: f64, rainfall_mm_yr: f64) -> String {
-    if so2_ugm3 < 0.0 || nox_ugm3 < 0.0 { return "ERROR: Konsentrasi tidak boleh negatif.".into(); }
+    if so2_ugm3 < 0.0 || nox_ugm3 < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let s_dep = so2_ugm3 * rainfall_mm_yr * 0.001 * 0.64; // simplified wet deposition (eq S/ha/yr)
     let n_dep = nox_ugm3 * rainfall_mm_yr * 0.001 * 0.30;

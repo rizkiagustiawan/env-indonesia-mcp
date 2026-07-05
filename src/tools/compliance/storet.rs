@@ -4,7 +4,7 @@
 pub fn calculate(data_json: &str) -> String {
     // data_json format: [{"name":"BOD", "type":"kimia", "samples": [{"value":4.0, "limit":2.0}, ...]}, ...]
     let data: Result<Vec<serde_json::Value>, _> = serde_json::from_str(data_json);
-    if data.is_err() { return "ERROR: Format data JSON tidak valid.".into(); }
+    if data.is_err() { return "ERROR [E103]: Format data JSON tidak valid.".into(); }
 
     let params = data.unwrap();
     if params.is_empty() { return "ERROR: Masukkan minimal 1 parameter.".into(); }

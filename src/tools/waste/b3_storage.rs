@@ -2,8 +2,8 @@
 /// Ref: PP 101/2014 tentang Pengelolaan Limbah B3
 
 pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64) -> String {
-    if volume_m3_per_month <= 0.0 { return "ERROR: Volume limbah per bulan harus > 0.".into(); }
-    if density_kg_m3 <= 0.0 { return "ERROR: Densitas limbah harus > 0.".into(); }
+    if volume_m3_per_month <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if density_kg_m3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let wt_lower = waste_type.to_lowercase();
 

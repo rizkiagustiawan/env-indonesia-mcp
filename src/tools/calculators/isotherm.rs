@@ -7,14 +7,14 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
     let mut out = String::from("=== Isoterm Adsorpsi ===\n");
     out.push_str("Ref: Metcalf & Eddy (2003), Weber (1972)\n\n");
 
-    if ce < 0.0 { return "ERROR: Konsentrasi kesetimbangan (Ce) tidak boleh negatif.".into(); }
+    if ce < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let model_lower = model.to_lowercase();
 
     match model_lower.as_str() {
         "freundlich" => {
-            if kf <= 0.0 { return "ERROR: Kf harus > 0.".into(); }
-            if n_exp <= 0.0 { return "ERROR: n harus > 0.".into(); }
+            if kf <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if n_exp <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
             let qe = kf * ce.powf(1.0 / n_exp);
 
@@ -40,8 +40,8 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
             }
         }
         "langmuir" => {
-            if qmax <= 0.0 { return "ERROR: qmax harus > 0.".into(); }
-            if kl <= 0.0 { return "ERROR: KL harus > 0.".into(); }
+            if qmax <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if kl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
             let qe = (qmax * kl * ce) / (1.0 + kl * ce);
 

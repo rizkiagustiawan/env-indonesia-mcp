@@ -13,7 +13,7 @@ fn fmt_num(v: f64) -> String {
 }
 
 pub fn calculate(product: &str, quantity: f64, unit: &str) -> String {
-    if quantity <= 0.0 { return "ERROR: Quantity harus > 0.".into(); }
+    if quantity <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Water footprint database (L per unit)
     // Format: (blue, green, grey, unit_desc, source)

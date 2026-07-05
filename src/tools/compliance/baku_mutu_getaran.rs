@@ -5,7 +5,7 @@ pub fn check(zone: &str, vibration_mm_s: f64) -> String {
     let z = zone.to_lowercase();
 
     if vibration_mm_s < 0.0 {
-        return format!("ERROR: Nilai getaran ({:.2} mm/s) tidak boleh negatif.", vibration_mm_s);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", vibration_mm_s);
     }
 
     // KepmenLH 49/1996 limits in mm/s

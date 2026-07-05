@@ -6,8 +6,8 @@ pub fn calculate(disinfectant: &str, concentration_mgl: f64, contact_time_min: f
     let mut out = String::from("=== Kalkulator CT Disinfeksi ===\n");
     out.push_str("Ref: EPA Guidance Manual for Disinfectant Residuals (GDR)\n\n");
 
-    if concentration_mgl <= 0.0 { return "ERROR: Konsentrasi disinfektan harus > 0.".into(); }
-    if contact_time_min <= 0.0 { return "ERROR: Waktu kontak harus > 0.".into(); }
+    if concentration_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if contact_time_min <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let ct_achieved = concentration_mgl * contact_time_min;
 

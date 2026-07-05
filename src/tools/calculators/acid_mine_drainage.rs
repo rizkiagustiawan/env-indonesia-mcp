@@ -2,7 +2,7 @@
 /// Ref: PermenLH 113/2003, Acid Base Accounting (ABA)
 
 pub fn calculate(sulfur_pct: f64, anc_kg_h2so4_t: f64, nag_ph: Option<f64>) -> String {
-    if sulfur_pct < 0.0 { return "ERROR: Persentase Sulfur tidak boleh negatif.".into(); }
+    if sulfur_pct < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let mpa = sulfur_pct * 30.6; // kg H2SO4/ton
     let napp = mpa - anc_kg_h2so4_t;

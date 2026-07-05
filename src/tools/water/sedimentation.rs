@@ -6,7 +6,7 @@ pub fn design(q_m3d: f64, tank_type: &str, tank_shape: &str) -> String {
     let mut out = String::from("=== Desain Bak Sedimentasi ===\n");
     out.push_str("Ref: Metcalf & Eddy (2003), Wastewater Engineering\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let type_lower = tank_type.to_lowercase();
     let shape_lower = tank_shape.to_lowercase();

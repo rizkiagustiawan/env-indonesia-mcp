@@ -2,7 +2,7 @@
 /// Ref: Turner (1970), EPA AERMOD
 
 pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: u32) -> String {
-    if wind_speed_ms < 0.0 { return "ERROR: Wind speed tidak boleh negatif.".into(); }
+    if wind_speed_ms < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let is_night = solar_radiation == "night";
     let solar = match solar_radiation.to_lowercase().as_str() {

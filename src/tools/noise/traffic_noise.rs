@@ -10,9 +10,9 @@ pub fn calculate(
     ground_type: &str,
     barrier_height_m: Option<f64>,
 ) -> String {
-    if vehicles_per_hour <= 0.0 { return "ERROR: Jumlah kendaraan/jam harus > 0.".into(); }
-    if speed_kmh <= 0.0 { return "ERROR: Kecepatan harus > 0 km/h.".into(); }
-    if distance_m <= 0.0 { return "ERROR: Jarak harus > 0 m.".into(); }
+    if vehicles_per_hour <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if speed_kmh <= 0.0 { return "ERROR [E102]: Parameter harus > 0 km/h.".into(); }
+    if distance_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
     if heavy_vehicle_pct < 0.0 || heavy_vehicle_pct > 100.0 {
         return "ERROR: Persentase kendaraan berat harus 0-100%.".into();
     }

@@ -3,7 +3,7 @@
 
 pub fn calculate(ph: f64, pco2_uatm: f64, temp_c: f64, salinity_psu: f64) -> String {
     if ph < 7.0 || ph > 9.0 { return format!("ERROR: pH laut {} di luar rentang normal (7.0-9.0).", ph); }
-    if pco2_uatm <= 0.0 { return "ERROR: pCO2 harus > 0.".into(); }
+    if pco2_uatm <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Simplified aragonite saturation state
     let ca_mmol = 10.3; // typical seawater Ca²⁺

@@ -6,9 +6,9 @@ pub fn calculate(k1: f64, k2: f64, l0: f64, d0: f64, velocity_ms: f64, distance_
     let mut out = String::from("=== Streeter-Phelps DO Sag Curve ===\n");
     out.push_str("Ref: Streeter & Phelps (1925), Ohio River Study\n\n");
 
-    if k1 <= 0.0 || k2 <= 0.0 { return "ERROR: k1 dan k2 harus > 0.".into(); }
+    if k1 <= 0.0 || k2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if (k2 - k1).abs() < 1e-10 { return format!("ERROR: k2 ({:.3}) = k1 ({:.3}). Division by zero.", k2, k1); }
-    if l0 <= 0.0 { return "ERROR: BOD ultimate (L0) harus > 0.".into(); }
+    if l0 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Temperature correction if provided
     let (k1_eff, k2_eff) = match temp_c {

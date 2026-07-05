@@ -2,8 +2,8 @@
 /// Ref: PLTU cooling water discharge regulation
 
 pub fn calculate(q_river_m3s: f64, t_river_c: f64, q_discharge_m3s: f64, t_discharge_c: f64) -> String {
-    if q_river_m3s <= 0.0 { return "ERROR: Debit sungai harus > 0.".into(); }
-    if q_discharge_m3s <= 0.0 { return "ERROR: Debit buangan harus > 0.".into(); }
+    if q_river_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if q_discharge_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let t_mix = (q_river_m3s * t_river_c + q_discharge_m3s * t_discharge_c) / (q_river_m3s + q_discharge_m3s);
     let delta_t = t_mix - t_river_c;

@@ -6,9 +6,9 @@ pub fn design(q_m3d: f64, cod_in_mgl: f64, cod_eff_target: f64, temperature_c: f
     let mut out = String::from("=== Desain Reaktor UASB ===\n");
     out.push_str("Ref: Lettinga et al. (1980), van Haandel & Lettinga (1994)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
-    if cod_in_mgl <= 0.0 { return "ERROR: COD influent harus > 0.".into(); }
-    if cod_eff_target < 0.0 { return "ERROR: COD effluent target tidak boleh negatif.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if cod_in_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if cod_eff_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if cod_eff_target >= cod_in_mgl { return "ERROR: COD target harus < COD influent.".into(); }
     if temperature_c < 15.0 || temperature_c > 40.0 { return "ERROR: Suhu harus antara 15-40°C untuk UASB.".into(); }
 

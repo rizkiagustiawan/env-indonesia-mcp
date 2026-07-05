@@ -2,8 +2,8 @@
 /// Ref: Hooijer et al. (2012) Biogeosciences
 
 pub fn calculate(water_table_depth_cm: f64, area_ha: f64, years: u32) -> String {
-    if water_table_depth_cm < 0.0 { return "ERROR: Kedalaman muka air tanah tidak boleh negatif.".into(); }
-    if area_ha <= 0.0 { return "ERROR: Luas area harus > 0.".into(); }
+    if water_table_depth_cm < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if area_ha <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Hooijer (2012) model
     let subsidence_rate_cm_yr = if water_table_depth_cm <= 40.0 { water_table_depth_cm * 0.04 + 1.0 } else { 0.9 * (water_table_depth_cm / 10.0) };

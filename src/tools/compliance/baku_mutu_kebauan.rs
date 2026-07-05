@@ -36,7 +36,7 @@ pub fn check(chemical: &str, concentration_ppm: f64) -> String {
     }
 
     if concentration_ppm < 0.0 {
-        return format!("ERROR: Konsentrasi ({:.4} ppm) tidak boleh negatif.", concentration_ppm);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", concentration_ppm);
     }
 
     // Chemical-specific limits in ppm

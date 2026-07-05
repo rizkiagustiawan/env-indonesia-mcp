@@ -3,7 +3,7 @@
 /// ⚠️ Hanya screening awal. Tidak valid sebagai rekomendasi final untuk sungai tropis Indonesia.
 
 pub fn calculate(maf_m3s: f64) -> String {
-    if maf_m3s <= 0.0 { return "ERROR: Mean Annual Flow harus > 0.".into(); }
+    if maf_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let mut out = String::from("=== Environmental Flow (Tennant Method) ===\n");
     out.push_str("Ref: Tennant (1976)\n");

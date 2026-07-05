@@ -6,11 +6,11 @@ pub fn calculate(q_m3s: f64, transmissivity_m2s: f64, storativity: f64, r_m: f64
     let mut out = String::from("=== Persamaan Theis — Penurunan Muka Air Tanah ===\n");
     out.push_str("Ref: Theis (1935), Cooper & Jacob (1946)\n\n");
 
-    if q_m3s <= 0.0 { return "ERROR: Debit pemompaan (Q) harus > 0.".into(); }
-    if transmissivity_m2s <= 0.0 { return "ERROR: Transmisivitas (T) harus > 0.".into(); }
+    if q_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if transmissivity_m2s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if storativity <= 0.0 || storativity >= 1.0 { return "ERROR: Storativity (S) harus antara 0 dan 1.".into(); }
-    if r_m <= 0.0 { return "ERROR: Jarak (r) harus > 0.".into(); }
-    if t_s <= 0.0 { return "ERROR: Waktu (t) harus > 0.".into(); }
+    if r_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if t_s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let pi = std::f64::consts::PI;
 

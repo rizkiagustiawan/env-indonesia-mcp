@@ -2,10 +2,10 @@
 /// Ref: Terzaghi (1943), relevant untuk Jakarta/Semarang/Pekalongan
 
 pub fn calculate(clay_thickness_m: f64, delta_stress_kpa: f64, cc: f64, e0: f64, sigma0_kpa: f64) -> String {
-    if clay_thickness_m <= 0.0 { return "ERROR: Ketebalan lempung harus > 0.".into(); }
-    if delta_stress_kpa <= 0.0 { return "ERROR: Penambahan tegangan harus > 0.".into(); }
-    if e0 <= 0.0 { return "ERROR: Angka pori awal (e0) harus > 0.".into(); }
-    if sigma0_kpa <= 0.0 { return "ERROR: Tegangan overburden harus > 0.".into(); }
+    if clay_thickness_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if delta_stress_kpa <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if e0 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if sigma0_kpa <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Terzaghi 1D primary consolidation
     let settlement_m = (cc * clay_thickness_m / (1.0 + e0)) * ((sigma0_kpa + delta_stress_kpa) / sigma0_kpa).log10();

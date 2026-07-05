@@ -11,7 +11,7 @@ pub fn calculate(method: &str, l_m: f64, s_slope: f64, a_km2: f64, cn: f64) -> S
     match method_lower.as_str() {
         "kirpich" => {
             // tc = 0.0195 × L^0.77 × S^(-0.385) (tc in min, L in m, S in m/m)
-            if l_m <= 0.0 { return "ERROR: Panjang saluran (L) harus > 0.".into(); }
+            if l_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
             if s_slope <= 0.0 || s_slope >= 1.0 { return "ERROR: Kemiringan (S) harus antara 0 dan 1 (m/m).".into(); }
 
             let tc_min = 0.0195 * l_m.powf(0.77) * s_slope.powf(-0.385);
@@ -24,9 +24,9 @@ pub fn calculate(method: &str, l_m: f64, s_slope: f64, a_km2: f64, cn: f64) -> S
         }
         "bransby-williams" | "bransby_williams" => {
             // tc = (58 × L) / (A^0.1 × S^0.2) (L in km, A in km², S in %, tc in min)
-            if l_m <= 0.0 { return "ERROR: Panjang saluran (L) harus > 0.".into(); }
-            if s_slope <= 0.0 { return "ERROR: Kemiringan (S) harus > 0.".into(); }
-            if a_km2 <= 0.0 { return "ERROR: Luas DAS (A) harus > 0 untuk Bransby-Williams.".into(); }
+            if l_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if s_slope <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if a_km2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0 untuk Bransby-Williams.".into(); }
 
             let l_km = l_m / 1000.0;
             let s_pct = s_slope * 100.0;
@@ -44,8 +44,8 @@ pub fn calculate(method: &str, l_m: f64, s_slope: f64, a_km2: f64, cn: f64) -> S
         "scs" | "scs_lag" => {
             // tc = L^0.8 × (S_ret+1)^0.7 / (1140 × Y^0.5)
             // where S_ret = (1000/CN) - 10 (in inches), L in feet, Y in %
-            if l_m <= 0.0 { return "ERROR: Panjang saluran (L) harus > 0.".into(); }
-            if s_slope <= 0.0 { return "ERROR: Kemiringan (S) harus > 0.".into(); }
+            if l_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if s_slope <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
             if cn <= 0.0 || cn > 100.0 { return "ERROR: CN harus antara 0-100.".into(); }
 
             let l_ft = l_m * 3.281; // m to feet
@@ -64,8 +64,8 @@ pub fn calculate(method: &str, l_m: f64, s_slope: f64, a_km2: f64, cn: f64) -> S
         }
         "semua" | "all" => {
             // Calculate all methods and compare
-            if l_m <= 0.0 { return "ERROR: Panjang saluran (L) harus > 0.".into(); }
-            if s_slope <= 0.0 { return "ERROR: Kemiringan (S) harus > 0.".into(); }
+            if l_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if s_slope <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
             out.push_str("Perbandingan semua metode:\n\n");
 

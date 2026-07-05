@@ -2,8 +2,8 @@
 /// Ref: Mononobe (standar Indonesia), Gumbel (Chow 1951)
 
 pub fn mononobe(r24_mm: f64, duration_hours: f64) -> String {
-    if r24_mm <= 0.0 { return "ERROR: R24 harus > 0.".into(); }
-    if duration_hours <= 0.0 { return "ERROR: Durasi harus > 0.".into(); }
+    if r24_mm <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if duration_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let i = (r24_mm / 24.0) * (24.0 / duration_hours).powf(2.0 / 3.0);
 
@@ -21,8 +21,8 @@ pub fn mononobe(r24_mm: f64, duration_hours: f64) -> String {
 }
 
 pub fn gumbel_return(mean: f64, std_dev: f64, return_period: f64) -> String {
-    if return_period <= 1.0 { return "ERROR: Return period harus > 1 tahun.".into(); }
-    if std_dev <= 0.0 { return "ERROR: Std deviasi harus > 0.".into(); }
+    if return_period <= 1.0 { return "ERROR [E102]: Parameter harus > 1 tahun.".into(); }
+    if std_dev <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let k = -(6.0_f64.sqrt() / std::f64::consts::PI) * (0.5772 + (return_period / (return_period - 1.0)).ln().ln());
     let xt = mean + k * std_dev;

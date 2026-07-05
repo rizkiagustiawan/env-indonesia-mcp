@@ -36,7 +36,7 @@ fn run_engine(mode: &str, sources: &str, ws: f64, wd: f64, stab: &str, output: &
         Ok(o) => {
             let out = String::from_utf8_lossy(&o.stdout).to_string();
             let err = String::from_utf8_lossy(&o.stderr).to_string();
-            if out.contains("SUCCESS") { out } else { format!("{}\n{}", out, &err[..err.len().min(500)]) }
+            if out.contains("SUCCESS") { out } else { format!("ERROR [E502]: Python Engine Failed: {}\n{}", out, &err[..err.len().min(500)]) }
         }
         Err(e) => format!("Error: {}", e),
     }

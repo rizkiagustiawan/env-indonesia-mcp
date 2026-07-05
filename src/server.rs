@@ -1087,7 +1087,7 @@ impl EnvIndonesiaServer {
     async fn air_pollution(&self, Parameters(p): Parameters<LatLonParam>) -> String {
         let lat = p.lat.unwrap_or(-6.2);
         let lon = p.lon.unwrap_or(106.85);
-        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::data::openweather::air_pollution(&HTTP, lat, lon).await
     }
 
@@ -1095,13 +1095,13 @@ impl EnvIndonesiaServer {
     async fn open_meteo_weather(&self, Parameters(p): Parameters<LatLonParam>) -> String {
         let lat = p.lat.unwrap_or(-6.2);
         let lon = p.lon.unwrap_or(106.85);
-        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::data::open_meteo::weather(&HTTP, lat, lon).await
     }
 
     #[tool(description = "NASA POWER solar irradiance GHI DNI monthly for energy potential")]
     async fn nasa_power_solar(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::data::nasa_power::solar(&HTTP, p.lat, p.lon, None, None).await
     }
 
@@ -1185,7 +1185,7 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Wrapper: Predict flood via geo-flood-ai (Port 8001)")]
     async fn wrapper_flood_predict(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::wrappers::predict_flood(&HTTP, p.lat, p.lon).await
     }
 
@@ -1228,18 +1228,21 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(description = "NASA MODIS products information for environmental monitoring.")]
-    async fn satellite_modis(&self, Parameters(p): Parameters<QueryParam>) -> String {
-        tools::satellite::modis::query(&HTTP, &p.query).await
+    async fn satellite_modis(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::modis::query(&HTTP, p.lat, p.lon).await
     }
 
     #[tool(description = "NASA VIIRS products information (Nighttime lights, active fires).")]
-    async fn satellite_viirs(&self) -> String {
-        tools::satellite::viirs::query(&HTTP).await
+    async fn satellite_viirs(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::viirs::query(&HTTP, p.lat, p.lon).await
     }
 
     #[tool(description = "SRTM 30m Digital Elevation Model for Indonesia")]
-    async fn satellite_srtm(&self) -> String {
-        tools::satellite::srtm::info(&HTTP).await
+    async fn satellite_srtm(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::srtm::query(&HTTP, p.lat, p.lon).await
     }
 
     #[tool(description = "CHIRPS Rainfall data (real HTTP query). Query: year,month (e.g. 2024,6)")]
@@ -1251,18 +1254,21 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(description = "NASA GRACE / GRACE-FO Groundwater Storage anomaly information.")]
-    async fn satellite_grace(&self) -> String {
-        tools::satellite::grace::query(&HTTP).await
+    async fn satellite_grace(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::grace::query(&HTTP, p.lat, p.lon).await
     }
 
     #[tool(description = "Google Dynamic World 10m near real-time land cover info.")]
-    async fn satellite_dynamic_world(&self) -> String {
-        tools::satellite::dynamic_world::query(&HTTP).await
+    async fn satellite_dynamic_world(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::dynamic_world::query(&HTTP, p.lat, p.lon).await
     }
 
     #[tool(description = "ECMWF ERA5 Climate Reanalysis information for long-term trends.")]
-    async fn satellite_era5(&self) -> String {
-        tools::satellite::era5::query(&HTTP).await
+    async fn satellite_era5(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        tools::satellite::era5::query(&HTTP, p.lat, p.lon).await
     }
 
     // --- ADVANCED GIS & ESG ---
@@ -1592,13 +1598,13 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "3D Bathymetry: Visualisasi relief dasar laut. Input: lat, lon pusat area.")]
     fn ocean_bathymetry_3d(&self, Parameters(p): Parameters<OceanBathyParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::ocean_modeling::ocean_viz::bathymetry_3d(p.lat, p.lon, &p.output_path, &p.title)
     }
 
     #[tool(description = "2D Ocean Current: Peta vector field arus laut berbasis angin (Ekman). Input: lat, lon, wind.")]
     fn ocean_current_2d(&self, Parameters(p): Parameters<OceanCurrentParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::ocean_modeling::ocean_viz::current_2d(p.lat, p.lon, p.wind_speed, p.wind_dir, &p.output_path, &p.title)
     }
 
@@ -1664,25 +1670,25 @@ impl EnvIndonesiaServer {
     #[tool(description = "Biodiversity Index: Shannon-Wiener H' & Simpson 1-D. Ref: Shannon 1949. Input: JSON array jumlah individu per spesies.")]
     fn biodiversity_index(&self, Parameters(p): Parameters<BiodiversityCalcParam>) -> String {
         let counts: Result<Vec<u64>, _> = serde_json::from_str(&p.species_counts_json);
-        match counts { Ok(c) => tools::calculators::biodiversity::calculate(&c), Err(e) => format!("ERROR: JSON parsing: {}", e) }
+        match counts { Ok(c) => tools::calculators::biodiversity::calculate(&c), Err(e) => format!("ERROR [E103]: JSON parsing: {}", e) }
     }
 
     #[tool(description = "Composting C/N Ratio Optimizer. Ref: USDA/SNI. Input: JSON array [[name, mass_kg, c_pct, n_pct], ...]")]
     fn composting_cn(&self, Parameters(p): Parameters<CompostingParam>) -> String {
         let mats: Result<Vec<(String, f64, f64, f64)>, _> = serde_json::from_str(&p.materials_json);
-        match mats { Ok(m) => tools::calculators::composting::calculate(&m), Err(e) => format!("ERROR: JSON parsing: {}", e) }
+        match mats { Ok(m) => tools::calculators::composting::calculate(&m), Err(e) => format!("ERROR [E103]: JSON parsing: {}", e) }
     }
 
     #[tool(description = "Flood Frequency Gumbel Distribution. Min 10 tahun data. Ref: Chow 1951, USGS Bulletin 17C.")]
     fn flood_frequency_gumbel(&self, Parameters(p): Parameters<FloodFreqParam>) -> String {
         let data: Result<Vec<f64>, _> = serde_json::from_str(&p.data_json);
-        match data { Ok(d) => tools::calculators::flood_frequency::gumbel(&d, p.return_period), Err(e) => format!("ERROR: JSON parsing: {}", e) }
+        match data { Ok(d) => tools::calculators::flood_frequency::gumbel(&d, p.return_period), Err(e) => format!("ERROR [E103]: JSON parsing: {}", e) }
     }
 
     #[tool(description = "Log-Pearson Type III Flood Frequency. Ref: USGS Bulletin 17C, SNI 2415:2016. Wilson-Hilferty KT approximation.")]
     fn log_pearson_iii(&self, Parameters(p): Parameters<FloodFreqParam>) -> String {
         let data: Result<Vec<f64>, _> = serde_json::from_str(&p.data_json);
-        match data { Ok(d) => tools::calculators::flood_frequency::log_pearson_iii(&d, p.return_period), Err(e) => format!("ERROR: JSON parsing: {}", e) }
+        match data { Ok(d) => tools::calculators::flood_frequency::log_pearson_iii(&d, p.return_period), Err(e) => format!("ERROR [E103]: JSON parsing: {}", e) }
     }
 
     #[tool(description = "Acid Mine Drainage (AMD/ABA). Ref: PermenLH 113/2003. Klasifikasi: PAF/NAF/Uncertain.")]
@@ -1719,19 +1725,19 @@ impl EnvIndonesiaServer {
     async fn waqi_air_quality(&self, Parameters(p): Parameters<LatLonParam>) -> String {
         let lat = p.lat.unwrap_or(-6.2);
         let lon = p.lon.unwrap_or(106.85);
-        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(lat, lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::data::waqi::get_air_quality(&HTTP, lat, lon).await
     }
 
     #[tool(description = "4D Satellite Timelapse GIF via GEE. Cloud-free compositing tahunan Sentinel-2/Sentinel-1.")]
     fn satellite_timelapse(&self, Parameters(p): Parameters<TimelapseParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::timelapse::generate_4d_timelapse(p.lat, p.lon, p.buffer_km, p.start_year, p.end_year, &p.sensor, &p.output_path)
     }
 
     #[tool(description = "NASA EMIT Hyperspectral 285-band. Ekstraksi spectral signature mineral via GEE. Output: PNG + data.")]
     fn satellite_hyperspectral(&self, Parameters(p): Parameters<HyperspectralParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::hyperspectral::extract_signature(p.lat, p.lon, &p.output_path)
     }
 
@@ -1895,7 +1901,7 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "IUCN Species Check di area. 33+ spesies dilindungi Indonesia. Filter by provinsi/pulau.")]
     async fn iucn_species_check(&self, Parameters(p): Parameters<IucnCheckParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::biodiversity::iucn::check_species(&HTTP, p.lat, p.lon, p.radius_km).await
     }
 
@@ -1945,14 +1951,14 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "OpenStreetMap POI Query. Cari RS/sekolah/permukiman/sungai di sekitar lokasi proyek (wajib AMDAL). Overpass API.")]
     async fn osm_poi_query(&self, Parameters(p): Parameters<OsmPoiParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::datasources::osm_poi::query_poi(&HTTP, p.lat, p.lon, p.radius_m, &p.poi_type).await
     }
 
     #[tool(description = "Elevation Profile antara 2 titik. Cross-section topografi. Source: Open-Elevation API / SRTM.")]
     async fn elevation_profile(&self, Parameters(p): Parameters<ElevationParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat1, p.lon1) { return format!("ERROR: titik awal — {}", e); }
-        if let Err(e) = crate::indonesia::validate_coords(p.lat2, p.lon2) { return format!("ERROR: titik akhir — {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat1, p.lon1) { return format!("ERROR [E101]: titik awal — {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat2, p.lon2) { return format!("ERROR [E101]: titik akhir — {}", e); }
         tools::datasources::elevation::profile(&HTTP, p.lat1, p.lon1, p.lat2, p.lon2, p.num_points.unwrap_or(20)).await
     }
 
@@ -1962,13 +1968,13 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "SAR Flood Detection. Sentinel-1 VV change detection pre/post banjir via GEE. Output: flood map PNG.")]
     fn sar_flood_detection(&self, Parameters(p): Parameters<SarFloodParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::sar::flood_detection(p.lat, p.lon, p.buffer_km, &p.pre_date, &p.post_date, &p.output_path)
     }
 
     #[tool(description = "SAR Deforestation Detection. Sentinel-1 backscatter loss detection di bawah awan. Via GEE.")]
     fn sar_deforestation(&self, Parameters(p): Parameters<SarDeforestParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::sar::deforestation(p.lat, p.lon, p.buffer_km, &p.start_date, &p.end_date, &p.output_path)
     }
 
@@ -1979,19 +1985,19 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "InSAR Land Subsidence (Screening). Sentinel-1 via GEE. ⚠️ Screening-level only, bukan full InSAR.")]
     fn land_subsidence_insar(&self, Parameters(p): Parameters<SarSubsidenceParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::sar::subsidence_insar(p.lat, p.lon, p.buffer_km, &p.start_date, &p.end_date, &p.output_path)
     }
 
     #[tool(description = "Burned Area Mapping (dNBR). Sentinel-2 Normalized Burn Ratio. Severity: Unburned→High. Ref: USGS.")]
     fn burned_area_mapping(&self, Parameters(p): Parameters<BurnedAreaParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::burned_area::map_burned_area(p.lat, p.lon, p.buffer_km, &p.fire_date, &p.output_path)
     }
 
     #[tool(description = "Mangrove Extent Mapping. Sentinel-2 NDVI+NDWI+elevation filter. Bandingkan dengan Global Mangrove Watch.")]
     fn mangrove_extent(&self, Parameters(p): Parameters<MangroveExtentParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::satellite::mangrove::map_extent(p.lat, p.lon, p.buffer_km, &p.output_path)
     }
 
@@ -2095,7 +2101,7 @@ impl EnvIndonesiaServer {
     #[tool(description = "Muskingum Flood Routing. Atenuasi debit puncak di sungai. Ref: McCarthy 1938.")]
     fn muskingum_routing(&self, Parameters(p): Parameters<MuskingumParam>) -> String {
         let inflow: Result<Vec<(f64, f64)>, _> = serde_json::from_str(&p.inflow_json);
-        match inflow { Ok(i) => tools::calculators::muskingum_routing::route(&i, p.k_hours, p.x, p.dt_hours), Err(e) => format!("ERROR: JSON parsing: {}", e) }
+        match inflow { Ok(i) => tools::calculators::muskingum_routing::route(&i, p.k_hours, p.x, p.dt_hours), Err(e) => format!("ERROR [E103]: JSON parsing: {}", e) }
     }
 
     #[tool(description = "Time of Concentration: Kirpich/Bransby-Williams/SCS Lag. Input untuk kurva IDF. Ref: Kirpich 1940.")]
@@ -2271,7 +2277,7 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Raster Band Math via GEE Sentinel-2. Compute spectral indices: NDVI/NDWI/SAVI/EVI/MNDWI/NDBI/BSI. Output: GeoTIFF.")]
     fn raster_band_math(&self, Parameters(p): Parameters<RasterBandMathParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::advanced::band_math_gee(p.lat, p.lon, p.buffer_km, &p.index_type, &p.start_date, &p.end_date, &p.output_path)
     }
 
@@ -2282,25 +2288,25 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "DEM Slope Analysis via GEE SRTM 30m. Kemiringan lereng (derajat). Output: GeoTIFF.")]
     fn dem_slope_gee(&self, Parameters(p): Parameters<DemGeeParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::advanced::dem_slope(p.lat, p.lon, p.buffer_km, &p.output_path)
     }
 
     #[tool(description = "DEM Aspect Analysis via GEE SRTM 30m. Arah hadap lereng (0-360°). Output: GeoTIFF.")]
     fn dem_aspect_gee(&self, Parameters(p): Parameters<DemGeeParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::advanced::dem_aspect(p.lat, p.lon, p.buffer_km, &p.output_path)
     }
 
     #[tool(description = "DEM Hillshade via GEE SRTM 30m. Bayangan relief untuk visualisasi terrain. Output: GeoTIFF.")]
     fn dem_hillshade_gee(&self, Parameters(p): Parameters<DemGeeParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::advanced::dem_hillshade(p.lat, p.lon, p.buffer_km, &p.output_path)
     }
 
     #[tool(description = "Zonal Statistics via GEE reduceRegion. Stats dari image_id+band di dalam polygon/buffer. Output: JSON.")]
     fn zonal_statistics_gee(&self, Parameters(p): Parameters<ZonalStatsGeeParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         let geojson = p.geojson.as_deref().unwrap_or("");
         tools::gis::advanced::raster_stats(&p.image_id, &p.band, geojson, p.lat, p.lon, p.buffer_km, &p.output_path)
     }
@@ -2312,13 +2318,13 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Land Cover Classification via GEE Sentinel-2. Dynamic World + SNI 7645:2014. Output: classified GeoTIFF.")]
     fn land_cover_classify(&self, Parameters(p): Parameters<LandCoverClassifyParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::landcover::classify(p.lat, p.lon, p.buffer_km, &p.start_date, &p.end_date, &p.output_path)
     }
 
     #[tool(description = "Land Use Change Detection. Banding 2 periode citra Sentinel-2 via GEE. Deteksi deforestasi/urbanisasi. Output: change map.")]
     fn land_use_change(&self, Parameters(p): Parameters<LandUseChangeParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::landcover::change_detection(p.lat, p.lon, p.buffer_km, &p.d1_start, &p.d1_end, &p.d2_start, &p.d2_end, &p.output_path)
     }
 
@@ -2344,13 +2350,13 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Suitability Analysis. Multi-criteria evaluation via GEE layers. Output: suitability map.")]
     fn suitability_analysis(&self, Parameters(p): Parameters<SuitabilityAnalysisParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::spatial_ops::suitability(&p.criteria_json, p.lat, p.lon, p.buffer_km, &p.output_path)
     }
 
     #[tool(description = "Viewshed Analysis. Line-of-sight visibility dari DEM. Untuk AMDAL visual impact, tower placement. Output: visibility map.")]
     fn viewshed_analysis(&self, Parameters(p): Parameters<ViewshedAnalysisParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.observer_lat, p.observer_lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.observer_lat, p.observer_lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::viewshed::analyze(&p.dem_path, p.observer_lat, p.observer_lon, p.observer_height_m, p.max_distance_m, &p.output_path)
     }
 
@@ -2363,7 +2369,7 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "WGS84 to UTM Auto. Auto-detect UTM zone for Indonesia coordinates. Returns easting, northing, zone, EPSG.")]
     fn wgs84_to_utm(&self, Parameters(p): Parameters<Wgs84ToUtmParam>) -> String {
-        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR: {}", e); }
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) { return format!("ERROR [E101]: Koordinat tidak valid - {}", e); }
         tools::gis::coords::wgs84_to_utm_auto(p.lat, p.lon)
     }
 }

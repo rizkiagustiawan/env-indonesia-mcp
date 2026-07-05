@@ -2,8 +2,8 @@
 /// Ref: IAEA Safety Standards, BAPETEN, Cember & Johnson (2009)
 
 pub fn calculate(isotope: &str, initial_activity_bq: f64, time_elapsed: f64, time_unit: &str) -> String {
-    if initial_activity_bq <= 0.0 { return "ERROR: Aktivitas awal harus > 0.".into(); }
-    if time_elapsed < 0.0 { return "ERROR: Waktu tidak boleh negatif.".into(); }
+    if initial_activity_bq <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if time_elapsed < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     // Half-lives in seconds
     struct Isotope {

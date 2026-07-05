@@ -2,9 +2,9 @@
 /// Ref: Metcalf & Eddy (2003), Monod kinetics, van't Hoff-Arrhenius
 
 pub fn design(q_m3d: f64, s0_mgl: f64, s_target_mgl: f64, temp_c: f64) -> String {
-    if q_m3d <= 0.0 { return "ERROR: Debit Q harus > 0.".into(); }
-    if s0_mgl <= 0.0 { return "ERROR: BOD influent harus > 0.".into(); }
-    if s_target_mgl < 0.0 { return "ERROR: BOD effluent target tidak boleh negatif.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if s0_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if s_target_mgl < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if s_target_mgl >= s0_mgl { return "ERROR: BOD target harus < BOD influent.".into(); }
     if temp_c < 4.0 || temp_c > 40.0 { return format!("ERROR: Suhu {}°C di luar rentang valid (4-40°C) untuk koreksi θ=1.047.", temp_c); }
 

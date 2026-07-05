@@ -13,7 +13,7 @@ pub fn flood_3d(dem_path: &str, output_path: &str, water_level: f64, title: &str
         Ok(o) => {
             let out = String::from_utf8_lossy(&o.stdout).to_string();
             let err = String::from_utf8_lossy(&o.stderr).to_string();
-            if out.contains("SUCCESS") { out } else { format!("{}\n{}", out, &err[..err.len().min(500)]) }
+            if out.contains("SUCCESS") { out } else { format!("ERROR [E502]: Python Engine Failed: {}\n{}", out, &err[..err.len().min(500)]) }
         }
         Err(e) => format!("Error: {}", e),
     }
@@ -34,7 +34,7 @@ pub fn flood_4d(dem_path: &str, output_path: &str, water_start: f64, water_end: 
         Ok(o) => {
             let out = String::from_utf8_lossy(&o.stdout).to_string();
             let err = String::from_utf8_lossy(&o.stderr).to_string();
-            if out.contains("SUCCESS") { out } else { format!("{}\n{}", out, &err[..err.len().min(500)]) }
+            if out.contains("SUCCESS") { out } else { format!("ERROR [E502]: Python Engine Failed: {}\n{}", out, &err[..err.len().min(500)]) }
         }
         Err(e) => format!("Error: {}", e),
     }

@@ -2,9 +2,9 @@
 /// Ref: Briggs (1969, 1971, 1975), used in AERMOD
 
 pub fn calculate(stack_height_m: f64, stack_diameter_m: f64, exit_velocity_ms: f64, exit_temp_k: f64, ambient_temp_k: f64, wind_speed_ms: f64) -> String {
-    if stack_height_m <= 0.0 { return "ERROR: Stack height harus > 0.".into(); }
-    if exit_velocity_ms <= 0.0 { return "ERROR: Exit velocity harus > 0.".into(); }
-    if exit_temp_k <= 0.0 || ambient_temp_k <= 0.0 { return "ERROR: Suhu harus > 0 Kelvin.".into(); }
+    if stack_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if exit_velocity_ms <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if exit_temp_k <= 0.0 || ambient_temp_k <= 0.0 { return "ERROR [E102]: Parameter harus > 0 Kelvin.".into(); }
     if wind_speed_ms < 0.28 { return "ERROR: Wind speed < 0.28 m/s. Model tidak valid.".into(); }
 
     let g = 9.81_f64;

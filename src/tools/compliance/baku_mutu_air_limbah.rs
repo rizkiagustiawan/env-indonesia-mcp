@@ -6,7 +6,7 @@ pub fn check(industry: &str, parameter: &str, concentration: f64) -> String {
     let par = parameter.to_lowercase();
 
     if concentration < 0.0 && par != "ph" {
-        return format!("ERROR: Konsentrasi ({}) tidak boleh negatif.", concentration);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", concentration);
     }
 
     // (industry, parameter) -> (limit, unit)

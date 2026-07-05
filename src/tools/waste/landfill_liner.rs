@@ -3,10 +3,10 @@
 /// Ref: Giroud & Bonaparte (1989) — Leakage through Liners
 
 pub fn design(liner_type: &str, area_m2: f64, head_on_liner_m: f64, k_clay: f64, clay_thickness_m: f64) -> String {
-    if area_m2 <= 0.0 { return "ERROR: Luas area (area_m2) harus > 0.".into(); }
-    if head_on_liner_m < 0.0 { return "ERROR: Head on liner tidak boleh negatif.".into(); }
-    if k_clay <= 0.0 { return "ERROR: Konduktivitas hidraulik clay (k_clay) harus > 0.".into(); }
-    if clay_thickness_m <= 0.0 { return "ERROR: Ketebalan clay harus > 0.".into(); }
+    if area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if head_on_liner_m < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if k_clay <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if clay_thickness_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let liner_lower = liner_type.to_lowercase();
     let (liner_name, leakage_rate_m3_s, geomembrane_mm, description) = match liner_lower.as_str() {

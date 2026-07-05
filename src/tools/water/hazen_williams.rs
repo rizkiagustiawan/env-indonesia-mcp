@@ -5,10 +5,10 @@ pub fn calculate(q_m3s: f64, length_m: f64, diameter_m: f64, c_coeff: f64, inclu
     let mut out = String::from("=== Hazen-Williams Head Loss ===\n");
     out.push_str("Ref: Hazen & Williams (1903)\n\n");
 
-    if q_m3s <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
-    if length_m <= 0.0 { return "ERROR: Panjang pipa (L) harus > 0.".into(); }
-    if diameter_m <= 0.0 { return "ERROR: Diameter pipa (D) harus > 0.".into(); }
-    if c_coeff <= 0.0 { return "ERROR: Koefisien C harus > 0.".into(); }
+    if q_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if length_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if diameter_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if c_coeff <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let pi = std::f64::consts::PI;
 

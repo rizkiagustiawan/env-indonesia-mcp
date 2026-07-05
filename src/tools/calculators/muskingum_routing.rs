@@ -7,9 +7,9 @@ pub fn route(inflow_hydrograph: &[(f64, f64)], k_hours: f64, x: f64, dt_hours: f
     out.push_str("Ref: McCarthy (1938), Chow (1959)\n\n");
 
     if inflow_hydrograph.len() < 2 { return "ERROR: Minimal 2 titik data inflow diperlukan.".into(); }
-    if k_hours <= 0.0 { return "ERROR: K (storage constant) harus > 0.".into(); }
+    if k_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if x < 0.0 || x > 0.5 { return "ERROR: x harus antara 0 dan 0.5.".into(); }
-    if dt_hours <= 0.0 { return "ERROR: Δt harus > 0.".into(); }
+    if dt_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     // Check stability: K should satisfy 2Kx < Δt < 2K(1-x)
     let lower = 2.0 * k_hours * x;

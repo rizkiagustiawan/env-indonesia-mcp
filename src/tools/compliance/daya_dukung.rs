@@ -13,10 +13,10 @@ pub fn calculate(
     let a = approach.to_lowercase();
 
     if area_ha <= 0.0 {
-        return format!("ERROR: Luas wilayah ({:.1} ha) harus > 0.", area_ha);
+        return format!("ERROR [E102]: Parameter harus > 0. {}", area_ha);
     }
     if population <= 0.0 {
-        return format!("ERROR: Jumlah penduduk ({:.0}) harus > 0.", population);
+        return format!("ERROR [E102]: Parameter harus > 0. {}", population);
     }
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Daya Dukung Lingkungan Hidup\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");

@@ -6,9 +6,9 @@ pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: 
     let mut out = String::from("=== Desain Constructed Wetland (k-C* Model) ===\n");
     out.push_str("Ref: Kadlec & Knight (1996), Treatment Wetlands\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR: Debit (Q) harus > 0.".into(); }
-    if ci_mgl <= 0.0 { return "ERROR: Konsentrasi influent harus > 0.".into(); }
-    if ce_target < 0.0 { return "ERROR: Konsentrasi target tidak boleh negatif.".into(); }
+    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if ci_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if ce_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
     if temp_c < 5.0 || temp_c > 40.0 { return "ERROR: Suhu harus antara 5-40°C.".into(); }
 
     let param_lower = parameter.to_lowercase();
@@ -31,7 +31,7 @@ pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: 
 
     // Check if target is achievable (must be > C*)
     if ce_target <= c_star {
-        return format!("ERROR: Target {} mg/L tidak tercapai. Konsentrasi latar (C*) = {:.1} mg/L. Target harus > C*.", ce_target, c_star);
+        return format!("ERROR [E102]: Parameter harus > C*. target={}, c_star={}", ce_target, c_star);
     }
 
     // Area sizing: A = Q × ln((Ci-C*)/(Ce-C*)) / k

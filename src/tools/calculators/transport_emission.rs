@@ -2,7 +2,7 @@
 /// Ref: 2006 IPCC Guidelines for National Greenhouse Gas Inventories
 
 pub fn calculate(fuel_type: &str, liters: f64) -> String {
-    if liters < 0.0 { return "ERROR: Volume bahan bakar tidak boleh negatif.".into(); }
+    if liters < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let (ef_kg_l, ncv_tj_gq, fuel_name) = match fuel_type.to_lowercase().as_str() {
         "bensin" | "gasoline" | "pertalite" | "pertamax" => (2.31, 44.3, "Motor Gasoline (Bensin)"),

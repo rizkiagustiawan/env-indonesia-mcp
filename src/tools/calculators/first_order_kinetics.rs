@@ -6,9 +6,9 @@ pub fn calculate(c0: f64, k: f64, t: f64, time_unit: &str) -> String {
     let mut out = String::from("=== Kinetika Orde Pertama ===\n");
     out.push_str("Ref: Tchobanoglous et al. (2003)\n\n");
 
-    if c0 <= 0.0 { return "ERROR: Konsentrasi awal (C₀) harus > 0.".into(); }
-    if k <= 0.0 { return "ERROR: Konstanta laju (k) harus > 0.".into(); }
-    if t < 0.0 { return "ERROR: Waktu (t) tidak boleh negatif.".into(); }
+    if c0 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if k <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if t < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
 
     let unit = match time_unit.to_lowercase().as_str() {
         "s" | "detik" => "detik",

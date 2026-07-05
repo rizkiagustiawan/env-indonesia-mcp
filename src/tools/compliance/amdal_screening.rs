@@ -6,7 +6,7 @@ pub fn screen(sector: &str, activity: &str, scale_value: f64, scale_unit: &str) 
     let a = activity.to_lowercase();
 
     if scale_value < 0.0 {
-        return format!("ERROR: Skala ({:.2}) tidak boleh negatif.", scale_value);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", scale_value);
     }
 
     // (sector, activity) -> (amdal_threshold, ukl_upl_threshold, unit, activity_desc)

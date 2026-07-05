@@ -5,7 +5,7 @@ pub fn check(zone: &str, measured_db: f64) -> String {
     let z = zone.to_lowercase();
 
     if measured_db < 0.0 {
-        return format!("ERROR: Nilai kebisingan ({:.1} dBA) tidak boleh negatif.", measured_db);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", measured_db);
     }
 
     // KepmenLH 48/1996 limits in dBA

@@ -3,8 +3,8 @@
 
 pub fn jonswap(wind_speed_ms: f64, fetch_m: f64, depth_m: f64) -> String {
     if wind_speed_ms < 0.28 { return "ERROR: Wind speed < 0.28 m/s.".into(); }
-    if fetch_m <= 0.0 { return "ERROR: Fetch harus > 0.".into(); }
-    if depth_m <= 0.0 { return "ERROR: Depth harus > 0.".into(); }
+    if fetch_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let g = 9.81_f64;
     let u = wind_speed_ms;

@@ -16,7 +16,7 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
     if discount_rate < 0.0 || discount_rate > 1.0 {
         return "ERROR: Discount rate harus antara 0.0 dan 1.0 (contoh: 0.10 = 10%).".into();
     }
-    if years == 0 { return "ERROR: Periode analisis harus > 0 tahun.".into(); }
+    if years == 0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
 
     // Parse costs
     #[derive(serde::Deserialize)]

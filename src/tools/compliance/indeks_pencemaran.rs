@@ -6,7 +6,7 @@ pub fn calculate(data_json: &str, temp_c: f64) -> String {
     let data: Result<Vec<serde_json::Value>, _> = serde_json::from_str(data_json);
     
     if data.is_err() {
-        return "ERROR: Format data JSON tidak valid.".into();
+        return "ERROR [E103]: Format data JSON tidak valid.".into();
     }
     
     let params = data.unwrap();
@@ -29,7 +29,7 @@ pub fn calculate(data_json: &str, temp_c: f64) -> String {
         let lij = p["lij"].as_f64().unwrap_or(0.0);
         let is_do = p["is_do"].as_bool().unwrap_or(false);
 
-        if lij <= 0.0 { return format!("ERROR: Baku mutu (Lij) untuk {} harus > 0.", name); }
+        if lij <= 0.0 { return format!("ERROR [E102]: Parameter harus > 0. {}", name); }
 
         let mut ratio = if is_do {
             if do_sat <= lij { 1.0 } else { (do_sat - ci) / (do_sat - lij) }

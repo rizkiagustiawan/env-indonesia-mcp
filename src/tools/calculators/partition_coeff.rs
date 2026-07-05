@@ -7,7 +7,7 @@ pub fn calculate(compound: &str, foc: f64, bulk_density_kgm3: f64, porosity: f64
     out.push_str("Ref: Schwarzenbach et al. (2003), Environmental Organic Chemistry\n\n");
 
     if foc <= 0.0 || foc > 1.0 { return "ERROR: foc (fraksi karbon organik) harus antara 0-1.".into(); }
-    if bulk_density_kgm3 <= 0.0 { return "ERROR: Bulk density harus > 0.".into(); }
+    if bulk_density_kgm3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
     if porosity <= 0.0 || porosity >= 1.0 { return "ERROR: Porositas harus antara 0 dan 1.".into(); }
 
     let compound_lower = compound.to_lowercase();

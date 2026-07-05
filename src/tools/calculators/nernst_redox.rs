@@ -6,7 +6,7 @@ pub fn calculate(half_reaction: &str, temperature_c: f64, log_q: f64, n_electron
     out.push_str("Ref: Stumm & Morgan (1996), Aquatic Chemistry\n\n");
 
     if temperature_c < 0.0 || temperature_c > 100.0 { return "ERROR: Suhu harus antara 0-100°C.".into(); }
-    if n_electrons == 0 { return "ERROR: Jumlah elektron (n) harus > 0.".into(); }
+    if n_electrons == 0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
 
     let reaction_lower = half_reaction.to_lowercase();
 
