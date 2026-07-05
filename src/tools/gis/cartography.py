@@ -154,9 +154,11 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, rp_x, 0.040, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
-        # Left and bottom margin expanded to 0.045 to give room for coordinate labels
+        # Left and bottom margin expanded to 0.055 to give room for coordinate labels
         # so they don't overlap with the outer neatline
-        ax = fig.add_axes([0.045, 0.045, rp_x-0.045, 0.890])
+        m_left = 0.055
+        m_bot = 0.055
+        ax = fig.add_axes([m_left, m_bot, rp_x - m_left, 0.880])
         ax.set_xlim(xn-px, xx+px); ax.set_ylim(yn-py, yx+py)
 
         # Basemap
@@ -188,7 +190,10 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         gw.plot(ax=ax, color='none', ec=C['proj'], lw=3.0, zorder=4)
 
         # Map frame
-        for sp in ax.spines.values(): sp.set_lw(2.0); sp.set_color(C['bdr'])
+        for sp in ax.spines.values(): 
+            sp.set_lw(2.0)
+            sp.set_color(C['bdr'])
+            sp.set_zorder(10)
 
         # Coordinate grid
         from pyproj import Transformer
@@ -206,6 +211,10 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax.set_xticklabels([f'{lo:.2f}°' for lo in lons], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
         ax.set_yticklabels([f'{abs(la):.2f}°{"S" if la<0 else "N"}' for la in lats], fontsize=7.5, fontweight='bold', color=C['tx2'], fontfamily=FNT)
         ax.tick_params(direction='out', length=5, width=1.2, pad=5, colors=C['tx2'])
+        
+        # Apply white halo/stroke to tick labels to ensure they are always readable
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_path_effects([withStroke(linewidth=2.5, foreground='white')])
         ax.grid(True, ls='--', lw=0.4, color=C['grid'], alpha=0.35, zorder=2)
         ax.set_xlabel(''); ax.set_ylabel('')
 
