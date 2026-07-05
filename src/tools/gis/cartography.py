@@ -117,13 +117,15 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, 0.025, 0.935, 0.975, 0.935, lw=3.0)
 
         # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
-        ax_strip = fig.add_axes([0.025, 0.885, 0.95, 0.045])
+        # Batasi ax_strip hanya pada kolom kanan (mulai dari 0.71)
+        # Tinggi dan posisinya diatur agar tepat di atas Inset Map (y=0.885 to 0.930)
+        ax_strip = fig.add_axes([0.71, 0.885, 0.975 - 0.71, 0.045])
         ax_strip.set_xlim(0,1); ax_strip.set_ylim(0,1)
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
 
-        # Scale bar — far right
-        sb_x = 0.76; sb_w = 0.13; sb_y = 0.30; sb_h = 0.30
+        # Scale bar — center of the right panel header
+        sb_x = 0.15; sb_w = 0.45; sb_y = 0.30; sb_h = 0.30
         segw = sb_w / 4
         for i in range(4):
             fc = C['bdr'] if i%2==0 else 'white'
@@ -134,17 +136,17 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
             ax_strip.text(sb_x + i*sb_w/2, sb_y-0.12, lbl, fontsize=8,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
-        # North arrow — far right, CONTAINED within strip
-        na_x = 0.95; na_top = 0.75; na_bot = 0.15
-        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.018,na_bot),(na_x,na_bot*1.5)],
+        # North arrow — far right of the right panel header
+        na_x = 0.85; na_top = 0.75; na_bot = 0.15
+        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.05,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
-        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.018,na_bot),(na_x,na_bot*1.5)],
+        ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.05,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc=C['bdr'], ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
-        # Line below strip
-        sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
+        # Line below strip (HAPUS garis horizontal ini untuk menyatukan area peta ke atas)
+        # sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
 
         # ── VERTICAL SEPARATOR (map | right panel) ──
         rp_x = 0.71  # right panel starts here
@@ -152,7 +154,8 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         sep(fig, rp_x, 0.025, rp_x, 0.935, lw=2.5)
 
         # ── MAIN MAP ──
-        ax = fig.add_axes([0.025, 0.025, rp_x-0.025, 0.855])
+        # Expand height from 0.855 to 0.900 to fill the gap left by the removed strip
+        ax = fig.add_axes([0.025, 0.025, rp_x-0.025, 0.900])
         ax.set_xlim(xn-px, xx+px); ax.set_ylim(yn-py, yx+py)
 
         # Basemap
