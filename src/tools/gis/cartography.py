@@ -122,8 +122,8 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
 
-        # Scale bar — right-center
-        sb_x = 0.55; sb_w = 0.25; sb_y = 0.30; sb_h = 0.30
+        # Scale bar — far right
+        sb_x = 0.65; sb_w = 0.22; sb_y = 0.30; sb_h = 0.30
         segw = sb_w / 4
         for i in range(4):
             fc = C['bdr'] if i%2==0 else 'white'
@@ -134,14 +134,17 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
             ax_strip.text(sb_x + i*sb_w/2, sb_y-0.12, lbl, fontsize=8,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
-        # North arrow — far right, CONTAINED within strip (no overflow)
-        na_x = 0.92; na_top = 0.80; na_bot = 0.15
+        # North arrow — far right, CONTAINED within strip
+        na_x = 0.96; na_top = 0.80; na_bot = 0.15
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.018,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.018,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc=C['bdr'], ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
+
+        # Garis vertikal kiri penutup area scale/north
+        ax_strip.plot([sb_x - 0.03, sb_x - 0.03], [0, 1], color=C['bdr'], lw=2.0, clip_on=False)
 
         # Line below strip
         sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
@@ -248,7 +251,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # ── LEGEND ──
         ax_lg = fig.add_axes([rp_x+pad_r, y_legend+pad_r, rp_w-2*pad_r, h_legend-2*pad_r])
         ax_lg.set_facecolor(C['bg']); ax_lg.axis('off')
-        ax_lg.text(0.5,1.08,'LEGENDA', transform=ax_lg.transAxes,
+        ax_lg.text(0.5,0.95,'LEGENDA', transform=ax_lg.transAxes,
                    fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
         items = [
@@ -281,7 +284,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_mt.set_facecolor(C['bg'])
         for sp in ax_mt.spines.values(): sp.set_lw(1.2); sp.set_color(C['bdr'])
         ax_mt.set_xlim(0,1); ax_mt.set_ylim(0,1); ax_mt.set_xticks([]); ax_mt.set_yticks([])
-        ax_mt.text(0.5,1.02,'INFORMASI PETA', transform=ax_mt.transAxes,
+        ax_mt.text(0.5,0.97,'INFORMASI PETA', transform=ax_mt.transAxes,
                    fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
         pd = date_str or datetime.now().strftime('%d %B %Y')
