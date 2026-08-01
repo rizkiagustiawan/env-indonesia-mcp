@@ -6,12 +6,22 @@
 pub fn descriptive(data_json: &str) -> String {
     let data: Vec<f64> = match serde_json::from_str(data_json) {
         Ok(v) => v,
-        Err(e) => return format!("ERROR: JSON array tidak valid — {}", e),
+        Err(e) => return format!("ERROR [E103]: JSON array tidak valid — {}", e),
     };
 
     let n = data.len();
     if n < 2 {
-        return "ERROR: Minimal 2 data point.".to_string();
+        return "ERROR [E102]: Minimal 2 data point.".to_string();
+    }
+    if let Some((index, value)) = data
+        .iter()
+        .enumerate()
+        .find(|(_, value)| !value.is_finite())
+    {
+        return format!(
+            "ERROR [E104]: Data point pada index {} harus finite, got {}.",
+            index, value
+        );
     }
 
     let mut sorted = data.clone();
@@ -20,19 +30,24 @@ pub fn descriptive(data_json: &str) -> String {
     let mean = data.iter().sum::<f64>() / n as f64;
     let variance = data.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / (n - 1) as f64;
     let std = variance.sqrt();
-    let median = if n % 2 == 0 {
+    let median = if n.is_multiple_of(2) {
         (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
     } else {
         sorted[n / 2]
     };
 
     // Skewness (Fisher's)
-    let m3 = data.iter().map(|x| ((x - mean) / std).powi(3)).sum::<f64>() / n as f64;
-    let skewness = m3 * (n * (n - 1)) as f64 / (n - 2).max(1) as f64;
+    let (skewness, kurtosis) = if std > f64::EPSILON {
+        // Degenerate constant series have no defined standardized moments.
+        let m3 = data.iter().map(|x| ((x - mean) / std).powi(3)).sum::<f64>() / n as f64;
+        let skewness = m3 * (n * (n - 1)) as f64 / (n - 2).max(1) as f64;
 
-    // Kurtosis (excess, Fisher's)
-    let m4 = data.iter().map(|x| ((x - mean) / std).powi(4)).sum::<f64>() / n as f64;
-    let kurtosis = m4 - 3.0; // excess kurtosis
+        // Kurtosis (excess, Fisher's)
+        let m4 = data.iter().map(|x| ((x - mean) / std).powi(4)).sum::<f64>() / n as f64;
+        (skewness, m4 - 3.0)
+    } else {
+        (0.0, 0.0)
+    };
 
     // Percentiles
     let pctl = |p: f64| -> f64 {
@@ -49,7 +64,7 @@ pub fn descriptive(data_json: &str) -> String {
     let cv = if mean.abs() > 1e-10 {
         std / mean.abs() * 100.0
     } else {
-        f64::NAN
+        0.0
     };
 
     // Standard error
@@ -101,6 +116,13 @@ pub fn correlation(data_json: &str, names_json: &str) -> String {
     let n = data[0].len();
     if n < 3 {
         return "ERROR: Minimal 3 data point per parameter.".to_string();
+    }
+    if data.iter().any(|series| series.len() != n) {
+        return "ERROR [E102]: Semua parameter harus memiliki panjang series yang sama."
+            .to_string();
+    }
+    if data.iter().flatten().any(|value| !value.is_finite()) {
+        return "ERROR [E104]: Semua data korelasi harus finite.".to_string();
     }
 
     // Pearson correlation
@@ -282,7 +304,7 @@ pub fn bootstrap_ci(data_json: &str, statistic: &str, confidence: f64, n_bootstr
     if n < 5 {
         return "ERROR: Minimal 5 data point.".to_string();
     }
-    let nb = n_bootstrap.max(100).min(50000) as usize;
+    let nb = n_bootstrap.clamp(100, 50000) as usize;
 
     // Statistic function
     let calc_stat = |sample: &[f64]| -> f64 {
@@ -291,7 +313,7 @@ pub fn bootstrap_ci(data_json: &str, statistic: &str, confidence: f64, n_bootstr
             "median" => {
                 let mut s = sample.to_vec();
                 s.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-                if s.len() % 2 == 0 {
+                if s.len().is_multiple_of(2) {
                     (s[s.len() / 2 - 1] + s[s.len() / 2]) / 2.0
                 } else {
                     s[s.len() / 2]
@@ -402,7 +424,7 @@ pub fn trend_test(data_json: &str, time_labels_json: &str) -> String {
         }
     }
     slopes.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let sen_slope = if slopes.len() % 2 == 0 && !slopes.is_empty() {
+    let sen_slope = if slopes.len().is_multiple_of(2) && !slopes.is_empty() {
         (slopes[slopes.len() / 2 - 1] + slopes[slopes.len() / 2]) / 2.0
     } else if !slopes.is_empty() {
         slopes[slopes.len() / 2]
@@ -414,7 +436,7 @@ pub fn trend_test(data_json: &str, time_labels_json: &str) -> String {
     let sen_intercept = {
         let mut medians: Vec<f64> = (0..n).map(|i| data[i] - sen_slope * i as f64).collect();
         medians.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        if medians.len() % 2 == 0 {
+        if medians.len().is_multiple_of(2) {
             (medians[medians.len() / 2 - 1] + medians[medians.len() / 2]) / 2.0
         } else {
             medians[medians.len() / 2]
@@ -465,4 +487,33 @@ fn erf_approx(x: f64) -> f64 {
     let t = 1.0 / (1.0 + p * x);
     let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-x * x).exp();
     sign * y
+}
+
+#[cfg(test)]
+mod tests {
+    use super::descriptive;
+
+    #[test]
+    fn descriptive_rejects_malformed_values() {
+        let result = descriptive("[1.0, null]");
+
+        assert!(result.starts_with("ERROR [E103]:"));
+    }
+
+    #[test]
+    fn descriptive_handles_constant_data_without_nan_or_infinity() {
+        let result = descriptive("[5.0, 5.0, 5.0]");
+
+        assert!(!result.contains("NaN"));
+        assert!(!result.contains("inf"));
+        assert!(result.contains("Std Dev = 0.000000"));
+    }
+
+    #[test]
+    fn correlation_rejects_series_with_different_lengths() {
+        let result = super::correlation("[[1.0, 2.0, 3.0], [3.0, 4.0]]", "[\"a\", \"b\"]");
+
+        assert!(result.starts_with("ERROR [E102]:"));
+        assert!(result.contains("panjang series"));
+    }
 }
