@@ -6,14 +6,19 @@ pub fn check_sensor_resolution(resolution_m: f64, area_sqm: f64) -> Result<(), S
     Ok(())
 }
 
+pub fn check_temporal_alignment(data_season: &str, target_season: &str) -> Result<(), String> {
+    if data_season != target_season {
+        return Err(format!("Temporal mismatch: data season '{}' does not match target season '{}'", data_season, target_season));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_check_sensor_resolution_fails_if_too_coarse() {
-        // 30m resolution (900 sqm pixel) for a 1000 sqm area should fail 
-        // if we require at least 4 pixels (e.g. area must be > 4 * pixel_area)
         let result = check_sensor_resolution(30.0, 1000.0);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Sensor resolution"));
@@ -21,8 +26,20 @@ mod tests {
 
     #[test]
     fn test_check_sensor_resolution_passes_if_fine_enough() {
-        // 10m resolution (100 sqm pixel) for a 1000 sqm area (10 pixels) should pass
         let result = check_sensor_resolution(10.0, 1000.0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_check_temporal_alignment_fails_on_mismatch() {
+        let result = check_temporal_alignment("dry", "wet");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Temporal mismatch"));
+    }
+
+    #[test]
+    fn test_check_temporal_alignment_passes_on_match() {
+        let result = check_temporal_alignment("dry", "dry");
         assert!(result.is_ok());
     }
 }
