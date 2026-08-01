@@ -8,3 +8,4 @@ pub mod ndvi;
 pub mod spatial_ops;
 pub mod viewshed;
 pub mod water;
+pub mod spatial_validation;
