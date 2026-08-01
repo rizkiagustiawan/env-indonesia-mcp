@@ -14,10 +14,10 @@ pub fn calculate(
 
     let pm10_bp: [f64; 6] = [0.0, 50.0, 150.0, 350.0, 420.0, 500.0];
     let pm25_bp: [f64; 6] = [0.0, 15.5, 55.4, 150.4, 250.4, 500.0];
-    let so2_bp: [f64; 6]  = [0.0, 52.0, 180.0, 400.0, 800.0, 1200.0];
-    let co_bp: [f64; 6]   = [0.0, 4000.0, 10000.0, 17000.0, 34000.0, 46000.0];
-    let o3_bp: [f64; 6]   = [0.0, 120.0, 235.0, 400.0, 800.0, 1000.0];
-    let no2_bp: [f64; 6]  = [0.0, 80.0, 200.0, 1130.0, 2260.0, 3000.0];
+    let so2_bp: [f64; 6] = [0.0, 52.0, 180.0, 400.0, 800.0, 1200.0];
+    let co_bp: [f64; 6] = [0.0, 4000.0, 10000.0, 17000.0, 34000.0, 46000.0];
+    let o3_bp: [f64; 6] = [0.0, 120.0, 235.0, 400.0, 800.0, 1000.0];
+    let no2_bp: [f64; 6] = [0.0, 80.0, 200.0, 1130.0, 2260.0, 3000.0];
 
     fn interpolate(cp: f64, bp: &[f64; 6], ip: &[f64; 6]) -> Result<f64, String> {
         if cp < 0.0 {
@@ -36,14 +36,22 @@ pub fn calculate(
     }
 
     fn category(ispu: f64) -> &'static str {
-        if ispu <= 50.0 { "Baik" }
-        else if ispu <= 100.0 { "Sedang" }
-        else if ispu <= 200.0 { "Tidak Sehat" }
-        else if ispu <= 300.0 { "Sangat Tidak Sehat" }
-        else { "Berbahaya" }
+        if ispu <= 50.0 {
+            "Baik"
+        } else if ispu <= 100.0 {
+            "Sedang"
+        } else if ispu <= 200.0 {
+            "Tidak Sehat"
+        } else if ispu <= 300.0 {
+            "Sangat Tidak Sehat"
+        } else {
+            "Berbahaya"
+        }
     }
 
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  ISPU Calculator\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    let mut out = String::from(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  ISPU Calculator\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+    );
     out.push_str("Ref: PermenLHK No. 73 Tahun 2019\n");
     out.push_str("Rumus: ISPU = ((Ih-Il)/(BPh-BPl)) × (Cp - BPl) + Il\n\n");
 
@@ -59,7 +67,13 @@ pub fn calculate(
         ("NO2", no2, &no2_bp),
     ];
 
-    out.push_str(format!("{:<8} | {:<12} | {:<8} | {}\n", "Param", "Konsentrasi", "ISPU", "Kategori").as_str());
+    out.push_str(
+        format!(
+            "{:<8} | {:<12} | {:<8} | {}\n",
+            "Param", "Konsentrasi", "ISPU", "Kategori"
+        )
+        .as_str(),
+    );
     out.push_str("─────────┼──────────────┼──────────┼──────────────────\n");
 
     for (name, val, bp) in &params {
@@ -68,7 +82,10 @@ pub fn calculate(
             match interpolate(*c, bp, &ispu_bp) {
                 Ok(ispu) => {
                     let cat = category(ispu);
-                    out.push_str(&format!("{:<8} | {:<12.1} | {:<8.1} | {}\n", name, c, ispu, cat));
+                    out.push_str(&format!(
+                        "{:<8} | {:<12.1} | {:<8.1} | {}\n",
+                        name, c, ispu, cat
+                    ));
                     results.push((name, ispu));
                 }
                 Err(e) => {
@@ -83,9 +100,17 @@ pub fn calculate(
     }
 
     let max_ispu = results.iter().map(|(_, v)| *v).fold(f64::NAN, f64::max);
-    let max_param = results.iter().find(|(_, v)| (*v - max_ispu).abs() < 0.001).map(|(n, _)| *n).unwrap_or("?");
+    let max_param = results
+        .iter()
+        .find(|(_, v)| (*v - max_ispu).abs() < 0.001)
+        .map(|(n, _)| *n)
+        .unwrap_or("?");
 
-    out.push_str(&format!("\nISPU Keseluruhan: {:.0} ({})\n", max_ispu, category(max_ispu)));
+    out.push_str(&format!(
+        "\nISPU Keseluruhan: {:.0} ({})\n",
+        max_ispu,
+        category(max_ispu)
+    ));
     out.push_str(&format!("Parameter Dominan: {}\n\n", max_param));
     out.push_str("Kategori ISPU:\n");
     out.push_str("  0-50     : Baik\n");

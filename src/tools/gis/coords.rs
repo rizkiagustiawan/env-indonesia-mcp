@@ -16,7 +16,10 @@ pub fn transform(x: f64, y: f64, from_epsg: &str, to_epsg: &str) -> String {
                     x, y, from_epsg, parts[0], parts[1], to_epsg,
                     utm_zone_from_lon(x))
             } else {
-                format!("ERROR: Transform failed: {}", String::from_utf8_lossy(&o.stderr))
+                format!(
+                    "ERROR: Transform failed: {}",
+                    String::from_utf8_lossy(&o.stderr)
+                )
             }
         }
         Err(e) => format!("Error: {}", e),
@@ -27,7 +30,7 @@ pub fn transform(x: f64, y: f64, from_epsg: &str, to_epsg: &str) -> String {
 pub fn utm_zone_from_lon(lon: f64) -> String {
     let zone = ((lon + 180.0) / 6.0).floor() as i32 + 1;
     let hemisphere = if lon >= 0.0 { "N" } else { "S" }; // Indonesia spans both
-    // For Indonesia (mostly southern hemisphere, lon 95-141):
+                                                         // For Indonesia (mostly southern hemisphere, lon 95-141):
     let epsg = if lon >= 95.0 && lon <= 141.0 {
         // Indonesia UTM zones: 46S-54S (some northern Kalimantan is N)
         32700 + zone // UTM South
@@ -40,7 +43,11 @@ pub fn utm_zone_from_lon(lon: f64) -> String {
 /// Auto UTM transform: WGS84 lat/lon -> appropriate UTM zone
 pub fn wgs84_to_utm_auto(lat: f64, lon: f64) -> String {
     let zone = ((lon + 180.0) / 6.0).floor() as i32 + 1;
-    let epsg = if lat >= 0.0 { 32600 + zone } else { 32700 + zone };
+    let epsg = if lat >= 0.0 {
+        32600 + zone
+    } else {
+        32700 + zone
+    };
     let to_crs = format!("EPSG:{}", epsg);
     transform(lon, lat, "EPSG:4326", &to_crs)
 }

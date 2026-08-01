@@ -2,7 +2,9 @@
 /// Ref: Turner (1970), EPA AERMOD
 
 pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: u32) -> String {
-    if wind_speed_ms < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if wind_speed_ms < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let is_night = solar_radiation == "night";
     let solar = match solar_radiation.to_lowercase().as_str() {
@@ -15,11 +17,25 @@ pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: 
 
     let class = if is_night {
         if cloud_cover_eighths >= 4 {
-            if wind_speed_ms < 2.0 { 'F' } else if wind_speed_ms < 3.0 { 'F' }
-            else if wind_speed_ms < 5.0 { 'E' } else { 'D' }
+            if wind_speed_ms < 2.0 {
+                'F'
+            } else if wind_speed_ms < 3.0 {
+                'F'
+            } else if wind_speed_ms < 5.0 {
+                'E'
+            } else {
+                'D'
+            }
         } else {
-            if wind_speed_ms < 2.0 { 'F' } else if wind_speed_ms < 3.0 { 'F' }
-            else if wind_speed_ms < 5.0 { 'E' } else { 'D' }
+            if wind_speed_ms < 2.0 {
+                'F'
+            } else if wind_speed_ms < 3.0 {
+                'F'
+            } else if wind_speed_ms < 5.0 {
+                'E'
+            } else {
+                'D'
+            }
         }
     } else {
         match (wind_speed_ms.round() as u32, solar) {
@@ -50,7 +66,10 @@ pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: 
     };
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Stability Class (Turner 1970)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str(&format!("Wind: {:.1} m/s\nRadiasi: {}\nCloud: {}/8\n\n", wind_speed_ms, solar_radiation, cloud_cover_eighths));
+    out.push_str(&format!(
+        "Wind: {:.1} m/s\nRadiasi: {}\nCloud: {}/8\n\n",
+        wind_speed_ms, solar_radiation, cloud_cover_eighths
+    ));
     out.push_str(&format!("Kelas Stabilitas: {} — {}\n", class, desc));
     out
 }
@@ -59,10 +78,22 @@ pub fn get_sigma(class: char, x_m: f64) -> (f64, f64) {
     let (sy, sz) = match class {
         'A' => (0.22 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.20 * x_m),
         'B' => (0.16 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.12 * x_m),
-        'C' => (0.11 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.08 * x_m * (1.0 + 0.0002 * x_m).powf(-0.5)),
-        'D' => (0.08 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.06 * x_m * (1.0 + 0.0015 * x_m).powf(-0.5)),
-        'E' => (0.06 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.03 * x_m * (1.0 + 0.0003 * x_m).powf(-1.0)),
-        'F' | _ => (0.04 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5), 0.016 * x_m * (1.0 + 0.0003 * x_m).powf(-1.0)),
+        'C' => (
+            0.11 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5),
+            0.08 * x_m * (1.0 + 0.0002 * x_m).powf(-0.5),
+        ),
+        'D' => (
+            0.08 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5),
+            0.06 * x_m * (1.0 + 0.0015 * x_m).powf(-0.5),
+        ),
+        'E' => (
+            0.06 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5),
+            0.03 * x_m * (1.0 + 0.0003 * x_m).powf(-1.0),
+        ),
+        'F' | _ => (
+            0.04 * x_m * (1.0 + 0.0001 * x_m).powf(-0.5),
+            0.016 * x_m * (1.0 + 0.0003 * x_m).powf(-1.0),
+        ),
     };
     (sy, sz)
 }

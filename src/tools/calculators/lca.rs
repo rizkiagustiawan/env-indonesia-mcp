@@ -2,7 +2,9 @@
 /// Ref: ISO 14040/14044, IPCC AR6 GWP100
 
 pub fn calculate(material: &str, mass_kg: f64) -> String {
-    if mass_kg <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if mass_kg <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     let (ef_co2, ef_water, ef_energy, desc) = match material.to_lowercase().as_str() {
         "baja" | "steel" => (1.85, 20.0, 20.0, "Baja (BOF steelmaking)"),
@@ -21,7 +23,10 @@ pub fn calculate(material: &str, mass_kg: f64) -> String {
     let water_total = ef_water * mass_kg;
     let energy_total = ef_energy * mass_kg;
 
-    let mut out = format!("=== Simplified LCA ===\nRef: ISO 14040/14044, IPCC AR6\n\nMaterial: {} ({:.0} kg)\n\n", desc, mass_kg);
+    let mut out = format!(
+        "=== Simplified LCA ===\nRef: ISO 14040/14044, IPCC AR6\n\nMaterial: {} ({:.0} kg)\n\n",
+        desc, mass_kg
+    );
     out.push_str(&format!("Impact Categories (cradle-to-gate):\n  GWP: {:.2} kgCO₂e (EF={:.3} kgCO₂/kg)\n  Water: {:.0} L (EF={:.1} L/kg)\n  Energy: {:.0} MJ (EF={:.1} MJ/kg)\n", co2_total, ef_co2, water_total, ef_water, energy_total, ef_energy));
     out
 }

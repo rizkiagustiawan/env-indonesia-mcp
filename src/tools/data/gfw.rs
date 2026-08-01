@@ -5,12 +5,19 @@ pub async fn deforestation_alerts(client: &Client) -> String {
 
     // GFW dashboard data for NTB (province code 17 in GFW)
     let url = "https://data-api.globalforestwatch.org/dataset/gfw_integrated_alerts/latest";
-    
+
     match client.get(url).send().await {
         Ok(resp) => match resp.text().await {
             Ok(body) => {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&body) {
-                    out.push_str(&format!("API Response: {}\n", serde_json::to_string_pretty(&v).unwrap_or_default().chars().take(1500).collect::<String>()));
+                    out.push_str(&format!(
+                        "API Response: {}\n",
+                        serde_json::to_string_pretty(&v)
+                            .unwrap_or_default()
+                            .chars()
+                            .take(1500)
+                            .collect::<String>()
+                    ));
                 } else {
                     out.push_str(&format!("Raw: {}\n", &body[..body.len().min(1000)]));
                 }

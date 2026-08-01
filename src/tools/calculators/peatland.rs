@@ -2,11 +2,19 @@
 /// Ref: Hooijer et al. (2012) Biogeosciences
 
 pub fn calculate(water_table_depth_cm: f64, area_ha: f64, years: u32) -> String {
-    if water_table_depth_cm < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if area_ha <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if water_table_depth_cm < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if area_ha <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     // Hooijer (2012) model
-    let subsidence_rate_cm_yr = if water_table_depth_cm <= 40.0 { water_table_depth_cm * 0.04 + 1.0 } else { 0.9 * (water_table_depth_cm / 10.0) };
+    let subsidence_rate_cm_yr = if water_table_depth_cm <= 40.0 {
+        water_table_depth_cm * 0.04 + 1.0
+    } else {
+        0.9 * (water_table_depth_cm / 10.0)
+    };
     let co2_per_ha_yr = 0.91 * water_table_depth_cm; // tCO2/ha/tahun per cm WTD
     let total_co2_yr = co2_per_ha_yr * area_ha;
     let total_co2 = total_co2_yr * (years as f64);

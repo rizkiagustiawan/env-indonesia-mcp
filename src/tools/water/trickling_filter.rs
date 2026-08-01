@@ -2,16 +2,34 @@
 /// E = 100 / (1 + 0.4432 × √(W/(V×F)))
 /// Ref: NRC (National Research Council, 1946); Metcalf & Eddy (2003)
 
-pub fn design(q_m3d: f64, bod_in: f64, bod_target: f64, media_depth_m: f64, recirculation_ratio: f64) -> String {
+pub fn design(
+    q_m3d: f64,
+    bod_in: f64,
+    bod_target: f64,
+    media_depth_m: f64,
+    recirculation_ratio: f64,
+) -> String {
     let mut out = String::from("=== Desain Trickling Filter (NRC) ===\n");
     out.push_str("Ref: NRC (1946), Metcalf & Eddy (2003)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if bod_in <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if bod_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if bod_target >= bod_in { return "ERROR: BOD target harus < BOD influent.".into(); }
-    if media_depth_m < 1.0 || media_depth_m > 3.0 { return "ERROR: Kedalaman media 1-3 m (tipikal).".into(); }
-    if recirculation_ratio < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if q_m3d <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if bod_in <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if bod_target < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if bod_target >= bod_in {
+        return "ERROR: BOD target harus < BOD influent.".into();
+    }
+    if media_depth_m < 1.0 || media_depth_m > 3.0 {
+        return "ERROR: Kedalaman media 1-3 m (tipikal).".into();
+    }
+    if recirculation_ratio < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let target_efficiency = (1.0 - bod_target / bod_in) * 100.0;
 
@@ -54,9 +72,15 @@ pub fn design(q_m3d: f64, bod_in: f64, bod_target: f64, media_depth_m: f64, reci
     out.push_str(&format!("Input:\n  Q = {:.0} m³/hari\n  BOD influent = {:.0} mg/L\n  BOD target = {:.0} mg/L\n  Kedalaman media = {:.1} m\n  Rasio resirkulasi (R) = {:.1}\n\n",
         q_m3d, bod_in, bod_target, media_depth_m, r));
 
-    out.push_str(&format!("Perhitungan:\n  Faktor resirkulasi (F) = (1+R)/(1+0.1R)² = {:.3}\n", f));
+    out.push_str(&format!(
+        "Perhitungan:\n  Faktor resirkulasi (F) = (1+R)/(1+0.1R)² = {:.3}\n",
+        f
+    ));
     out.push_str(&format!("  Beban BOD (W) = {:.1} kg/hari\n", w));
-    out.push_str(&format!("  Efisiensi target = {:.1}%\n\n", target_efficiency));
+    out.push_str(&format!(
+        "  Efisiensi target = {:.1}%\n\n",
+        target_efficiency
+    ));
 
     out.push_str("Desain filter:\n");
     out.push_str(&format!("  Volume filter = {:.1} m³\n", v_required));

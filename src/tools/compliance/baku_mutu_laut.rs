@@ -12,13 +12,28 @@ struct ParamLimit {
 
 impl ParamLimit {
     fn max_only(max: f64, unit: &'static str) -> Self {
-        Self { min: None, max: Some(max), unit, notes: "" }
+        Self {
+            min: None,
+            max: Some(max),
+            unit,
+            notes: "",
+        }
     }
     fn min_only(min: f64, unit: &'static str) -> Self {
-        Self { min: Some(min), max: None, unit, notes: "" }
+        Self {
+            min: Some(min),
+            max: None,
+            unit,
+            notes: "",
+        }
     }
     fn range(min: f64, max: f64, unit: &'static str) -> Self {
-        Self { min: Some(min), max: Some(max), unit, notes: "" }
+        Self {
+            min: Some(min),
+            max: Some(max),
+            unit,
+            notes: "",
+        }
     }
     fn with_notes(mut self, notes: &'static str) -> Self {
         self.notes = notes;
@@ -49,9 +64,7 @@ fn get_limit(parameter: &str, peruntukan: &str) -> Option<ParamLimit> {
             "sulfida" | "h2s" | "sulfide" => Some(ParamLimit::max_only(0.03, "mg/L")),
             "surfaktan" | "deterjen" | "mbas" => Some(ParamLimit::max_only(1.0, "mg/L")),
             "minyak_lemak" | "oil_grease" | "minyak" => Some(ParamLimit::max_only(1.0, "mg/L")),
-            "fenol" | "phenol" => {
-                Some(ParamLimit::max_only(0.0, "mg/L").with_notes("Nihil"))
-            }
+            "fenol" | "phenol" => Some(ParamLimit::max_only(0.0, "mg/L").with_notes("Nihil")),
             "sianida" | "cn" | "cyanide" => Some(ParamLimit::max_only(0.5, "mg/L")),
             "merkuri" | "hg" | "mercury" => Some(ParamLimit::max_only(0.001, "mg/L")),
             "kromium_vi" | "cr6" | "cr(vi)" | "chromium_vi" => {
@@ -75,9 +88,7 @@ fn get_limit(parameter: &str, peruntukan: &str) -> Option<ParamLimit> {
             "kecerahan" | "transparency" => {
                 Some(ParamLimit::min_only(6.0, "m").with_notes("> 6 m"))
             }
-            "bau" | "odor" => {
-                Some(ParamLimit::max_only(0.0, "").with_notes("Tidak berbau"))
-            }
+            "bau" | "odor" => Some(ParamLimit::max_only(0.0, "").with_notes("Tidak berbau")),
             "lapisan_minyak" | "oil_layer" => {
                 Some(ParamLimit::max_only(0.0, "").with_notes("Nihil"))
             }
@@ -147,9 +158,7 @@ fn get_limit(parameter: &str, peruntukan: &str) -> Option<ParamLimit> {
                 "nitrat" | "no3" | "nitrate" => Some(ParamLimit::max_only(0.02, "mg/L")),
                 "sulfida" | "h2s" | "sulfide" => Some(ParamLimit::max_only(0.03, "mg/L")),
                 "surfaktan" | "deterjen" | "mbas" => Some(ParamLimit::max_only(1.0, "mg/L")),
-                "minyak_lemak" | "oil_grease" | "minyak" => {
-                    Some(ParamLimit::max_only(5.0, "mg/L"))
-                }
+                "minyak_lemak" | "oil_grease" | "minyak" => Some(ParamLimit::max_only(5.0, "mg/L")),
                 "fenol" | "phenol" => Some(ParamLimit::max_only(0.002, "mg/L")),
                 "sianida" | "cn" | "cyanide" => Some(ParamLimit::max_only(0.5, "mg/L")),
                 "merkuri" | "hg" | "mercury" => Some(ParamLimit::max_only(0.003, "mg/L")),
@@ -191,7 +200,10 @@ pub fn check(parameter: &str, concentration: f64, peruntukan: &str) -> String {
         "Lampiran I — Wisata Bahari"
     } else if p_lower.contains("biota") {
         "Lampiran II — Biota Laut"
-    } else if p_lower.contains("pelabuhan") || p_lower.contains("harbour") || p_lower.contains("port") {
+    } else if p_lower.contains("pelabuhan")
+        || p_lower.contains("harbour")
+        || p_lower.contains("port")
+    {
         "Lampiran III — Pelabuhan"
     } else {
         return format!(
@@ -215,12 +227,21 @@ pub fn check(parameter: &str, concentration: f64, peruntukan: &str) -> String {
                         let range = max - min;
                         let mid = (min + max) / 2.0;
                         let deviation = ((concentration - mid) / (range / 2.0) * 100.0).abs();
-                        ("✅ Memenuhi".to_string(), format!("{:.1}% dari tengah rentang", deviation))
+                        (
+                            "✅ Memenuhi".to_string(),
+                            format!("{:.1}% dari tengah rentang", deviation),
+                        )
                     } else {
                         let violation = if concentration < min {
-                            format!("{:.1}% di bawah batas minimum", ((min - concentration) / min) * 100.0)
+                            format!(
+                                "{:.1}% di bawah batas minimum",
+                                ((min - concentration) / min) * 100.0
+                            )
                         } else {
-                            format!("{:.1}% di atas batas maksimum", ((concentration - max) / max) * 100.0)
+                            format!(
+                                "{:.1}% di atas batas maksimum",
+                                ((concentration - max) / max) * 100.0
+                            )
                         };
                         ("❌ Melebihi".to_string(), violation)
                     }
@@ -229,10 +250,16 @@ pub fn check(parameter: &str, concentration: f64, peruntukan: &str) -> String {
                     // Minimum only (e.g., DO > 5)
                     if concentration >= min {
                         let pct = (concentration / min) * 100.0;
-                        ("✅ Memenuhi".to_string(), format!("{:.1}% dari batas minimum", pct))
+                        (
+                            "✅ Memenuhi".to_string(),
+                            format!("{:.1}% dari batas minimum", pct),
+                        )
                     } else {
                         let pct = (concentration / min) * 100.0;
-                        ("❌ Melebihi".to_string(), format!("{:.1}% dari batas minimum (kurang)", pct))
+                        (
+                            "❌ Melebihi".to_string(),
+                            format!("{:.1}% dari batas minimum (kurang)", pct),
+                        )
                     }
                 }
                 (None, Some(max)) => {
@@ -240,16 +267,28 @@ pub fn check(parameter: &str, concentration: f64, peruntukan: &str) -> String {
                     if max == 0.0 {
                         // Nihil parameter
                         if concentration <= 0.0 {
-                            ("✅ Memenuhi".to_string(), "Nihil (tidak terdeteksi)".to_string())
+                            (
+                                "✅ Memenuhi".to_string(),
+                                "Nihil (tidak terdeteksi)".to_string(),
+                            )
                         } else {
-                            ("❌ Melebihi".to_string(), "Harus nihil (0), tetapi terdeteksi".to_string())
+                            (
+                                "❌ Melebihi".to_string(),
+                                "Harus nihil (0), tetapi terdeteksi".to_string(),
+                            )
                         }
                     } else if concentration <= max {
                         let pct = (concentration / max) * 100.0;
-                        ("✅ Memenuhi".to_string(), format!("{:.1}% dari baku mutu", pct))
+                        (
+                            "✅ Memenuhi".to_string(),
+                            format!("{:.1}% dari baku mutu", pct),
+                        )
                     } else {
                         let pct = (concentration / max) * 100.0;
-                        ("❌ Melebihi".to_string(), format!("{:.1}% dari baku mutu", pct))
+                        (
+                            "❌ Melebihi".to_string(),
+                            format!("{:.1}% dari baku mutu", pct),
+                        )
                     }
                 }
                 (None, None) => ("⚠️ Tidak dapat dievaluasi".to_string(), "-".to_string()),
@@ -311,7 +350,10 @@ pub fn check_multi(parameters_json: &str, peruntukan: &str) -> String {
         "Lampiran I — Wisata Bahari"
     } else if p_lower.contains("biota") {
         "Lampiran II — Biota Laut"
-    } else if p_lower.contains("pelabuhan") || p_lower.contains("harbour") || p_lower.contains("port") {
+    } else if p_lower.contains("pelabuhan")
+        || p_lower.contains("harbour")
+        || p_lower.contains("port")
+    {
         "Lampiran III — Pelabuhan"
     } else {
         return format!(
@@ -513,7 +555,9 @@ fn extract_number_field(obj: &str, field: &str) -> Option<f64> {
     // Read number characters
     let num_str: String = value_trimmed
         .chars()
-        .take_while(|c| c.is_ascii_digit() || *c == '.' || *c == '-' || *c == 'e' || *c == 'E' || *c == '+')
+        .take_while(|c| {
+            c.is_ascii_digit() || *c == '.' || *c == '-' || *c == 'e' || *c == 'E' || *c == '+'
+        })
         .collect();
     num_str.parse().ok()
 }

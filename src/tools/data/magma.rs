@@ -7,34 +7,51 @@ pub async fn status(client: &Client) -> String {
     out.push_str("Data dari MAGMA Indonesia (magma.esdm.go.id). Jika API gagal, data fallback statis terakhir digunakan.\n\n");
 
     // Try live API first
-    match client.get(url).timeout(std::time::Duration::from_secs(10)).send().await {
+    match client
+        .get(url)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+    {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
             Ok(v) => {
                 if let Some(data) = v.get("data").and_then(|d| d.as_array()) {
-                    out.push_str(&format!("(Data live dari API — {} gunung api)\n\n", data.len()));
+                    out.push_str(&format!(
+                        "(Data live dari API — {} gunung api)\n\n",
+                        data.len()
+                    ));
                     for item in data.iter().take(20) {
-                        let name = item.get("ga_nama_gapi")
+                        let name = item
+                            .get("ga_nama_gapi")
                             .or_else(|| item.get("nama"))
                             .and_then(|n| n.as_str())
                             .unwrap_or("?");
-                        let status = item.get("ga_status")
+                        let status = item
+                            .get("ga_status")
                             .or_else(|| item.get("status"))
                             .and_then(|s| s.as_str())
                             .unwrap_or("?");
-                        let activity = item.get("ga_aktivitas")
+                        let activity = item
+                            .get("ga_aktivitas")
                             .or_else(|| item.get("aktivitas"))
                             .and_then(|a| a.as_str())
                             .unwrap_or("-");
-                        let level = item.get("ga_level")
+                        let level = item
+                            .get("ga_level")
                             .or_else(|| item.get("level"))
                             .and_then(|l| l.as_str())
                             .or_else(|| item.get("ga_level").and_then(|l| l.as_u64()).map(|_| ""))
                             .unwrap_or("");
-                        out.push_str(&format!("- {} | Status: {} | Level: {} | Aktivitas: {}\n",
-                            name, status, level, activity));
+                        out.push_str(&format!(
+                            "- {} | Status: {} | Level: {} | Aktivitas: {}\n",
+                            name, status, level, activity
+                        ));
                     }
                     if data.len() > 20 {
-                        out.push_str(&format!("\n... dan {} gunung api lainnya.\n", data.len() - 20));
+                        out.push_str(&format!(
+                            "\n... dan {} gunung api lainnya.\n",
+                            data.len() - 20
+                        ));
                     }
                     out.push_str("\nSumber: https://magma.vsi.esdm.go.id/\n");
                     return out;
@@ -56,7 +73,9 @@ pub async fn status(client: &Client) -> String {
 
     out.push_str("LEVEL IV (AWAS - Sangat Berbahaya)\n");
     out.push_str("- G. Ruang (Sulawesi Utara): Erupsi eksplosif, awan panas, potensi tsunami.\n");
-    out.push_str("- G. Lewotobi Laki-laki (NTT): Erupsi, lontaran batu pijar, hujan abu lebat.\n\n");
+    out.push_str(
+        "- G. Lewotobi Laki-laki (NTT): Erupsi, lontaran batu pijar, hujan abu lebat.\n\n",
+    );
 
     out.push_str("LEVEL III (SIAGA)\n");
     out.push_str("- G. Merapi (Jawa Tengah/DIY): Guguran lava, awan panas.\n");

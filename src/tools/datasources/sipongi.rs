@@ -12,7 +12,8 @@ pub async fn get_hotspots(client: &Client, province: &str) -> String {
         province.replace(' ', "%20")
     );
 
-    match client.get(&url)
+    match client
+        .get(&url)
         .header("Accept", "application/json")
         .timeout(std::time::Duration::from_secs(15))
         .send()
@@ -57,8 +58,11 @@ pub async fn get_hotspots(client: &Client, province: &str) -> String {
          TINGKAT KERAWANAN KEBAKARAN:\n\
          • Riau, Kalimantan Tengah, Kalimantan Barat: SANGAT TINGGI\n\
          • Sumatera Selatan, Jambi, Kalimantan Selatan: TINGGI\n\
-         • Papua, Kalimantan Timur, Lampung: SEDANG\n\
-         • NTB, NTT, Bali: RENDAH (musim kemarau waspada)\n\n\
+         • Aceh, Sumatera Utara, Kalimantan Utara: SEDANG-TINGGI\n\
+         • Papua, Kalimantan Timur, Lampung, Sulawesi Tengah: SEDANG\n\
+         • Sumatera Barat, Kepulauan Riau, Bangka Belitung, Maluku: SEDANG\n\
+         • NTB, NTT, Bengkulu, Gorontalo, Sulawesi Utara: RENDAH-SEDANG\n\
+         • Banten, Bali: RENDAH (musim kemarau waspada)\n\n\
          MUSIM KEBAKARAN: Juni - Oktober (puncak Agustus-September)\n\
          Ref: InPres 3/2020 tentang Penanggulangan Karhutla\n\
          ══════════════════════════════════════════════",
@@ -81,16 +85,30 @@ fn format_hotspot_response(data: &serde_json::Value, province: &str) -> String {
         for (i, hs) in hotspots.iter().take(20).enumerate() {
             let lat = hs.get("latitude").and_then(|v| v.as_f64()).unwrap_or(0.0);
             let lon = hs.get("longitude").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let confidence = hs.get("confidence").and_then(|v| v.as_str()).unwrap_or("N/A");
+            let confidence = hs
+                .get("confidence")
+                .and_then(|v| v.as_str())
+                .unwrap_or("N/A");
             let date = hs.get("acq_date").and_then(|v| v.as_str()).unwrap_or("N/A");
-            let satellite = hs.get("satellite").and_then(|v| v.as_str()).unwrap_or("N/A");
+            let satellite = hs
+                .get("satellite")
+                .and_then(|v| v.as_str())
+                .unwrap_or("N/A");
             result.push_str(&format!(
                 "{}. ({:.4}, {:.4}) | {} | Confidence: {} | Sat: {}\n",
-                i + 1, lat, lon, date, confidence, satellite
+                i + 1,
+                lat,
+                lon,
+                date,
+                confidence,
+                satellite
             ));
         }
         if hotspots.len() > 20 {
-            result.push_str(&format!("\n... dan {} hotspot lainnya\n", hotspots.len() - 20));
+            result.push_str(&format!(
+                "\n... dan {} hotspot lainnya\n",
+                hotspots.len() - 20
+            ));
         }
     } else {
         result.push_str(&format!("Response: {}\n", data));
@@ -113,7 +131,23 @@ fn get_fire_prone_info(province: &str) -> String {
         ("kalimantan selatan", "Kalimantan Selatan: Risiko TINGGI. Lahan gambut dan hutan rawa. Hotspot utama: Tanah Laut, Banjar, Barito Kuala."),
         ("kalimantan timur", "Kalimantan Timur: Risiko SEDANG-TINGGI. Hotspot utama: Kutai Kartanegara, Berau."),
         ("lampung", "Lampung: Risiko SEDANG. Pembukaan lahan dan perkebunan."),
+        ("papua tengah", "Papua Tengah: Risiko RENDAH-SEDANG. Kebakaran padang rumput dataran tinggi. Area: lembah Baliem, Jayawijaya. Puncak: Jul-Okt."),
+        ("papua selatan", "Papua Selatan: Risiko SEDANG. Kebakaran savana dan pembukaan lahan pertanian (transmigrasi). Hotspot utama: Merauke, Boven Digoel. Puncak: Ags-Nov."),
         ("papua", "Papua: Risiko SEDANG. Deforestasi dan pembukaan lahan baru."),
+        ("aceh", "Aceh: Risiko SEDANG-TINGGI. Kebakaran gambut di dataran rendah pantai timur. Hotspot utama: Aceh Timur, Nagan Raya, Aceh Barat. Puncak: Feb-Mar, Jun-Sep. Sumber: data hotspot KLHK."),
+        ("sumatera utara", "Sumatera Utara: Risiko SEDANG-TINGGI. Kebakaran gambut di pantai timur dan perkebunan sawit. Hotspot utama: Labuhanbatu, Serdang Bedagai, Asahan, Langkat. Puncak: Feb-Apr, Jun-Sep."),
+        ("sumatera barat", "Sumatera Barat: Risiko SEDANG. Kebakaran hutan di dataran tinggi saat kemarau. Area: kawasan hutan Solok, Pasaman, Sijunjung. Puncak: Jul-Okt."),
+        ("bengkulu", "Bengkulu: Risiko RENDAH-SEDANG. Kebakaran hutan dan lahan saat musim kemarau. Area: Bengkulu Utara, Seluma. Puncak: Ags-Okt."),
+        ("kepulauan riau", "Kepulauan Riau: Risiko SEDANG. Kebakaran gambut di Pulau Bintan dan sekitarnya. Hotspot utama: Bintan, Karimun, Lingga. Puncak: Feb-Mar, Jun-Ags."),
+        ("bangka belitung", "Bangka Belitung: Risiko SEDANG. Kebakaran lahan bekas tambang dan hutan sekunder. Area: Bangka Tengah, Belitung Timur. Puncak: Jul-Okt."),
+        ("banten", "Banten: Risiko RENDAH. Kebakaran pinggiran perkotaan dan zona penyangga Ujung Kulon. Area: Pandeglang, Lebak. Puncak: Ags-Okt."),
+        ("kalimantan utara", "Kalimantan Utara: Risiko SEDANG-TINGGI. Kebakaran hutan di area perbatasan Malaysia, terkait aktivitas logging. Hotspot utama: Malinau, Nunukan, Bulungan. Puncak: Jul-Okt."),
+        ("sulawesi selatan", "Sulawesi Selatan: Risiko SEDANG. Kebakaran savana dan padang rumput saat kemarau. Area: Bone, Wajo, Luwu. Puncak: Ags-Nov."),
+        ("sulawesi tengah", "Sulawesi Tengah: Risiko SEDANG. Kebakaran hutan, terutama pasca pembukaan lahan setelah gempa 2018. Hotspot utama: Sigi, Donggala, Morowali. Puncak: Ags-Nov."),
+        ("sulawesi tenggara", "Sulawesi Tenggara: Risiko SEDANG. Kebakaran savana dan hutan sekunder. Area: Konawe, Kolaka, Bombana. Puncak: Ags-Nov."),
+        ("sulawesi utara", "Sulawesi Utara: Risiko RENDAH-SEDANG. Kebakaran hutan di sekitar Manado dan Minahasa. Area: Minahasa Selatan, Bolaang Mongondow. Puncak: Ags-Okt."),
+        ("gorontalo", "Gorontalo: Risiko RENDAH-SEDANG. Kebakaran padang rumput musiman. Area: Gorontalo Utara, Pohuwato. Puncak: Ags-Nov."),
+        ("maluku", "Maluku: Risiko SEDANG. Kebakaran musim kemarau di Maluku Tenggara. Area: Maluku Tenggara Barat, Kepulauan Aru. Puncak: Ags-Nov."),
     ];
 
     for (key, val) in &info {
@@ -122,5 +156,8 @@ fn get_fire_prone_info(province: &str) -> String {
         }
     }
 
-    format!("Informasi spesifik untuk '{}' tidak tersedia dalam database referensi.", province)
+    format!(
+        "Informasi spesifik untuk '{}' tidak tersedia dalam database referensi.",
+        province
+    )
 }

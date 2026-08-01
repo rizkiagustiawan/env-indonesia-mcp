@@ -3,25 +3,51 @@
 /// Langmuir: qe = (qmax × KL × Ce) / (1 + KL × Ce)
 /// Ref: Metcalf & Eddy (2003), Weber (1972)
 
-pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, volume_l: f64, c0: f64) -> String {
+pub fn calculate(
+    model: &str,
+    ce: f64,
+    kf: f64,
+    n_exp: f64,
+    qmax: f64,
+    kl: f64,
+    volume_l: f64,
+    c0: f64,
+) -> String {
     let mut out = String::from("=== Isoterm Adsorpsi ===\n");
     out.push_str("Ref: Metcalf & Eddy (2003), Weber (1972)\n\n");
 
-    if ce < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if ce < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let model_lower = model.to_lowercase();
 
     match model_lower.as_str() {
         "freundlich" => {
-            if kf <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-            if n_exp <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if kf <= 0.0 {
+                return "ERROR [E102]: Parameter harus > 0.".into();
+            }
+            if n_exp <= 0.0 {
+                return "ERROR [E102]: Parameter harus > 0.".into();
+            }
 
             let qe = kf * ce.powf(1.0 / n_exp);
 
             out.push_str("Model: Freundlich\n");
             out.push_str(&format!("  qe = Kf × Ce^(1/n)\n\n"));
-            out.push_str(&format!("Input:\n  Ce = {:.2} mg/L\n  Kf = {:.4}\n  n = {:.2}\n  1/n = {:.4}\n\n", ce, kf, n_exp, 1.0 / n_exp));
-            out.push_str(&format!("Hasil:\n  qe = {:.4} × {:.2}^{:.4}\n", kf, ce, 1.0 / n_exp));
+            out.push_str(&format!(
+                "Input:\n  Ce = {:.2} mg/L\n  Kf = {:.4}\n  n = {:.2}\n  1/n = {:.4}\n\n",
+                ce,
+                kf,
+                n_exp,
+                1.0 / n_exp
+            ));
+            out.push_str(&format!(
+                "Hasil:\n  qe = {:.4} × {:.2}^{:.4}\n",
+                kf,
+                ce,
+                1.0 / n_exp
+            ));
             out.push_str(&format!("  qe = {:.4} mg/g\n\n", qe));
 
             // Favorability
@@ -40,8 +66,12 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
             }
         }
         "langmuir" => {
-            if qmax <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-            if kl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+            if qmax <= 0.0 {
+                return "ERROR [E102]: Parameter harus > 0.".into();
+            }
+            if kl <= 0.0 {
+                return "ERROR [E102]: Parameter harus > 0.".into();
+            }
 
             let qe = (qmax * kl * ce) / (1.0 + kl * ce);
 
@@ -50,13 +80,22 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
 
             out.push_str("Model: Langmuir\n");
             out.push_str("  qe = (qmax × KL × Ce) / (1 + KL × Ce)\n\n");
-            out.push_str(&format!("Input:\n  Ce = {:.2} mg/L\n  qmax = {:.2} mg/g\n  KL = {:.4} L/mg\n\n", ce, qmax, kl));
-            out.push_str(&format!("Hasil:\n  qe = ({:.2} × {:.4} × {:.2}) / (1 + {:.4} × {:.2})\n", qmax, kl, ce, kl, ce));
+            out.push_str(&format!(
+                "Input:\n  Ce = {:.2} mg/L\n  qmax = {:.2} mg/g\n  KL = {:.4} L/mg\n\n",
+                ce, qmax, kl
+            ));
+            out.push_str(&format!(
+                "Hasil:\n  qe = ({:.2} × {:.4} × {:.2}) / (1 + {:.4} × {:.2})\n",
+                qmax, kl, ce, kl, ce
+            ));
             out.push_str(&format!("  qe = {:.4} mg/g\n\n", qe));
 
             // Separation factor
             if c0 > 0.0 {
-                out.push_str(&format!("Faktor separasi:\n  RL = 1/(1+KL×C₀) = 1/(1+{:.4}×{:.2}) = {:.4}\n", kl, c0, rl));
+                out.push_str(&format!(
+                    "Faktor separasi:\n  RL = 1/(1+KL×C₀) = 1/(1+{:.4}×{:.2}) = {:.4}\n",
+                    kl, c0, rl
+                ));
                 let assessment = if rl <= 0.0 {
                     "Irreversible"
                 } else if rl < 1.0 {
@@ -66,7 +105,10 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
                 } else {
                     "Unfavorable ⚠️"
                 };
-                out.push_str(&format!("  Penilaian: {} (0<RL<1 = favorable)\n", assessment));
+                out.push_str(&format!(
+                    "  Penilaian: {} (0<RL<1 = favorable)\n",
+                    assessment
+                ));
             }
 
             // Mass of adsorbent
@@ -77,7 +119,12 @@ pub fn calculate(model: &str, ce: f64, kf: f64, n_exp: f64, qmax: f64, kl: f64, 
                     volume_l, c0, mass_removed, adsorbent_g, adsorbent_g / 1000.0));
             }
         }
-        _ => return format!("ERROR: Model '{}' tidak dikenali. Pilihan: freundlich, langmuir.", model),
+        _ => {
+            return format!(
+                "ERROR: Model '{}' tidak dikenali. Pilihan: freundlich, langmuir.",
+                model
+            )
+        }
     }
 
     out

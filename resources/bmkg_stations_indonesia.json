@@ -46,6 +46,14 @@
     {"name": "Stasiun Meteorologi Sentani Jayapura", "code": "97560", "lat": -2.577, "lon": 140.517, "province": "Papua"},
     {"name": "Stasiun Meteorologi Mopah Merauke", "code": "97600", "lat": -8.520, "lon": 140.418, "province": "Papua"},
     {"name": "Stasiun Meteorologi Rendani Manokwari", "code": "97502", "lat": -0.891, "lon": 134.049, "province": "Papua Barat"},
-    {"name": "Stasiun Meteorologi Serang", "code": "96739", "lat": -6.113, "lon": 106.150, "province": "Banten"}
+    {"name": "Stasiun Meteorologi Serang", "code": "96739", "lat": -6.113, "lon": 106.150, "province": "Banten"},
+    {"name": "Stasiun Meteorologi Depati Amir Pangkalpinang", "code": "96731", "lat": -2.1661, "lon": 106.1392, "province": "Kepulauan Bangka Belitung"},
+    {"name": "Stasiun Meteorologi Hang Nadim Batam", "code": "96091", "lat": 1.1211, "lon": 104.1189, "province": "Kepulauan Riau"},
+    {"name": "Stasiun Meteorologi Tanjung Harapan Tanjung Selor", "code": "96529", "lat": 2.8357, "lon": 117.3632, "province": "Kalimantan Utara"},
+    {"name": "Stasiun Meteorologi Tampa Padang Mamuju", "code": "97096", "lat": -2.6748, "lon": 118.8886, "province": "Sulawesi Barat"},
+    {"name": "Stasiun Meteorologi Mopah Merauke", "code": "97600", "lat": -8.4932, "lon": 140.4018, "province": "Papua Selatan"},
+    {"name": "Stasiun Meteorologi Nabire", "code": "97532", "lat": -3.3664, "lon": 135.4929, "province": "Papua Tengah"},
+    {"name": "Stasiun Meteorologi Wamena", "code": "97544", "lat": -4.1025, "lon": 138.9523, "province": "Papua Pegunungan"},
+    {"name": "Stasiun Meteorologi Domine Eduard Osok Sorong", "code": "97430", "lat": -0.8867, "lon": 131.2870, "province": "Papua Barat Daya"}
   ]
 }

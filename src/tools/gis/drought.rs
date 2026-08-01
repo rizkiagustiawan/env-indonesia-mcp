@@ -1,6 +1,10 @@
 pub fn index(precip: f64, avg: f64, std: f64) -> String {
-    let spi = if std.abs() < 1e-10 { 0.0 } else { (precip - avg) / std };
-    
+    let spi = if std.abs() < 1e-10 {
+        0.0
+    } else {
+        (precip - avg) / std
+    };
+
     let category = match spi {
         v if v <= -2.0 => "KEKERINGAN EKSTREM (Extreme Drought)",
         v if v <= -1.5 => "KEKERINGAN PARAH (Severe Drought)",

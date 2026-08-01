@@ -17,15 +17,23 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
         Err(e) => return format!("ERROR: Gagal parse outputs_json: {}.\nFormat: [{{\"material\":\"produk\",\"amount_ton\":800}}]", e),
     };
 
-    if inputs.is_empty() { return "ERROR: Minimal 1 input material.".into(); }
-    if outputs.is_empty() { return "ERROR: Minimal 1 output material.".into(); }
+    if inputs.is_empty() {
+        return "ERROR: Minimal 1 input material.".into();
+    }
+    if outputs.is_empty() {
+        return "ERROR: Minimal 1 output material.".into();
+    }
 
     let total_input: f64 = inputs.iter().map(|i| i.amount_ton).sum();
     let total_output: f64 = outputs.iter().map(|o| o.amount_ton).sum();
 
     // Mass balance: Input = Output + Stock_change
     let balance = total_input - total_output - stock_change;
-    let balance_pct = if total_input > 0.0 { (balance / total_input).abs() * 100.0 } else { 0.0 };
+    let balance_pct = if total_input > 0.0 {
+        (balance / total_input).abs() * 100.0
+    } else {
+        0.0
+    };
 
     // Identify useful product vs waste
     let mut useful_output = 0.0_f64;
@@ -35,9 +43,15 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
 
     for o in &outputs {
         let lower = o.material.to_lowercase();
-        if lower.contains("limbah") || lower.contains("waste") || lower.contains("emisi")
-            || lower.contains("emission") || lower.contains("reject") || lower.contains("scrap")
-            || lower.contains("slag") || lower.contains("abu") || lower.contains("sludge")
+        if lower.contains("limbah")
+            || lower.contains("waste")
+            || lower.contains("emisi")
+            || lower.contains("emission")
+            || lower.contains("reject")
+            || lower.contains("scrap")
+            || lower.contains("slag")
+            || lower.contains("abu")
+            || lower.contains("sludge")
             || lower.contains("residu")
         {
             waste_output += o.amount_ton;
@@ -48,8 +62,16 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
         }
     }
 
-    let efficiency = if total_input > 0.0 { useful_output / total_input * 100.0 } else { 0.0 };
-    let waste_ratio = if total_input > 0.0 { waste_output / total_input * 100.0 } else { 0.0 };
+    let efficiency = if total_input > 0.0 {
+        useful_output / total_input * 100.0
+    } else {
+        0.0
+    };
+    let waste_ratio = if total_input > 0.0 {
+        waste_output / total_input * 100.0
+    } else {
+        0.0
+    };
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  MATERIAL FLOW ANALYSIS (MFA)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
     out.push_str("Ref: Brunner & Rechberger (2004), ISO 14040\n\n");
@@ -57,28 +79,55 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
     // Inputs
     out.push_str("INPUT MATERIAL:\n");
     for i in &inputs {
-        let pct = if total_input > 0.0 { i.amount_ton / total_input * 100.0 } else { 0.0 };
-        out.push_str(&format!("  {:25} {:>10.2} ton ({:.1}%)\n", i.material, i.amount_ton, pct));
+        let pct = if total_input > 0.0 {
+            i.amount_ton / total_input * 100.0
+        } else {
+            0.0
+        };
+        out.push_str(&format!(
+            "  {:25} {:>10.2} ton ({:.1}%)\n",
+            i.material, i.amount_ton, pct
+        ));
     }
-    out.push_str(&format!("  {:25} {:>10.2} ton\n\n", "TOTAL INPUT", total_input));
+    out.push_str(&format!(
+        "  {:25} {:>10.2} ton\n\n",
+        "TOTAL INPUT", total_input
+    ));
 
     // Outputs
     out.push_str("OUTPUT MATERIAL:\n");
     if !product_items.is_empty() {
         out.push_str("  Produk:\n");
         for o in &product_items {
-            let pct = if total_input > 0.0 { o.amount_ton / total_input * 100.0 } else { 0.0 };
-            out.push_str(&format!("    {:23} {:>10.2} ton ({:.1}%)\n", o.material, o.amount_ton, pct));
+            let pct = if total_input > 0.0 {
+                o.amount_ton / total_input * 100.0
+            } else {
+                0.0
+            };
+            out.push_str(&format!(
+                "    {:23} {:>10.2} ton ({:.1}%)\n",
+                o.material, o.amount_ton, pct
+            ));
         }
     }
     if !waste_items.is_empty() {
         out.push_str("  Limbah/Emisi:\n");
         for o in &waste_items {
-            let pct = if total_input > 0.0 { o.amount_ton / total_input * 100.0 } else { 0.0 };
-            out.push_str(&format!("    {:23} {:>10.2} ton ({:.1}%)\n", o.material, o.amount_ton, pct));
+            let pct = if total_input > 0.0 {
+                o.amount_ton / total_input * 100.0
+            } else {
+                0.0
+            };
+            out.push_str(&format!(
+                "    {:23} {:>10.2} ton ({:.1}%)\n",
+                o.material, o.amount_ton, pct
+            ));
         }
     }
-    out.push_str(&format!("  {:25} {:>10.2} ton\n\n", "TOTAL OUTPUT", total_output));
+    out.push_str(&format!(
+        "  {:25} {:>10.2} ton\n\n",
+        "TOTAL OUTPUT", total_output
+    ));
 
     // Stock change
     out.push_str(&format!("PERUBAHAN STOK: {:+.2} ton\n\n", stock_change));
@@ -105,11 +154,21 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
     // Sankey data (simplified text representation)
     out.push_str("DATA SANKEY DIAGRAM:\n");
     for i in &inputs {
-        out.push_str(&format!("  [INPUT] {} ({:.1}t) → PROSES\n", i.material, i.amount_ton));
+        out.push_str(&format!(
+            "  [INPUT] {} ({:.1}t) → PROSES\n",
+            i.material, i.amount_ton
+        ));
     }
     for o in &outputs {
-        let flow_type = if waste_items.iter().any(|w| w.material == o.material) { "LIMBAH" } else { "PRODUK" };
-        out.push_str(&format!("  PROSES → [{}] {} ({:.1}t)\n", flow_type, o.material, o.amount_ton));
+        let flow_type = if waste_items.iter().any(|w| w.material == o.material) {
+            "LIMBAH"
+        } else {
+            "PRODUK"
+        };
+        out.push_str(&format!(
+            "  PROSES → [{}] {} ({:.1}t)\n",
+            flow_type, o.material, o.amount_ton
+        ));
     }
     if stock_change.abs() > 0.01 {
         out.push_str(&format!("  PROSES → [STOK] ({:+.1}t)\n", stock_change));

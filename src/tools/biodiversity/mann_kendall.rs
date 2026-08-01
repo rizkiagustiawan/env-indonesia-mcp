@@ -9,7 +9,10 @@ pub fn trend_test(data_json: &str) -> String {
 
     let n = data.len();
     if n < 4 {
-        return format!("ERROR: Minimal 4 data diperlukan untuk uji Mann-Kendall, diberikan {}.", n);
+        return format!(
+            "ERROR: Minimal 4 data diperlukan untuk uji Mann-Kendall, diberikan {}.",
+            n
+        );
     }
 
     // S = Σ Σ sgn(xj - xi) for all i<j
@@ -79,21 +82,41 @@ pub fn trend_test(data_json: &str) -> String {
     let c_alpha = 1.96 * sigma;
     let m1 = ((nn * (nn - 1.0) / 2.0 - c_alpha) / 2.0) as usize;
     let m2 = ((nn * (nn - 1.0) / 2.0 + c_alpha) / 2.0) as usize;
-    let lower_ci = if m1 < slopes.len() { slopes[m1] } else { slopes[0] };
-    let upper_ci = if m2 < slopes.len() { slopes[m2] } else { slopes[slopes.len() - 1] };
+    let lower_ci = if m1 < slopes.len() {
+        slopes[m1]
+    } else {
+        slopes[0]
+    };
+    let upper_ci = if m2 < slopes.len() {
+        slopes[m2]
+    } else {
+        slopes[slopes.len() - 1]
+    };
 
     // Trend determination
     let (trend, trend_id) = if p_value <= 0.01 {
         if z > 0.0 {
-            ("MENINGKAT (sangat signifikan)", "Tren naik signifikan pada α = 0.01")
+            (
+                "MENINGKAT (sangat signifikan)",
+                "Tren naik signifikan pada α = 0.01",
+            )
         } else {
-            ("MENURUN (sangat signifikan)", "Tren turun signifikan pada α = 0.01")
+            (
+                "MENURUN (sangat signifikan)",
+                "Tren turun signifikan pada α = 0.01",
+            )
         }
     } else if p_value <= 0.05 {
         if z > 0.0 {
-            ("MENINGKAT (signifikan)", "Tren naik signifikan pada α = 0.05")
+            (
+                "MENINGKAT (signifikan)",
+                "Tren naik signifikan pada α = 0.05",
+            )
         } else {
-            ("MENURUN (signifikan)", "Tren turun signifikan pada α = 0.05")
+            (
+                "MENURUN (signifikan)",
+                "Tren turun signifikan pada α = 0.05",
+            )
         }
     } else if p_value <= 0.10 {
         if z > 0.0 {
@@ -129,23 +152,44 @@ pub fn trend_test(data_json: &str) -> String {
     result.push_str(&format!("• p-value (two-tailed) : {:.6}\n\n", p_value));
 
     result.push_str("SEN'S SLOPE:\n");
-    result.push_str(&format!("• Slope estimasi       : {:.6} per satuan waktu\n", sens_slope));
-    result.push_str(&format!("• 95% CI               : [{:.6}, {:.6}]\n\n", lower_ci, upper_ci));
+    result.push_str(&format!(
+        "• Slope estimasi       : {:.6} per satuan waktu\n",
+        sens_slope
+    ));
+    result.push_str(&format!(
+        "• 95% CI               : [{:.6}, {:.6}]\n\n",
+        lower_ci, upper_ci
+    ));
 
     result.push_str(&format!("TREN: {}\n", trend));
     result.push_str(&format!("  {}\n\n", trend_id));
 
     result.push_str("SIGNIFIKANSI:\n");
-    result.push_str(&format!("• α = 0.01 : {} (p {} 0.01)\n",
-        if p_value <= 0.01 { "Signifikan" } else { "Tidak signifikan" },
+    result.push_str(&format!(
+        "• α = 0.01 : {} (p {} 0.01)\n",
+        if p_value <= 0.01 {
+            "Signifikan"
+        } else {
+            "Tidak signifikan"
+        },
         if p_value <= 0.01 { "≤" } else { ">" }
     ));
-    result.push_str(&format!("• α = 0.05 : {} (p {} 0.05)\n",
-        if p_value <= 0.05 { "Signifikan" } else { "Tidak signifikan" },
+    result.push_str(&format!(
+        "• α = 0.05 : {} (p {} 0.05)\n",
+        if p_value <= 0.05 {
+            "Signifikan"
+        } else {
+            "Tidak signifikan"
+        },
         if p_value <= 0.05 { "≤" } else { ">" }
     ));
-    result.push_str(&format!("• α = 0.10 : {} (p {} 0.10)\n",
-        if p_value <= 0.10 { "Signifikan" } else { "Tidak signifikan" },
+    result.push_str(&format!(
+        "• α = 0.10 : {} (p {} 0.10)\n",
+        if p_value <= 0.10 {
+            "Signifikan"
+        } else {
+            "Tidak signifikan"
+        },
         if p_value <= 0.10 { "≤" } else { ">" }
     ));
     result.push_str("══════════════════════════════════════════════\n");
@@ -158,7 +202,9 @@ fn normal_cdf(x: f64) -> f64 {
     let t = 1.0 / (1.0 + 0.2316419 * x.abs());
     let d = 0.3989422804014327; // 1/sqrt(2π)
     let p = d * (-x * x / 2.0).exp();
-    let poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    let poly = t
+        * (0.319381530
+            + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
     if x >= 0.0 {
         1.0 - p * poly
     } else {

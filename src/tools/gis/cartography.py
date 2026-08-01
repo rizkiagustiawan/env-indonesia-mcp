@@ -10,6 +10,12 @@ SNI 6502:2010 | PermenLH 16/2012
 import sys, json, argparse, math, os
 from datetime import datetime
 
+# Provenance
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from provenance import create_provenance
+except: create_provenance = None
+
 import geopandas as gpd
 import matplotlib
 matplotlib.use('Agg')
@@ -24,7 +30,30 @@ import numpy as np
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
-ADMIN_GEOJSON = os.path.join(PROJECT_ROOT, 'resources', 'indonesia_admin.geojson')
+ADMIN_GEOJSON = os.path.join(PROJECT_ROOT, 'resources', 'indonesia_admin_gadm41.geojson')
+KAB_GEOJSON = os.path.join(PROJECT_ROOT, 'resources', 'indonesia_kabupaten_gadm41.geojson')
+
+def _fetch_big_admin(lat, lon, buffer_km):
+    """Ambil batas administrasi dari BIG Geoportal (resmi pemerintah Indonesia).
+    Fallback ke GADM kabupaten (level 2) jika BIG tidak respons.
+    Fallback ke GADM provinsi (level 1) jika kabupaten tidak ada."""
+    import tempfile, sys as _sys
+    _sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'datasources'))
+    try:
+        from big_geoportal import query_admin_kabkota
+        out_file = os.path.join(tempfile.gettempdir(), f'big_admin_{lat:.2f}_{lon:.2f}.geojson')
+        result = query_admin_kabkota(lat, lon, buffer_km, out_file)
+        if os.path.exists(out_file) and os.path.getsize(out_file) > 1000:
+            return out_file, "BIG RBI 1:50K"
+    except Exception:
+        pass
+    # Fallback ke GADM kabupaten (502 features, lebih detail dari provinsi)
+    if os.path.exists(KAB_GEOJSON):
+        return KAB_GEOJSON, "GADM 4.1 Kab/Kota"
+    # Fallback terakhir ke GADM provinsi
+    if os.path.exists(ADMIN_GEOJSON):
+        return ADMIN_GEOJSON, "GADM 4.1 Provinsi"
+    return None, "Tidak tersedia"
 
 # ── STYLE ────────────────────────────────────────────────────────
 C = {
@@ -80,7 +109,10 @@ def sep(fig, x0, y0, x1, y1, lw=2.5):
 
 # ── MAIN ─────────────────────────────────────────────────────────
 def generate_sni_map(geojson_str, output_path, title, realtime=False,
-                     author="Environmental AI Agent", date_str=None, show_admin=True):
+                     author="Environmental AI Agent", date_str=None, show_admin=True,
+                     overlay_raster=None, analysis_type='continuous', cmap='viridis',
+                     vmin=None, vmax=None, discrete_labels=None,
+                     colorbar_label='Nilai', analysis_stats=None, conclusion_text=None):
     try:
         data = json.loads(geojson_str)
         if data.get('type')=='FeatureCollection':
@@ -119,7 +151,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # ── ROW 1: SCALE BAR + NORTH ARROW — RIGHT SIDE (outside basemap) ──
         # Batasi ax_strip hanya pada kolom kanan (mulai dari 0.72)
         # Tinggi dan posisinya diatur agar tepat di atas Inset Map (y=0.895 to 0.935)
-        ax_strip = fig.add_axes([0.72, 0.895, 0.975 - 0.72, 0.040])
+        ax_strip = fig.add_axes([0.72, 0.890, 0.975 - 0.72, 0.045])
         ax_strip.set_xlim(0,1); ax_strip.set_ylim(0,1)
         ax_strip.set_facecolor(C['bg'])
         ax_strip.axis('off')
@@ -137,16 +169,16 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                          fontweight='bold', ha='center', va='top', color=C['tx1'], fontfamily=FNT)
 
         # North arrow — far right of the right panel header
-        na_x = 0.85; na_top = 0.75; na_bot = 0.15
+        na_x = 0.85; na_top = 0.65; na_bot = 0.10
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x-0.05,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc='white', ec=C['bdr'], lw=1.5, clip_on=False))
         ax_strip.add_patch(Polygon([(na_x,na_top),(na_x+0.05,na_bot),(na_x,na_bot*1.5)],
             closed=True, fc=C['bdr'], ec=C['bdr'], lw=1.5, clip_on=False))
-        ax_strip.text(na_x, na_top+0.05, 'U', fontsize=11, fontweight='heavy',
+        ax_strip.text(na_x, na_top-0.05, 'U', fontsize=11, fontweight='heavy',
                       ha='center', va='bottom', color=C['tx1'], fontfamily=FNT)
 
-        # Garis vertikal pemisah Scale Bar dan North Arrow
-        sep(fig, 0.89, 0.895, 0.89, 0.935, lw=1.5)
+        # Garis vertikal pemisah Scale Bar dan North Arrow (DIHAPUS v4.15)
+        # sep(fig, 0.89, 0.895, 0.89, 0.935, lw=1.5)
 
         # Line below strip (HAPUS garis horizontal ini untuk menyatukan area peta ke atas)
         # sep(fig, 0.025, 0.882, 0.975, 0.882, lw=2.5)
@@ -155,6 +187,9 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         rp_x = 0.72  # right panel starts here
         # Make the vertical line span all the way from inner bottom neatline (0.013) up to the title separator
         sep(fig, rp_x, 0.013, rp_x, 0.935, lw=2.5)
+
+        # Garis horizontal bawah scale bar strip — mentok inner neatline
+        sep(fig, rp_x, 0.885, 0.987, 0.885, lw=2.0)
 
         # ── MAIN MAP ──
         # Left and bottom margin expanded to 0.065 to give room for coordinate labels
@@ -182,15 +217,62 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         else:
             cx.add_basemap(ax, crs=gw.crs.to_string(), source=cx.providers.Esri.WorldImagery, zorder=1)
 
-        # Admin boundaries
-        if show_admin and os.path.exists(ADMIN_GEOJSON):
+        # Thematic Overlay Raster (di atas basemap, di bawah batas admin)
+        if overlay_raster and os.path.exists(overlay_raster):
             try:
-                ad=gpd.read_file(ADMIN_GEOJSON).to_crs(epsg=3857)
+                import rasterio
+                from rasterio.plot import show as rs
+                import numpy as np
+                with rasterio.open(overlay_raster) as src:
+                    if analysis_type == 'continuous':
+                        rs(src, ax=ax, zorder=2, cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.65)
+                        # Add contour lines for DEM
+                        dem = src.read(1)
+                        # Handle nodata
+                        dem = np.where(dem < -9000, np.nan, dem)
+                        
+                        # Generate extent in projected coordinates
+                        bounds = src.bounds
+                        x = np.linspace(bounds.left, bounds.right, dem.shape[1])
+                        y = np.linspace(bounds.bottom, bounds.top, dem.shape[0])
+                        X, Y = np.meshgrid(x, y)
+                        
+                        # Subsample to speed up contouring if raster is very large
+                        step = max(1, dem.shape[0] // 500)
+                        dem_sub = dem[::step, ::step]
+                        X_sub = X[::step, ::step]
+                        Y_sub = Y[::step, ::step]
+                        
+                        # Calculate contour levels (max 15 levels)
+                        min_val = np.nanmin(dem_sub)
+                        max_val = np.nanmax(dem_sub)
+                        if max_val > min_val:
+                            levels = np.linspace(min_val, max_val, 15)
+                            contours = ax.contour(X_sub, Y_sub, dem_sub, levels=levels, colors='black', linewidths=0.5, alpha=0.4, zorder=3)
+                            ax.clabel(contours, inline=True, fontsize=5, fmt='%1.0f m')
+                    else:
+                        rs(src, ax=ax, zorder=2, cmap=cmap if isinstance(cmap, str) else None, alpha=0.75)
+            except Exception as e:
+                print(f"[WARNING] Overlay raster gagal: {e}")
+
+        # Ambil batas administrasi dari BIG Geoportal (resmi)
+        admin_file, admin_source = _fetch_big_admin(clat, clon, bk + 5)
+        
+        # Admin boundaries
+        if show_admin and admin_file:
+            try:
+                ad=gpd.read_file(admin_file).to_crs(epsg=3857)
+                # Clip ke area peta (kembangkan sedikit)
                 cl=ad.cx[xn-px*3:xx+px*3, yn-py*3:yx+py*3]
                 if len(cl)>0:
-                    cl[cl['level']==1].plot(ax=ax, color='none', ec=C['adm'],
+                    cl.plot(ax=ax, color='none', ec=C['adm'],
                         lw=1.5, ls='--', zorder=3, alpha=0.85)
-            except: pass
+                else:
+                    # Jika clip kosong, plot semua (mungkin CRS mismatch)
+                    ad.plot(ax=ax, color='none', ec=C['adm'],
+                        lw=1.5, ls='--', zorder=3, alpha=0.85)
+            except Exception as e:
+                print(f"[WARNING] Admin boundary plot gagal: {e}")
 
         # Project polygon
         gw.plot(ax=ax, color='none', ec=C['proj'], lw=3.0, zorder=4)
@@ -237,7 +319,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         # ═══════════════════════════════════════════════════════
         rp_w = 0.975 - rp_x  # right panel width
         rp_bot = 0.040
-        rp_top = 0.895
+        rp_top = 0.880
 
         # Heights: inset 22%, legend 15%, gap 3%, metadata 45%, logo 15%
         h_inset = (rp_top - rp_bot) * 0.22
@@ -265,13 +347,12 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                     fill=True, fc='#E53E3E55', ec='#E53E3E', lw=2, zorder=5))
                 ax_ins.plot(clon,clat,'o',color='#E53E3E',ms=6,mec='white',mew=1,zorder=6)
             except: pass
-        ax_ins.set_xlim(94,142); ax_ins.set_ylim(-12,7)
         ax_ins.set_xticks([]); ax_ins.set_yticks([])
         ax_ins.text(0.5,1.06,'PETA LOKASI', transform=ax_ins.transAxes,
                     fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
         # Separator below inset
-        sep(fig, rp_x, y_inset, 0.975, y_inset, lw=2.0)
+        sep(fig, rp_x, y_inset, 0.987, y_inset, lw=2.0)
 
         # ── LEGEND ──
         ax_lg = fig.add_axes([rp_x+pad_r, y_legend+pad_r, rp_w-2*pad_r, h_legend-2*pad_r])
@@ -279,30 +360,65 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         ax_lg.text(0.5,0.95,'LEGENDA', transform=ax_lg.transAxes,
                    fontsize=10, fontweight='heavy', ha='center', color=C['tx1'], fontfamily=FNT)
 
-        items = [
-            ('rect', C['proj'], 2.5, '-', 'Batas Area Studi'),
-        ]
-        if show_admin:
-            items.append(('line', C['adm'], 2.0, '--', 'Batas Administrasi'))
-        items.append(('dot', '#3498DB', 8, '', 'Titik Sampling'))
+        if overlay_raster and analysis_type == 'continuous' and vmin is not None and vmax is not None:
+            # Colorbar horizontal di bawah judul LEGENDA
+            import matplotlib as mpl
+            cb_ax = fig.add_axes([rp_x+pad_r+0.02, y_legend+pad_r+0.005, rp_w-2*pad_r-0.04, 0.015])
+            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+            try: cm = plt.get_cmap(cmap)
+            except: cm = plt.get_cmap('viridis')
+            cb = mpl.colorbar.ColorbarBase(cb_ax, cmap=cm, norm=norm, orientation='horizontal')
+            cb.ax.tick_params(labelsize=6, colors=C['tx1'])
+            ax_lg.text(0.5, 0.78, colorbar_label, transform=ax_lg.transAxes,
+                       fontsize=7, fontweight='bold', ha='center', color=C['tx1'], fontfamily=FNT)
+            # Base items di atas
+            ax_lg.add_patch(Rectangle((0.04,0.50),0.08,0.08, fc='none', ec=C['proj'], lw=2, transform=ax_lg.transAxes, clip_on=False))
+            ax_lg.text(0.16, 0.54, 'Batas Studi', transform=ax_lg.transAxes, fontsize=7, fontweight='bold', va='center', color=C['tx1'])
+            if show_admin:
+                ax_lg.plot([0.55,0.65],[0.54,0.54], color=C['adm'], lw=2, ls='--', transform=ax_lg.transAxes, clip_on=False)
+                ax_lg.text(0.68, 0.54, 'Batas Admin', transform=ax_lg.transAxes, fontsize=7, fontweight='bold', va='center', color=C['tx1'])
 
-        yp = 0.78
-        for typ, col, sz, ls, lbl in items:
-            if typ == 'rect':
-                ax_lg.add_patch(Rectangle((0.04,yp-0.12),0.14,0.15,
-                    fc='none', ec=col, lw=sz, transform=ax_lg.transAxes, clip_on=False))
-            elif typ == 'line':
-                ax_lg.plot([0.04,0.18],[yp-0.04,yp-0.04], color=col, lw=sz,
-                          ls=ls, transform=ax_lg.transAxes, clip_on=False)
-            elif typ == 'dot':
-                ax_lg.plot(0.11, yp-0.04, 'o', color=col, ms=sz, mec='white', mew=0.8,
-                          transform=ax_lg.transAxes, clip_on=False)
-            ax_lg.text(0.24, yp-0.04, lbl, transform=ax_lg.transAxes,
-                      fontsize=8.5, fontweight='bold', va='center', color=C['tx1'], fontfamily=FNT)
-            yp -= 0.32
+        elif overlay_raster and analysis_type == 'discrete' and discrete_labels:
+            # Kotak warna diskrit 2 kolom
+            yp = 0.78
+            ax_lg.add_patch(Rectangle((0.03,yp-0.06),0.06,0.08, fc='none', ec=C['proj'], lw=2, transform=ax_lg.transAxes, clip_on=False))
+            ax_lg.text(0.12, yp-0.02, 'Batas Studi', transform=ax_lg.transAxes, fontsize=6.5, fontweight='bold', va='center')
+            if show_admin:
+                ax_lg.plot([0.55,0.65],[yp-0.02,yp-0.02], color=C['adm'], lw=2, ls='--', transform=ax_lg.transAxes, clip_on=False)
+                ax_lg.text(0.68, yp-0.02, 'Batas Admin', transform=ax_lg.transAxes, fontsize=6.5, fontweight='bold', va='center')
+            yp -= 0.22
+            for idx, (color_hex, label) in enumerate(discrete_labels.items()):
+                col_x = 0.03 if idx % 2 == 0 else 0.55
+                if idx % 2 == 0 and idx > 0: yp -= 0.20
+                ax_lg.add_patch(Rectangle((col_x, yp-0.07), 0.06, 0.08, fc=color_hex, ec='#333', lw=0.5, transform=ax_lg.transAxes, clip_on=False))
+                ax_lg.text(col_x + 0.09, yp-0.03, label[:18], transform=ax_lg.transAxes, fontsize=6.5, fontweight='bold', va='center', color=C['tx1'])
+
+        else:
+            # Default legend (v4.15 asli)
+            items = [
+                ('rect', C['proj'], 2.5, '-', 'Batas Area Studi'),
+            ]
+            if show_admin:
+                items.append(('line', C['adm'], 2.0, '--', 'Batas Administrasi'))
+            items.append(('dot', '#3498DB', 8, '', 'Titik Sampling'))
+
+            yp = 0.78
+            for typ, col, sz, ls, lbl in items:
+                if typ == 'rect':
+                    ax_lg.add_patch(Rectangle((0.04,yp-0.12),0.14,0.15,
+                        fc='none', ec=col, lw=sz, transform=ax_lg.transAxes, clip_on=False))
+                elif typ == 'line':
+                    ax_lg.plot([0.04,0.18],[yp-0.04,yp-0.04], color=col, lw=sz,
+                              ls=ls, transform=ax_lg.transAxes, clip_on=False)
+                elif typ == 'dot':
+                    ax_lg.plot(0.11, yp-0.04, 'o', color=col, ms=sz, mec='white', mew=0.8,
+                              transform=ax_lg.transAxes, clip_on=False)
+                ax_lg.text(0.24, yp-0.04, lbl, transform=ax_lg.transAxes,
+                          fontsize=8.5, fontweight='bold', va='center', color=C['tx1'], fontfamily=FNT)
+                yp -= 0.32
 
         # Separator below legend (with gap before metadata)
-        sep(fig, rp_x, y_meta + h_meta, 0.975, y_meta + h_meta, lw=2.0)
+        sep(fig, rp_x, y_meta + h_meta, 0.987, y_meta + h_meta, lw=2.0)
 
         # ── METADATA TABLE ──
         ax_mt = fig.add_axes([rp_x+pad_r, y_meta+pad_r, rp_w-2*pad_r, h_meta-2*pad_r])
@@ -317,9 +433,17 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
         rows = [
             ('Skala', ss), ('Proyeksi', f'UTM Zone {uz}{uh}'),
             ('Datum', 'WGS-84'), ('EPSG', str(epsg)),
-            ('Sumber', src_txt), ('Tanggal', pd), ('Dibuat', author),
-            ('Diperiksa', '________________'), ('Disetujui', '________________'),
+            ('Citra', src_txt), ('Batas', admin_source[:22] if admin_file else 'N/A'),
+            ('Tanggal', pd),
         ]
+        # Inject analysis stats (Algoritma, Area Terbakar, dll)
+        if analysis_stats and isinstance(analysis_stats, dict):
+            for k, v in analysis_stats.items():
+                rows.append((str(k)[:15], str(v)[:22]))
+        rows.extend([
+            ('Dibuat', author),
+            ('Diperiksa', '________________'), ('Disetujui', '________________'),
+        ])
         n=len(rows); table_h=0.85; rh=table_h/n
         for i,(k,v) in enumerate(rows):
             yy = table_h - (i+1)*rh
@@ -332,7 +456,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                       va='center', color=C['tx2'], fontfamily=FNT)
 
         # Separator below metadata
-        sep(fig, rp_x, y_meta, 0.975, y_meta, lw=2.0)
+        sep(fig, rp_x, y_meta, 0.987, y_meta, lw=2.0)
 
         # ── LOGO PLACEHOLDER ──
         ax_lo = fig.add_axes([rp_x+pad_r, y_logo+pad_r, rp_w-2*pad_r, h_logo-2*pad_r])

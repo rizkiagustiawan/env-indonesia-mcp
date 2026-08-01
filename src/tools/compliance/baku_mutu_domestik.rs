@@ -18,23 +18,33 @@ pub fn check(parameter: &str, concentration: f64) -> String {
 
     let (max_lim, min_lim, unit, is_range) = match result {
         Some(v) => v,
-        None => return format!(
-            "ERROR: Parameter '{}' tidak ditemukan dalam PermenLHK 68/2016.\n\
+        None => {
+            return format!(
+                "ERROR: Parameter '{}' tidak ditemukan dalam PermenLHK 68/2016.\n\
              Parameter valid: pH, BOD, COD, TSS, oil_grease, ammonia, total_coliform",
-            parameter
-        ),
+                parameter
+            )
+        }
     };
 
     let (status, detail) = if is_range {
         let ok = concentration >= min_lim && concentration <= max_lim;
         (
-            if ok { "Memenuhi Baku Mutu ✅" } else { "Melebihi Baku Mutu ❌" },
+            if ok {
+                "Memenuhi Baku Mutu ✅"
+            } else {
+                "Melebihi Baku Mutu ❌"
+            },
             format!("Range: {}-{}", min_lim, max_lim),
         )
     } else {
         let pct = (concentration / max_lim) * 100.0;
         (
-            if concentration <= max_lim { "Memenuhi Baku Mutu ✅" } else { "Melebihi Baku Mutu ❌" },
+            if concentration <= max_lim {
+                "Memenuhi Baku Mutu ✅"
+            } else {
+                "Melebihi Baku Mutu ❌"
+            },
             format!("{:.1}% dari baku mutu", pct),
         )
     };

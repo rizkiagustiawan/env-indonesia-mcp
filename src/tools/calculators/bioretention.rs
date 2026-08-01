@@ -6,10 +6,16 @@ fn fmt_rp(v: f64) -> String {
     let bytes: Vec<u8> = s.bytes().collect();
     let mut result = String::new();
     for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 { result.push('.'); }
+        if i > 0 && (bytes.len() - i) % 3 == 0 {
+            result.push('.');
+        }
         result.push(*b as char);
     }
-    if v < 0.0 { format!("-{}", result) } else { result }
+    if v < 0.0 {
+        format!("-{}", result)
+    } else {
+        result
+    }
 }
 
 pub fn design(
@@ -19,11 +25,21 @@ pub fn design(
     media_depth_m: f64,
     drain_time_hr: f64,
 ) -> String {
-    if q_design_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m³/s.".into(); }
-    if ksat_m_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m/hr.".into(); }
-    if ponding_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
-    if media_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
-    if drain_time_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0 jam.".into(); }
+    if q_design_m3s <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m³/s.".into();
+    }
+    if ksat_m_hr <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m/hr.".into();
+    }
+    if ponding_depth_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m.".into();
+    }
+    if media_depth_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m.".into();
+    }
+    if drain_time_hr <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 jam.".into();
+    }
 
     // Design storm volume (simplified: Q × duration assumed 1 hr = 3600s)
     let storm_duration_s = 3600.0; // 1-hour design storm
@@ -98,8 +114,14 @@ pub fn design(
 
     out.push_str("UNDERDRAIN:\n");
     out.push_str("  Pipa: PVC perforasi Ø100 mm\n");
-    out.push_str(&format!("  Lapisan gravel: {:.2} m (kerikil 10-20 mm)\n", gravel_depth));
-    out.push_str(&format!("  Panjang estimasi: {:.1} m\n\n", underdrain_length));
+    out.push_str(&format!(
+        "  Lapisan gravel: {:.2} m (kerikil 10-20 mm)\n",
+        gravel_depth
+    ));
+    out.push_str(&format!(
+        "  Panjang estimasi: {:.1} m\n\n",
+        underdrain_length
+    ));
 
     out.push_str("TANAMAN YANG DIREKOMENDASIKAN (Indonesia):\n");
     out.push_str("  • Heliconia psittacorum — toleran genangan, estetik\n");

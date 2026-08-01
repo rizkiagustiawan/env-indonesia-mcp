@@ -5,10 +5,18 @@ pub fn calculate(k_ms: f64, gradient: f64, area_m2: f64, porosity: f64, distance
     let mut out = String::from("=== Hukum Darcy — Aliran Air Tanah ===\n");
     out.push_str("Ref: Freeze & Cherry (1979), Groundwater\n\n");
 
-    if k_ms <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if gradient <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if porosity <= 0.0 || porosity >= 1.0 { return "ERROR: Porositas harus antara 0 dan 1 (eksklusif).".into(); }
+    if k_ms <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if gradient <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if area_m2 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if porosity <= 0.0 || porosity >= 1.0 {
+        return "ERROR: Porositas harus antara 0 dan 1 (eksklusif).".into();
+    }
 
     let q_specific = k_ms * gradient; // m/s (specific discharge / Darcy velocity)
     let q_flow = k_ms * gradient * area_m2; // m³/s
@@ -18,20 +26,38 @@ pub fn calculate(k_ms: f64, gradient: f64, area_m2: f64, porosity: f64, distance
         k_ms, gradient, area_m2, porosity, distance_m));
 
     out.push_str("Hasil:\n");
-    out.push_str(&format!("  Darcy velocity (q) = K × i = {:.2e} m/s = {:.4} m/hari\n", q_specific, q_specific * 86400.0));
-    out.push_str(&format!("  Debit (Q) = K × i × A = {:.2e} m³/s = {:.4} m³/hari\n", q_flow, q_flow * 86400.0));
-    out.push_str(&format!("  Seepage velocity (v) = q/n = {:.2e} m/s = {:.4} m/hari\n\n", v_seepage, v_seepage * 86400.0));
+    out.push_str(&format!(
+        "  Darcy velocity (q) = K × i = {:.2e} m/s = {:.4} m/hari\n",
+        q_specific,
+        q_specific * 86400.0
+    ));
+    out.push_str(&format!(
+        "  Debit (Q) = K × i × A = {:.2e} m³/s = {:.4} m³/hari\n",
+        q_flow,
+        q_flow * 86400.0
+    ));
+    out.push_str(&format!(
+        "  Seepage velocity (v) = q/n = {:.2e} m/s = {:.4} m/hari\n\n",
+        v_seepage,
+        v_seepage * 86400.0
+    ));
 
     // Travel time
     if distance_m > 0.0 {
         let travel_time_s = distance_m / v_seepage;
         let travel_time_d = travel_time_s / 86400.0;
         let travel_time_yr = travel_time_d / 365.25;
-        out.push_str(&format!("Waktu tempuh kontaminan sejauh {:.1} m:\n", distance_m));
+        out.push_str(&format!(
+            "Waktu tempuh kontaminan sejauh {:.1} m:\n",
+            distance_m
+        ));
         if travel_time_yr > 1.0 {
             out.push_str(&format!("  t = {:.1} tahun\n", travel_time_yr));
         } else {
-            out.push_str(&format!("  t = {:.1} hari ({:.2} tahun)\n", travel_time_d, travel_time_yr));
+            out.push_str(&format!(
+                "  t = {:.1} hari ({:.2} tahun)\n",
+                travel_time_d, travel_time_yr
+            ));
         }
     }
 

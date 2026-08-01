@@ -1,7 +1,12 @@
 /// Desain Sampling — Penentuan Jumlah Sampel
 /// Ref: US EPA Guidance on Choosing a Sampling Design, RKL-RPL (PP 22/2021)
 
-pub fn calculate(confidence_pct: f64, margin_error_pct: f64, std_deviation: f64, population_size: Option<u64>) -> String {
+pub fn calculate(
+    confidence_pct: f64,
+    margin_error_pct: f64,
+    std_deviation: f64,
+    population_size: Option<u64>,
+) -> String {
     if confidence_pct <= 0.0 || confidence_pct >= 100.0 {
         return "ERROR: Tingkat kepercayaan harus antara 0 dan 100 (eksklusif).".into();
     }
@@ -42,7 +47,11 @@ pub fn calculate(confidence_pct: f64, margin_error_pct: f64, std_deviation: f64,
         let n_adj = n_infinite / (1.0 + (n_infinite - 1.0) / n_pop as f64);
         (n_adj, n_adj.ceil() as u64, format!("{}", n_pop))
     } else {
-        (n_infinite, n_infinite_rounded, "∞ (tidak terbatas)".to_string())
+        (
+            n_infinite,
+            n_infinite_rounded,
+            "∞ (tidak terbatas)".to_string(),
+        )
     };
 
     // Sampling frequency recommendation per RKL-RPL
@@ -72,18 +81,33 @@ pub fn calculate(confidence_pct: f64, margin_error_pct: f64, std_deviation: f64,
     result.push_str("Koreksi populasi terbatas: n_adj = n / (1 + (n-1)/N)\n\n");
 
     result.push_str("INPUT:\n");
-    result.push_str(&format!("• Tingkat kepercayaan  : {:.1}%\n", confidence_pct));
+    result.push_str(&format!(
+        "• Tingkat kepercayaan  : {:.1}%\n",
+        confidence_pct
+    ));
     result.push_str(&format!("• Nilai z              : {:.3}\n", z));
-    result.push_str(&format!("• Margin error         : {:.1}%\n", margin_error_pct));
+    result.push_str(&format!(
+        "• Margin error         : {:.1}%\n",
+        margin_error_pct
+    ));
     result.push_str(&format!("• Standar deviasi (s)  : {:.4}\n", std_deviation));
     result.push_str(&format!("• Ukuran populasi (N)  : {}\n\n", pop_str));
 
     result.push_str("HASIL:\n");
-    result.push_str(&format!("• n (populasi tak terbatas) : {:.2} → {} sampel\n", n_infinite, n_infinite_rounded));
+    result.push_str(&format!(
+        "• n (populasi tak terbatas) : {:.2} → {} sampel\n",
+        n_infinite, n_infinite_rounded
+    ));
     if population_size.is_some() {
-        result.push_str(&format!("• n (terkoreksi FPC)        : {:.2} → {} sampel\n", n_adjusted, n_adj_rounded));
+        result.push_str(&format!(
+            "• n (terkoreksi FPC)        : {:.2} → {} sampel\n",
+            n_adjusted, n_adj_rounded
+        ));
     }
-    result.push_str(&format!("\nJUMLAH SAMPEL MINIMUM: {} sampel\n\n", n_adj_rounded));
+    result.push_str(&format!(
+        "\nJUMLAH SAMPEL MINIMUM: {} sampel\n\n",
+        n_adj_rounded
+    ));
 
     result.push_str("STRATEGI SAMPLING:\n");
     result.push_str("• Random       : Setiap lokasi peluang sama, unbiased\n");
@@ -91,12 +115,24 @@ pub fn calculate(confidence_pct: f64, margin_error_pct: f64, std_deviation: f64,
     result.push_str("• Stratifikasi : Bagi area per zona, proporsional\n");
     result.push_str("• Purposive    : Fokus pada area sensitif/terdampak\n\n");
 
-    result.push_str(&format!("FREKUENSI REKOMENDASI (RKL-RPL): {}\n\n", freq_recommendation));
+    result.push_str(&format!(
+        "FREKUENSI REKOMENDASI (RKL-RPL): {}\n\n",
+        freq_recommendation
+    ));
 
     result.push_str("ESTIMASI BIAYA (laboratorium Indonesia, 2024):\n");
-    result.push_str(&format!("• Air ({} sampel × Rp 2.500.000)  : Rp {:>14.0}\n", n_adj_rounded, total_cost_water));
-    result.push_str(&format!("• Tanah ({} sampel × Rp 3.500.000): Rp {:>14.0}\n", n_adj_rounded, total_cost_soil));
-    result.push_str(&format!("• Udara ({} sampel × Rp 4.000.000): Rp {:>14.0}\n", n_adj_rounded, total_cost_air));
+    result.push_str(&format!(
+        "• Air ({} sampel × Rp 2.500.000)  : Rp {:>14.0}\n",
+        n_adj_rounded, total_cost_water
+    ));
+    result.push_str(&format!(
+        "• Tanah ({} sampel × Rp 3.500.000): Rp {:>14.0}\n",
+        n_adj_rounded, total_cost_soil
+    ));
+    result.push_str(&format!(
+        "• Udara ({} sampel × Rp 4.000.000): Rp {:>14.0}\n",
+        n_adj_rounded, total_cost_air
+    ));
     result.push_str("══════════════════════════════════════════════\n");
 
     result

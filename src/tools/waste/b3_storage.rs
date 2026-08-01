@@ -2,44 +2,52 @@
 /// Ref: PP 101/2014 tentang Pengelolaan Limbah B3
 
 pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64) -> String {
-    if volume_m3_per_month <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if density_kg_m3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if volume_m3_per_month <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if density_kg_m3 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     let wt_lower = waste_type.to_lowercase();
 
-    let (type_name, max_storage_days_cat1, max_storage_days_cat2, stack_height_m, container_desc)
-        = match wt_lower.as_str() {
-        "padat" => (
-            "Padat",
-            90, 180,
-            3.0,
-            "Drum 200L (standar) atau kontainer tertutup",
-        ),
-        "cair" => (
-            "Cair",
-            90, 180,
-            2.0, // single stack drums
-            "Drum 200L HDPE/baja atau tangki IBC 1000L",
-        ),
-        "lumpur" => (
-            "Lumpur (Sludge)",
-            90, 180,
-            2.0,
-            "Drum 200L tertutup atau bak penampung berlapis",
-        ),
-        "gas" => (
-            "Gas (Tabung Bertekanan)",
-            90, 180,
-            1.5, // single row
-            "Tabung gas bertekanan standar DOT/SNI",
-        ),
-        _ => {
-            return format!(
-                "ERROR: Jenis limbah '{}' tidak dikenal.\nPilihan: padat, cair, lumpur, gas",
-                waste_type
-            );
-        }
-    };
+    let (type_name, max_storage_days_cat1, max_storage_days_cat2, stack_height_m, container_desc) =
+        match wt_lower.as_str() {
+            "padat" => (
+                "Padat",
+                90,
+                180,
+                3.0,
+                "Drum 200L (standar) atau kontainer tertutup",
+            ),
+            "cair" => (
+                "Cair",
+                90,
+                180,
+                2.0, // single stack drums
+                "Drum 200L HDPE/baja atau tangki IBC 1000L",
+            ),
+            "lumpur" => (
+                "Lumpur (Sludge)",
+                90,
+                180,
+                2.0,
+                "Drum 200L tertutup atau bak penampung berlapis",
+            ),
+            "gas" => (
+                "Gas (Tabung Bertekanan)",
+                90,
+                180,
+                1.5, // single row
+                "Tabung gas bertekanan standar DOT/SNI",
+            ),
+            _ => {
+                return format!(
+                    "ERROR: Jenis limbah '{}' tidak dikenal.\nPilihan: padat, cair, lumpur, gas",
+                    waste_type
+                );
+            }
+        };
 
     let mass_kg_per_month = volume_m3_per_month * density_kg_m3;
     let mass_ton_per_month = mass_kg_per_month / 1000.0;
@@ -68,24 +76,60 @@ pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64)
 
     result.push_str("INPUT:\n");
     result.push_str(&format!("• Jenis limbah         : {}\n", type_name));
-    result.push_str(&format!("• Volume per bulan     : {:.2} m³/bulan\n", volume_m3_per_month));
-    result.push_str(&format!("• Densitas             : {:.0} kg/m³\n", density_kg_m3));
-    result.push_str(&format!("• Massa per bulan      : {:.2} ton/bulan\n\n", mass_ton_per_month));
+    result.push_str(&format!(
+        "• Volume per bulan     : {:.2} m³/bulan\n",
+        volume_m3_per_month
+    ));
+    result.push_str(&format!(
+        "• Densitas             : {:.0} kg/m³\n",
+        density_kg_m3
+    ));
+    result.push_str(&format!(
+        "• Massa per bulan      : {:.2} ton/bulan\n\n",
+        mass_ton_per_month
+    ));
 
     result.push_str("BATAS WAKTU PENYIMPANAN (PP 101/2014):\n");
-    result.push_str(&format!("• Kategori 1 (akut/reaktif)     : {} hari\n", max_storage_days_cat1));
-    result.push_str(&format!("• Kategori 2 (kronis/umum)      : {} hari\n\n", max_storage_days_cat2));
+    result.push_str(&format!(
+        "• Kategori 1 (akut/reaktif)     : {} hari\n",
+        max_storage_days_cat1
+    ));
+    result.push_str(&format!(
+        "• Kategori 2 (kronis/umum)      : {} hari\n\n",
+        max_storage_days_cat2
+    ));
 
     result.push_str("KEBUTUHAN RUANG (maks {} hari):\n");
-    result.push_str(&format!("• Volume tersimpan maks         : {:.2} m³\n", max_stored_volume_m3));
-    result.push_str(&format!("• Kontainer                     : {}\n", container_desc));
-    result.push_str(&format!("• Jumlah drum (200L) estimasi   : {} drum\n", n_drums));
-    result.push_str(&format!("• Tinggi tumpukan maks          : {:.1} m\n", stack_height_m));
-    result.push_str(&format!("• Luas lantai (netto)           : {:.1} m²\n", floor_area_m2));
-    result.push_str(&format!("• Luas lantai (+ aisle 40%)     : {:.1} m²\n\n", floor_area_with_aisle));
+    result.push_str(&format!(
+        "• Volume tersimpan maks         : {:.2} m³\n",
+        max_stored_volume_m3
+    ));
+    result.push_str(&format!(
+        "• Kontainer                     : {}\n",
+        container_desc
+    ));
+    result.push_str(&format!(
+        "• Jumlah drum (200L) estimasi   : {} drum\n",
+        n_drums
+    ));
+    result.push_str(&format!(
+        "• Tinggi tumpukan maks          : {:.1} m\n",
+        stack_height_m
+    ));
+    result.push_str(&format!(
+        "• Luas lantai (netto)           : {:.1} m²\n",
+        floor_area_m2
+    ));
+    result.push_str(&format!(
+        "• Luas lantai (+ aisle 40%)     : {:.1} m²\n\n",
+        floor_area_with_aisle
+    ));
 
     result.push_str("SISTEM PENAHAN TUMPAHAN (BUND):\n");
-    result.push_str(&format!("• Volume bund minimum           : {:.2} m³\n", containment_volume));
+    result.push_str(&format!(
+        "• Volume bund minimum           : {:.2} m³\n",
+        containment_volume
+    ));
     result.push_str("• Kriteria: 110% kontainer terbesar ATAU 25% total volume\n\n");
 
     result.push_str("PERSYARATAN KONSTRUKSI TPS B3:\n");

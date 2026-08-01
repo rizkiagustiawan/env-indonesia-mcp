@@ -9,7 +9,11 @@ pub fn calculate_ika(ip_values: &[f64]) -> String {
 
     for (i, v) in ip_values.iter().enumerate() {
         if *v < 0.0 {
-            return format!("ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}", i + 1, v);
+            return format!(
+                "ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}",
+                i + 1,
+                v
+            );
         }
     }
 
@@ -18,11 +22,17 @@ pub fn calculate_ika(ip_values: &[f64]) -> String {
     // Scaling: IP 0 = IKA 100 (sempurna), IP 10 = IKA 0 (cemar berat)
     let ika = (100.0 - (mean_ip * 10.0)).clamp(0.0, 100.0);
 
-    let kategori = if ika >= 80.0 { "Sangat Baik" }
-        else if ika >= 60.0 { "Baik" }
-        else if ika >= 40.0 { "Cukup" }
-        else if ika >= 20.0 { "Kurang" }
-        else { "Sangat Kurang" };
+    let kategori = if ika >= 80.0 {
+        "Sangat Baik"
+    } else if ika >= 60.0 {
+        "Baik"
+    } else if ika >= 40.0 {
+        "Cukup"
+    } else if ika >= 20.0 {
+        "Kurang"
+    } else {
+        "Sangat Kurang"
+    };
 
     let mut out = String::from("=== IKA (Indeks Kualitas Air) ===\n");
     out.push_str("Ref: PermenLHK P.14/2020\n\n");
@@ -42,7 +52,11 @@ pub fn calculate_iku(ispu_values: &[f64]) -> String {
 
     for (i, v) in ispu_values.iter().enumerate() {
         if *v < 0.0 {
-            return format!("ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}", i + 1, v);
+            return format!(
+                "ERROR [E102]: Parameter tidak boleh negatif. indeks={}, value={}",
+                i + 1,
+                v
+            );
         }
     }
 
@@ -50,18 +64,27 @@ pub fn calculate_iku(ispu_values: &[f64]) -> String {
     // IKU = 100 - (mean_ISPU * 0.25), scaled so ISPU 0 = IKU 100, ISPU 400 = IKU 0
     let iku = (100.0 - (mean_ispu * 0.25)).clamp(0.0, 100.0);
 
-    let kategori = if iku >= 80.0 { "Sangat Baik" }
-        else if iku >= 60.0 { "Baik" }
-        else if iku >= 40.0 { "Cukup" }
-        else if iku >= 20.0 { "Kurang" }
-        else { "Sangat Kurang" };
+    let kategori = if iku >= 80.0 {
+        "Sangat Baik"
+    } else if iku >= 60.0 {
+        "Baik"
+    } else if iku >= 40.0 {
+        "Cukup"
+    } else if iku >= 20.0 {
+        "Kurang"
+    } else {
+        "Sangat Kurang"
+    };
 
     let mut out = String::from("=== IKU (Indeks Kualitas Udara) ===\n");
     out.push_str("Ref: PermenLHK P.14/2020\n\n");
     out.push_str(&format!("Jumlah Stasiun: {}\n", ispu_values.len()));
     out.push_str(&format!("Nilai ISPU: {:?}\n", ispu_values));
     out.push_str(&format!("Rata-rata ISPU: {:.2}\n\n", mean_ispu));
-    out.push_str(&format!("IKU = 100 - ({:.2} × 0.25) = {:.2}\n", mean_ispu, iku));
+    out.push_str(&format!(
+        "IKU = 100 - ({:.2} × 0.25) = {:.2}\n",
+        mean_ispu, iku
+    ));
     out.push_str(&format!("Kategori: {} ({:.2})\n", kategori, iku));
     out
 }
@@ -69,26 +92,44 @@ pub fn calculate_iku(ispu_values: &[f64]) -> String {
 /// IKTL dari persentase tutupan lahan
 pub fn calculate_iktl(forest_cover_pct: f64, target_pct: f64) -> String {
     if forest_cover_pct < 0.0 || forest_cover_pct > 100.0 {
-        return format!("ERROR: Persentase tutupan lahan ({:.1}%) harus 0-100.", forest_cover_pct);
+        return format!(
+            "ERROR: Persentase tutupan lahan ({:.1}%) harus 0-100.",
+            forest_cover_pct
+        );
     }
     if target_pct <= 0.0 || target_pct > 100.0 {
-        return format!("ERROR [E102]: Parameter harus > 0 dan <= 100. {}", target_pct);
+        return format!(
+            "ERROR [E102]: Parameter harus > 0 dan <= 100. {}",
+            target_pct
+        );
     }
 
     // IKTL = (forest_cover_pct / target_pct) * 100, capped at 100
     let iktl = ((forest_cover_pct / target_pct) * 100.0).min(100.0);
 
-    let kategori = if iktl >= 80.0 { "Sangat Baik" }
-        else if iktl >= 60.0 { "Baik" }
-        else if iktl >= 40.0 { "Cukup" }
-        else if iktl >= 20.0 { "Kurang" }
-        else { "Sangat Kurang" };
+    let kategori = if iktl >= 80.0 {
+        "Sangat Baik"
+    } else if iktl >= 60.0 {
+        "Baik"
+    } else if iktl >= 40.0 {
+        "Cukup"
+    } else if iktl >= 20.0 {
+        "Kurang"
+    } else {
+        "Sangat Kurang"
+    };
 
     let mut out = String::from("=== IKTL (Indeks Kualitas Tutupan Lahan) ===\n");
     out.push_str("Ref: PermenLHK P.14/2020\n\n");
-    out.push_str(&format!("Tutupan Lahan Aktual : {:.1}%\n", forest_cover_pct));
+    out.push_str(&format!(
+        "Tutupan Lahan Aktual : {:.1}%\n",
+        forest_cover_pct
+    ));
     out.push_str(&format!("Target Tutupan Lahan : {:.1}%\n\n", target_pct));
-    out.push_str(&format!("IKTL = ({:.1} / {:.1}) × 100 = {:.2}\n", forest_cover_pct, target_pct, iktl));
+    out.push_str(&format!(
+        "IKTL = ({:.1} / {:.1}) × 100 = {:.2}\n",
+        forest_cover_pct, target_pct, iktl
+    ));
     out.push_str(&format!("Kategori: {} ({:.2})\n", kategori, iktl));
     out
 }
@@ -109,7 +150,13 @@ pub fn calculate_ikal(sea_quality_params: &str) -> String {
     let mut ratios = Vec::new();
     let mut out = String::from("=== IKAL (Indeks Kualitas Air Laut) ===\n");
     out.push_str("Ref: PermenLHK P.14/2020\n\n");
-    out.push_str(format!("{:<10} | {:<8} | {:<8} | {}\n", "Parameter", "Ci", "Lij", "Rasio").as_str());
+    out.push_str(
+        format!(
+            "{:<10} | {:<8} | {:<8} | {}\n",
+            "Parameter", "Ci", "Lij", "Rasio"
+        )
+        .as_str(),
+    );
     out.push_str("─────────────────────────────────────\n");
 
     for p in &params {
@@ -123,21 +170,36 @@ pub fn calculate_ikal(sea_quality_params: &str) -> String {
 
         let ratio = ci / lij;
         ratios.push(ratio);
-        out.push_str(&format!("{:<10} | {:<8.2} | {:<8.2} | {:.3}\n", &name[..name.len().min(10)], ci, lij, ratio));
+        out.push_str(&format!(
+            "{:<10} | {:<8.2} | {:<8.2} | {:.3}\n",
+            &name[..name.len().min(10)],
+            ci,
+            lij,
+            ratio
+        ));
     }
 
     let mean_ratio = ratios.iter().sum::<f64>() / ratios.len() as f64;
     // IKAL = 100 - (mean_ratio * 10), similar to IKA approach
     let ikal = (100.0 - (mean_ratio * 10.0)).clamp(0.0, 100.0);
 
-    let kategori = if ikal >= 80.0 { "Sangat Baik" }
-        else if ikal >= 60.0 { "Baik" }
-        else if ikal >= 40.0 { "Cukup" }
-        else if ikal >= 20.0 { "Kurang" }
-        else { "Sangat Kurang" };
+    let kategori = if ikal >= 80.0 {
+        "Sangat Baik"
+    } else if ikal >= 60.0 {
+        "Baik"
+    } else if ikal >= 40.0 {
+        "Cukup"
+    } else if ikal >= 20.0 {
+        "Kurang"
+    } else {
+        "Sangat Kurang"
+    };
 
     out.push_str(&format!("\nRata-rata Rasio Ci/Lij: {:.3}\n", mean_ratio));
-    out.push_str(&format!("IKAL = 100 - ({:.3} × 10) = {:.2}\n", mean_ratio, ikal));
+    out.push_str(&format!(
+        "IKAL = 100 - ({:.3} × 10) = {:.2}\n",
+        mean_ratio, ikal
+    ));
     out.push_str(&format!("Kategori: {} ({:.2})\n", kategori, ikal));
     out
 }

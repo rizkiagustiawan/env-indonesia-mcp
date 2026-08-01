@@ -12,29 +12,44 @@ pub fn impact_matrix(impacts_json: &str) -> String {
         return "Error: Daftar dampak kosong.".to_string();
     }
 
-    let valid_components = ["ekonomi", "sosial_budaya", "kesehatan", "demografi", "infrastruktur"];
+    let valid_components = [
+        "ekonomi",
+        "sosial_budaya",
+        "kesehatan",
+        "demografi",
+        "infrastruktur",
+    ];
 
     let mut total_positive = 0.0_f64;
     let mut total_negative = 0.0_f64;
     let mut rows: Vec<String> = Vec::new();
-    let mut component_scores: std::collections::HashMap<String, (f64, f64)> = std::collections::HashMap::new();
+    let mut component_scores: std::collections::HashMap<String, (f64, f64)> =
+        std::collections::HashMap::new();
 
     for (i, impact) in impacts.iter().enumerate() {
-        let component = impact.get("component")
+        let component = impact
+            .get("component")
             .and_then(|v| v.as_str())
             .unwrap_or("lainnya");
-        let impact_desc = impact.get("impact")
+        let impact_desc = impact
+            .get("impact")
             .and_then(|v| v.as_str())
             .unwrap_or("Tidak diketahui");
-        let magnitude = impact.get("magnitude")
+        let magnitude = impact
+            .get("magnitude")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0);
-        let importance = impact.get("importance")
+        let importance = impact
+            .get("importance")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0);
 
         let score = magnitude * importance;
-        let sifat = if magnitude >= 0.0 { "Positif (+)" } else { "Negatif (-)" };
+        let sifat = if magnitude >= 0.0 {
+            "Positif (+)"
+        } else {
+            "Negatif (-)"
+        };
 
         if magnitude >= 0.0 {
             total_positive += score;
@@ -42,7 +57,9 @@ pub fn impact_matrix(impacts_json: &str) -> String {
             total_negative += score;
         }
 
-        let entry = component_scores.entry(component.to_string()).or_insert((0.0, 0.0));
+        let entry = component_scores
+            .entry(component.to_string())
+            .or_insert((0.0, 0.0));
         if magnitude >= 0.0 {
             entry.0 += score;
         } else {
@@ -57,8 +74,13 @@ pub fn impact_matrix(impacts_json: &str) -> String {
 
         rows.push(format!(
             "│ {:>2} │ {:15} │ {:40} │ {:>6.1} │ {:>6.1} │ {:>8.1} │ {:10} │",
-            i + 1, component_valid, impact_desc,
-            magnitude, importance, score, sifat
+            i + 1,
+            component_valid,
+            impact_desc,
+            magnitude,
+            importance,
+            score,
+            sifat
         ));
     }
 
@@ -74,10 +96,14 @@ pub fn impact_matrix(impacts_json: &str) -> String {
     };
 
     let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════════════════════════════════════\n");
+    result.push_str(
+        "══════════════════════════════════════════════════════════════════════════════\n",
+    );
     result.push_str("MATRIKS DAMPAK SOSIAL (TIPE LEOPOLD)\n");
     result.push_str("Ref: PermenLH 17/2012 tentang Partisipasi Masyarakat dalam AMDAL\n");
-    result.push_str("══════════════════════════════════════════════════════════════════════════════\n\n");
+    result.push_str(
+        "══════════════════════════════════════════════════════════════════════════════\n\n",
+    );
     result.push_str("Skala magnitude : -10 (sangat negatif) s/d +10 (sangat positif)\n");
     result.push_str("Skala importance: 1 (rendah) s/d 10 (sangat penting)\n");
     result.push_str("Skor = Magnitude x Importance\n\n");
@@ -94,8 +120,13 @@ pub fn impact_matrix(impacts_json: &str) -> String {
 
     result.push_str("REKAPITULASI PER KOMPONEN:\n");
     for (comp, (pos, neg)) in &component_scores {
-        result.push_str(&format!("  {} : Positif={:.1}, Negatif={:.1}, Netto={:.1}\n",
-            comp, pos, neg, pos + neg));
+        result.push_str(&format!(
+            "  {} : Positif={:.1}, Negatif={:.1}, Netto={:.1}\n",
+            comp,
+            pos,
+            neg,
+            pos + neg
+        ));
     }
 
     result.push_str(&format!(
@@ -104,13 +135,20 @@ pub fn impact_matrix(impacts_json: &str) -> String {
         total_positive, total_negative, total_score, assessment
     ));
 
-    result.push_str("\n══════════════════════════════════════════════════════════════════════════════\n");
+    result.push_str(
+        "\n══════════════════════════════════════════════════════════════════════════════\n",
+    );
     result
 }
 
 /// Simple exposure pathway health impact analysis
 /// Calculate Average Daily Dose (ADD) and Hazard Quotient (HQ)
-pub fn health_impact(population: u64, pollutant: &str, concentration: f64, exposure_hours: f64) -> String {
+pub fn health_impact(
+    population: u64,
+    pollutant: &str,
+    concentration: f64,
+    exposure_hours: f64,
+) -> String {
     // Reference data for common pollutants
     struct PollutantRef {
         name: &'static str,
@@ -123,16 +161,96 @@ pub fn health_impact(population: u64, pollutant: &str, concentration: f64, expos
     }
 
     let pollutants = vec![
-        PollutantRef { name: "pm25", unit: "µg/m³", rfd: 0.0035, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "PM2.5 (Partikulat Halus)" },
-        PollutantRef { name: "pm10", unit: "µg/m³", rfd: 0.005, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "PM10 (Partikulat Kasar)" },
-        PollutantRef { name: "so2", unit: "µg/m³", rfd: 0.02, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Sulfur Dioksida (SO₂)" },
-        PollutantRef { name: "no2", unit: "µg/m³", rfd: 0.02, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Nitrogen Dioksida (NO₂)" },
-        PollutantRef { name: "co", unit: "mg/m³", rfd: 0.057, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Karbon Monoksida (CO)" },
-        PollutantRef { name: "benzene", unit: "µg/m³", rfd: 0.004, rfd_unit: "mg/kg/hari", cancer_slope: Some(0.029), ir: 20.0, description: "Benzena (C₆H₆)" },
-        PollutantRef { name: "toluene", unit: "µg/m³", rfd: 0.08, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Toluena (C₇H₈)" },
-        PollutantRef { name: "pb", unit: "µg/m³", rfd: 0.00036, rfd_unit: "mg/kg/hari", cancer_slope: Some(0.042), ir: 20.0, description: "Timbal (Pb)" },
-        PollutantRef { name: "h2s", unit: "µg/m³", rfd: 0.003, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Hidrogen Sulfida (H₂S)" },
-        PollutantRef { name: "nh3", unit: "µg/m³", rfd: 0.1, rfd_unit: "mg/kg/hari", cancer_slope: None, ir: 20.0, description: "Amonia (NH₃)" },
+        PollutantRef {
+            name: "pm25",
+            unit: "µg/m³",
+            rfd: 0.0035,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "PM2.5 (Partikulat Halus)",
+        },
+        PollutantRef {
+            name: "pm10",
+            unit: "µg/m³",
+            rfd: 0.005,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "PM10 (Partikulat Kasar)",
+        },
+        PollutantRef {
+            name: "so2",
+            unit: "µg/m³",
+            rfd: 0.02,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Sulfur Dioksida (SO₂)",
+        },
+        PollutantRef {
+            name: "no2",
+            unit: "µg/m³",
+            rfd: 0.02,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Nitrogen Dioksida (NO₂)",
+        },
+        PollutantRef {
+            name: "co",
+            unit: "mg/m³",
+            rfd: 0.057,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Karbon Monoksida (CO)",
+        },
+        PollutantRef {
+            name: "benzene",
+            unit: "µg/m³",
+            rfd: 0.004,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: Some(0.029),
+            ir: 20.0,
+            description: "Benzena (C₆H₆)",
+        },
+        PollutantRef {
+            name: "toluene",
+            unit: "µg/m³",
+            rfd: 0.08,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Toluena (C₇H₈)",
+        },
+        PollutantRef {
+            name: "pb",
+            unit: "µg/m³",
+            rfd: 0.00036,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: Some(0.042),
+            ir: 20.0,
+            description: "Timbal (Pb)",
+        },
+        PollutantRef {
+            name: "h2s",
+            unit: "µg/m³",
+            rfd: 0.003,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Hidrogen Sulfida (H₂S)",
+        },
+        PollutantRef {
+            name: "nh3",
+            unit: "µg/m³",
+            rfd: 0.1,
+            rfd_unit: "mg/kg/hari",
+            cancer_slope: None,
+            ir: 20.0,
+            description: "Amonia (NH₃)",
+        },
     ];
 
     let query = pollutant.to_lowercase();
@@ -142,7 +260,8 @@ pub fn health_impact(population: u64, pollutant: &str, concentration: f64, expos
             let available: Vec<&str> = pollutants.iter().map(|p| p.name).collect();
             return format!(
                 "Polutan '{}' tidak ditemukan.\nPolutan tersedia: {}",
-                pollutant, available.join(", ")
+                pollutant,
+                available.join(", ")
             );
         }
     };
@@ -157,7 +276,11 @@ pub fn health_impact(population: u64, pollutant: &str, concentration: f64, expos
     let ir = pol.ir; // inhalation rate (m³/day)
 
     // Convert concentration to mg/m³ if in µg/m³
-    let conc_mg = if pol.unit == "µg/m³" { concentration / 1000.0 } else { concentration };
+    let conc_mg = if pol.unit == "µg/m³" {
+        concentration / 1000.0
+    } else {
+        concentration
+    };
 
     // ADD = C × IR × (ET/24) × EF × ED / (BW × AT)
     let add_noncarc = conc_mg * ir * (et / 24.0) * ef * ed / (bw * at_noncarc);
@@ -200,10 +323,19 @@ pub fn health_impact(population: u64, pollutant: &str, concentration: f64, expos
          • ADD (non-karsinogenik): {:.6} mg/kg/hari\n\
          • Reference Dose (RfD): {:.6} {}\n\
          • Hazard Quotient (HQ): {:.4}\n",
-        pol.description, concentration, pol.unit,
-        population, exposure_hours,
-        ir, bw, ef, ed,
-        add_noncarc, pol.rfd, pol.rfd_unit, hq
+        pol.description,
+        concentration,
+        pol.unit,
+        population,
+        exposure_hours,
+        ir,
+        bw,
+        ef,
+        ed,
+        add_noncarc,
+        pol.rfd,
+        pol.rfd_unit,
+        hq
     );
 
     // Cancer risk if applicable
@@ -226,10 +358,7 @@ pub fn health_impact(population: u64, pollutant: &str, concentration: f64, expos
         ));
     }
 
-    result.push_str(&format!(
-        "\nTINGKAT RISIKO: {}\n",
-        risk_level
-    ));
+    result.push_str(&format!("\nTINGKAT RISIKO: {}\n", risk_level));
 
     if affected_estimate > 0 {
         result.push_str(&format!(

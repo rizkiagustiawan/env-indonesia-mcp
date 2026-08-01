@@ -6,17 +6,25 @@ fn fmt_rp(v: f64) -> String {
     let bytes: Vec<u8> = s.bytes().collect();
     let mut result = String::new();
     for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 { result.push('.'); }
+        if i > 0 && (bytes.len() - i) % 3 == 0 {
+            result.push('.');
+        }
         result.push(*b as char);
     }
-    if v < 0.0 { format!("-{}", result) } else { result }
+    if v < 0.0 {
+        format!("-{}", result)
+    } else {
+        result
+    }
 }
 
 pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, years: u32) -> String {
     if discount_rate < 0.0 || discount_rate > 1.0 {
         return "ERROR: Discount rate harus antara 0.0 dan 1.0 (contoh: 0.10 = 10%).".into();
     }
-    if years == 0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
+    if years == 0 {
+        return "ERROR [E102]: Parameter harus > 0 tahun.".into();
+    }
 
     // Parse costs
     #[derive(serde::Deserialize)]
@@ -86,7 +94,11 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
     }
 
     // BCR
-    let bcr = if npv_costs > 0.0 { npv_benefits / npv_costs } else { 0.0 };
+    let bcr = if npv_costs > 0.0 {
+        npv_benefits / npv_costs
+    } else {
+        0.0
+    };
 
     // IRR (bisection method)
     let irr = {
@@ -100,7 +112,11 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
                 let df = 1.0 / (1.0 + mid).powi(t as i32);
                 npv_test += (annual_benefits[t as usize] - annual_costs[t as usize]) * df;
             }
-            if npv_test > 0.0 { lo = mid; } else { hi = mid; }
+            if npv_test > 0.0 {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
             irr_val = mid;
         }
         irr_val
@@ -120,33 +136,68 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
 
     out.push_str(&format!(
         "PARAMETER:\n  Discount rate = {:.1}%\n  Periode       = {} tahun\n\n",
-        discount_rate * 100.0, years
+        discount_rate * 100.0,
+        years
     ));
 
     // List costs
     out.push_str("BIAYA (Costs):\n");
     for c in &costs {
-        out.push_str(&format!("  Tahun {:>3}: Rp {}  {}\n", c.year, fmt_rp(c.amount), c.description));
+        out.push_str(&format!(
+            "  Tahun {:>3}: Rp {}  {}\n",
+            c.year,
+            fmt_rp(c.amount),
+            c.description
+        ));
     }
     let total_cost_nominal: f64 = costs.iter().map(|c| c.amount).sum();
-    out.push_str(&format!("  Total (nominal): Rp {}\n\n", fmt_rp(total_cost_nominal)));
+    out.push_str(&format!(
+        "  Total (nominal): Rp {}\n\n",
+        fmt_rp(total_cost_nominal)
+    ));
 
     // List benefits
     out.push_str("MANFAAT (Benefits):\n");
     for b in &benefits {
-        out.push_str(&format!("  Tahun {:>3}: Rp {}  {}\n", b.year, fmt_rp(b.amount), b.description));
+        out.push_str(&format!(
+            "  Tahun {:>3}: Rp {}  {}\n",
+            b.year,
+            fmt_rp(b.amount),
+            b.description
+        ));
     }
     let total_benefit_nominal: f64 = benefits.iter().map(|b| b.amount).sum();
-    out.push_str(&format!("  Total (nominal): Rp {}\n\n", fmt_rp(total_benefit_nominal)));
+    out.push_str(&format!(
+        "  Total (nominal): Rp {}\n\n",
+        fmt_rp(total_benefit_nominal)
+    ));
 
     // Results
-    let npv_status = if npv >= 0.0 { "✓ LAYAK (NPV ≥ 0)" } else { "✗ TIDAK LAYAK (NPV < 0)" };
-    let bcr_status = if bcr >= 1.0 { "✓ LAYAK (BCR ≥ 1)" } else { "✗ TIDAK LAYAK (BCR < 1)" };
+    let npv_status = if npv >= 0.0 {
+        "✓ LAYAK (NPV ≥ 0)"
+    } else {
+        "✗ TIDAK LAYAK (NPV < 0)"
+    };
+    let bcr_status = if bcr >= 1.0 {
+        "✓ LAYAK (BCR ≥ 1)"
+    } else {
+        "✗ TIDAK LAYAK (BCR < 1)"
+    };
 
     out.push_str("HASIL ANALISIS:\n");
-    out.push_str(&format!("  NPV (Net Present Value) = Rp {}  {}\n", fmt_rp(npv), npv_status));
-    out.push_str(&format!("  BCR (Benefit-Cost Ratio) = {:.3}  {}\n", bcr, bcr_status));
-    out.push_str(&format!("  IRR (Internal Rate of Return) = {:.2}%\n", irr * 100.0));
+    out.push_str(&format!(
+        "  NPV (Net Present Value) = Rp {}  {}\n",
+        fmt_rp(npv),
+        npv_status
+    ));
+    out.push_str(&format!(
+        "  BCR (Benefit-Cost Ratio) = {:.3}  {}\n",
+        bcr, bcr_status
+    ));
+    out.push_str(&format!(
+        "  IRR (Internal Rate of Return) = {:.2}%\n",
+        irr * 100.0
+    ));
     out.push_str(&format!("  PV Biaya    = Rp {}\n", fmt_rp(npv_costs)));
     out.push_str(&format!("  PV Manfaat  = Rp {}\n\n", fmt_rp(npv_benefits)));
 
@@ -157,8 +208,17 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
 
     // Sensitivity table
     out.push_str("ANALISIS SENSITIVITAS (variasi discount rate):\n");
-    out.push_str(&format!("  {:>10} {:>10} {:>20} {:>10}\n", "DR", "Variasi", "NPV (Rp)", "BCR"));
-    out.push_str(&format!("  {:>10} {:>10} {:>20} {:>10}\n", "─".repeat(10), "─".repeat(10), "─".repeat(20), "─".repeat(10)));
+    out.push_str(&format!(
+        "  {:>10} {:>10} {:>20} {:>10}\n",
+        "DR", "Variasi", "NPV (Rp)", "BCR"
+    ));
+    out.push_str(&format!(
+        "  {:>10} {:>10} {:>20} {:>10}\n",
+        "─".repeat(10),
+        "─".repeat(10),
+        "─".repeat(20),
+        "─".repeat(10)
+    ));
     for (rate, label) in &sensitivity_rates {
         let mut npv_s = 0.0_f64;
         let mut pvc_s = 0.0_f64;
@@ -170,7 +230,13 @@ pub fn calculate(costs_json: &str, benefits_json: &str, discount_rate: f64, year
             npv_s += (annual_benefits[t as usize] - annual_costs[t as usize]) * df;
         }
         let bcr_s = if pvc_s > 0.0 { pvb_s / pvc_s } else { 0.0 };
-        out.push_str(&format!("  {:>9.1}% {:>10} {:>20} {:>10.3}\n", rate * 100.0, label, fmt_rp(npv_s), bcr_s));
+        out.push_str(&format!(
+            "  {:>9.1}% {:>10} {:>20} {:>10.3}\n",
+            rate * 100.0,
+            label,
+            fmt_rp(npv_s),
+            bcr_s
+        ));
     }
 
     out.push_str("\nKeputusan layak jika: NPV > 0, BCR > 1, IRR > discount rate.\n");

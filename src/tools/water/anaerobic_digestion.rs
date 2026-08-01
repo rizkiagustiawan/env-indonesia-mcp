@@ -2,14 +2,28 @@
 /// Ref: Rittmann & McCarty (2001), Metcalf & Eddy (2003)
 /// Aplikasi: peternakan (sapi, babi, ayam) dan POME Indonesia
 
-pub fn design(q_m3d: f64, vs_concentration_kgm3: f64, vs_destruction_pct: f64, temperature_c: f64, substrate: &str) -> String {
+pub fn design(
+    q_m3d: f64,
+    vs_concentration_kgm3: f64,
+    vs_destruction_pct: f64,
+    temperature_c: f64,
+    substrate: &str,
+) -> String {
     let mut out = String::from("=== Desain Reaktor Anaerobik (Biogas) ===\n");
     out.push_str("Ref: Rittmann & McCarty (2001), Metcalf & Eddy (2003)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if vs_concentration_kgm3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if vs_destruction_pct <= 0.0 || vs_destruction_pct > 100.0 { return "ERROR: VS destruction harus antara 0-100%.".into(); }
-    if temperature_c < 20.0 || temperature_c > 60.0 { return "ERROR: Suhu harus antara 20-60°C.".into(); }
+    if q_m3d <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if vs_concentration_kgm3 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if vs_destruction_pct <= 0.0 || vs_destruction_pct > 100.0 {
+        return "ERROR: VS destruction harus antara 0-100%.".into();
+    }
+    if temperature_c < 20.0 || temperature_c > 60.0 {
+        return "ERROR: Suhu harus antara 20-60°C.".into();
+    }
 
     let substrate_lower = substrate.to_lowercase();
 
@@ -20,7 +34,12 @@ pub fn design(q_m3d: f64, vs_concentration_kgm3: f64, vs_destruction_pct: f64, t
         "ayam" | "chicken" => (0.35, 60.0, "Kotoran Ayam", 15.0),
         "pome" => (0.50, 35.0, "Palm Oil Mill Effluent", 20.0),
         "sampah_organik" | "organic_waste" => (0.45, 80.0, "Sampah Organik", 20.0),
-        _ => return format!("ERROR: Substrat '{}' tidak dikenali. Pilihan: sapi, babi, ayam, pome, sampah_organik.", substrate),
+        _ => {
+            return format!(
+            "ERROR: Substrat '{}' tidak dikenali. Pilihan: sapi, babi, ayam, pome, sampah_organik.",
+            substrate
+        )
+        }
     };
 
     // Temperature regime
@@ -66,7 +85,10 @@ pub fn design(q_m3d: f64, vs_concentration_kgm3: f64, vs_destruction_pct: f64, t
         substrate, gas_yield, typical_vs));
 
     out.push_str("Desain reaktor:\n");
-    out.push_str(&format!("  SRT = {:.0} hari (min {:.0} hari pada {})\n", design_srt, min_srt, regime));
+    out.push_str(&format!(
+        "  SRT = {:.0} hari (min {:.0} hari pada {})\n",
+        design_srt, min_srt, regime
+    ));
     out.push_str(&format!("  Volume = {:.0} m³\n", v_reactor));
     out.push_str(&format!("  Diameter ≈ {:.1} m\n", diameter));
     out.push_str(&format!("  Tinggi ≈ {:.1} m\n", height));
@@ -81,17 +103,29 @@ pub fn design(q_m3d: f64, vs_concentration_kgm3: f64, vs_destruction_pct: f64, t
 
     out.push_str("Produksi gas:\n");
     out.push_str(&format!("  VS masuk = {:.1} kg/hari\n", vs_load_kgd));
-    out.push_str(&format!("  VS dihancurkan = {:.1} kg/hari\n", vs_destroyed_kgd));
+    out.push_str(&format!(
+        "  VS dihancurkan = {:.1} kg/hari\n",
+        vs_destroyed_kgd
+    ));
     out.push_str(&format!("  Biogas = {:.1} m³/hari\n", biogas_m3d));
     out.push_str(&format!("  CH₄ (60%) = {:.1} m³/hari\n", ch4_m3d));
-    out.push_str(&format!("  CO₂ (40%) = {:.1} m³/hari\n\n", biogas_m3d - ch4_m3d));
+    out.push_str(&format!(
+        "  CO₂ (40%) = {:.1} m³/hari\n\n",
+        biogas_m3d - ch4_m3d
+    ));
 
     out.push_str("Potensi energi:\n");
     out.push_str(&format!("  Energi termal = {:.1} MJ/hari\n", energy_mj));
     out.push_str(&format!("  Listrik (η=35%) = {:.1} kWh/hari\n", energy_kwh));
-    out.push_str(&format!("  Setara rumah tangga ≈ {:.0} KK (2 kWh/hari)\n\n", energy_kwh / 2.0));
+    out.push_str(&format!(
+        "  Setara rumah tangga ≈ {:.0} KK (2 kWh/hari)\n\n",
+        energy_kwh / 2.0
+    ));
 
-    out.push_str(&format!("Digestate:\n  VS sisa = {:.1} kg/hari (pupuk organik)\n", vs_remaining_kgd));
+    out.push_str(&format!(
+        "Digestate:\n  VS sisa = {:.1} kg/hari (pupuk organik)\n",
+        vs_remaining_kgd
+    ));
 
     out
 }

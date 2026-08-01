@@ -1,11 +1,24 @@
 /// Bruun Rule Coastal Erosion Prediction
 /// Ref: Bruun (1962), Dean (1991), IPCC AR6 WG1
 
-pub fn calculate(sea_level_rise_m: f64, profile_length_m: f64, berm_height_m: f64, closure_depth_m: f64) -> String {
-    if sea_level_rise_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
-    if profile_length_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
-    if berm_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m (di atas MSL).".into(); }
-    if closure_depth_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m (di bawah MSL).".into(); }
+pub fn calculate(
+    sea_level_rise_m: f64,
+    profile_length_m: f64,
+    berm_height_m: f64,
+    closure_depth_m: f64,
+) -> String {
+    if sea_level_rise_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m.".into();
+    }
+    if profile_length_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m.".into();
+    }
+    if berm_height_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m (di atas MSL).".into();
+    }
+    if closure_depth_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m (di bawah MSL).".into();
+    }
 
     // Bruun Rule: R = SLR × L / (B + h*)
     let denominator = berm_height_m + closure_depth_m;
@@ -47,17 +60,34 @@ pub fn calculate(sea_level_rise_m: f64, profile_length_m: f64, berm_height_m: f6
 
     // Comparison across IPCC scenarios
     out.push_str("PERBANDINGAN SKENARIO IPCC AR6 (2100):\n");
-    out.push_str(&format!("  {:30} {:>10} {:>12} {:>14}\n", "Skenario", "SLR (m)", "Resesi (m)", "Hilang (ha/km)"));
-    out.push_str(&format!("  {:30} {:>10} {:>12} {:>14}\n", "─".repeat(30), "─".repeat(10), "─".repeat(12), "─".repeat(14)));
+    out.push_str(&format!(
+        "  {:30} {:>10} {:>12} {:>14}\n",
+        "Skenario", "SLR (m)", "Resesi (m)", "Hilang (ha/km)"
+    ));
+    out.push_str(&format!(
+        "  {:30} {:>10} {:>12} {:>14}\n",
+        "─".repeat(30),
+        "─".repeat(10),
+        "─".repeat(12),
+        "─".repeat(14)
+    ));
     for (name, slr) in scenarios {
         let r = slr * profile_length_m / denominator;
         let area_ha = r * 1000.0 / 10000.0;
-        out.push_str(&format!("  {:30} {:>10.3} {:>12.2} {:>14.2}\n", name, slr, r, area_ha));
+        out.push_str(&format!(
+            "  {:30} {:>10.3} {:>12.2} {:>14.2}\n",
+            name, slr, r, area_ha
+        ));
     }
 
     // Input scenario highlight
-    out.push_str(&format!("  {:30} {:>10.3} {:>12.2} {:>14.2}  ← INPUT\n\n",
-        "User scenario", sea_level_rise_m, recession, area_lost_per_km / 10000.0));
+    out.push_str(&format!(
+        "  {:30} {:>10.3} {:>12.2} {:>14.2}  ← INPUT\n\n",
+        "User scenario",
+        sea_level_rise_m,
+        recession,
+        area_lost_per_km / 10000.0
+    ));
 
     // Warnings
     if recession > 50.0 {

@@ -1,10 +1,13 @@
+pub mod activated_sludge_design;
+pub mod anaerobic_digestion;
+pub mod constructed_wetland;
 pub mod ct_disinfection;
 pub mod darcy_flow;
-pub mod theis_drawdown;
+pub mod dispersion_coefficient;
 pub mod hazen_williams;
 pub mod pump_sizing;
 pub mod sedimentation;
-pub mod uasb_design;
+pub mod theis_drawdown;
+pub mod treatment_train;
 pub mod trickling_filter;
-pub mod constructed_wetland;
-pub mod anaerobic_digestion;
+pub mod uasb_design;

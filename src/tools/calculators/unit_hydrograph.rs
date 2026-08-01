@@ -6,9 +6,15 @@ pub fn calculate(a_km2: f64, tc_hours: f64, d_hours: f64) -> String {
     let mut out = String::from("=== SCS Triangular Unit Hydrograph ===\n");
     out.push_str("Ref: USDA SCS (1972), NEH Part 630\n\n");
 
-    if a_km2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if tc_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if d_hours <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if a_km2 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if tc_hours <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if d_hours <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     // Time to peak
     let t_lag = 0.6 * tc_hours; // SCS lag time
@@ -27,16 +33,34 @@ pub fn calculate(a_km2: f64, tc_hours: f64, d_hours: f64) -> String {
     out.push_str(&format!("Input:\n  Luas DAS (A) = {:.2} km²\n  Waktu konsentrasi (tc) = {:.2} jam\n  Durasi hujan efektif (D) = {:.2} jam\n\n", a_km2, tc_hours, d_hours));
 
     out.push_str("Perhitungan:\n");
-    out.push_str(&format!("  t_lag = 0.6 × tc = 0.6 × {:.2} = {:.2} jam\n", tc_hours, t_lag));
-    out.push_str(&format!("  tp = D/2 + t_lag = {:.2}/2 + {:.2} = {:.2} jam\n", d_hours, t_lag, tp));
-    out.push_str(&format!("  Qp = 0.208 × A / tp = 0.208 × {:.2} / {:.2} = {:.4} m³/s/mm\n", a_km2, tp, qp));
-    out.push_str(&format!("  tb = 2.67 × tp = 2.67 × {:.2} = {:.2} jam\n\n", tp, tb));
+    out.push_str(&format!(
+        "  t_lag = 0.6 × tc = 0.6 × {:.2} = {:.2} jam\n",
+        tc_hours, t_lag
+    ));
+    out.push_str(&format!(
+        "  tp = D/2 + t_lag = {:.2}/2 + {:.2} = {:.2} jam\n",
+        d_hours, t_lag, tp
+    ));
+    out.push_str(&format!(
+        "  Qp = 0.208 × A / tp = 0.208 × {:.2} / {:.2} = {:.4} m³/s/mm\n",
+        a_km2, tp, qp
+    ));
+    out.push_str(&format!(
+        "  tb = 2.67 × tp = 2.67 × {:.2} = {:.2} jam\n\n",
+        tp, tb
+    ));
 
     out.push_str("Hasil:\n");
     out.push_str(&format!("  Waktu puncak (tp) = {:.2} jam\n", tp));
-    out.push_str(&format!("  Debit puncak (Qp) = {:.4} m³/s per mm hujan efektif\n", qp));
+    out.push_str(&format!(
+        "  Debit puncak (Qp) = {:.4} m³/s per mm hujan efektif\n",
+        qp
+    ));
     out.push_str(&format!("  Waktu dasar (tb) = {:.2} jam\n", tb));
-    out.push_str(&format!("  Volume check: {:.0} m³ vs {:.0} m³ (expected)\n\n", volume_check, expected_volume));
+    out.push_str(&format!(
+        "  Volume check: {:.0} m³ vs {:.0} m³ (expected)\n\n",
+        volume_check, expected_volume
+    ));
 
     // UH ordinates (triangular)
     out.push_str("Ordinat Unit Hydrograph:\n");

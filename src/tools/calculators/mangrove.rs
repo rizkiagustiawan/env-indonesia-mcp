@@ -2,10 +2,22 @@
 /// Ref: Gao (1996), Komiyama et al. (2005)
 
 pub fn ndmi(nir_b8a: f64, swir_b11: f64) -> String {
-    if (nir_b8a + swir_b11).abs() < 1e-10 { return "ERROR: Pembagi nol (NIR + SWIR = 0).".into(); }
+    if (nir_b8a + swir_b11).abs() < 1e-10 {
+        return "ERROR: Pembagi nol (NIR + SWIR = 0).".into();
+    }
     let ndmi = (nir_b8a - swir_b11) / (nir_b8a + swir_b11);
 
-    let cat = if ndmi < -0.2 { "Tanah kering/batu" } else if ndmi < 0.0 { "Vegetasi kering/stress" } else if ndmi < 0.2 { "Vegetasi rendah kelembaban" } else if ndmi < 0.4 { "Vegetasi sehat (mangrove sedang)" } else { "Vegetasi sangat lembab (mangrove sehat/rawa)" };
+    let cat = if ndmi < -0.2 {
+        "Tanah kering/batu"
+    } else if ndmi < 0.0 {
+        "Vegetasi kering/stress"
+    } else if ndmi < 0.2 {
+        "Vegetasi rendah kelembaban"
+    } else if ndmi < 0.4 {
+        "Vegetasi sehat (mangrove sedang)"
+    } else {
+        "Vegetasi sangat lembab (mangrove sehat/rawa)"
+    };
 
     let mut out = String::from("=== Mangrove NDMI (Gao 1996) ===\n");
     out.push_str("⚠️ NDMI Gao ≠ NDWI McFeeters. Jangan dicampur.\n");
@@ -15,8 +27,15 @@ pub fn ndmi(nir_b8a: f64, swir_b11: f64) -> String {
 }
 
 pub fn carbon_stock(dbh_cm: f64, wood_density: f64, n_trees_per_ha: f64) -> String {
-    if dbh_cm <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if wood_density <= 0.0 || wood_density > 1.5 { return format!("ERROR: Wood density {} g/cm³ di luar rentang (0-1.5).", wood_density); }
+    if dbh_cm <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if wood_density <= 0.0 || wood_density > 1.5 {
+        return format!(
+            "ERROR: Wood density {} g/cm³ di luar rentang (0-1.5).",
+            wood_density
+        );
+    }
 
     // Komiyama et al. (2005) allometric
     let agb_kg = 0.251 * wood_density * dbh_cm.powf(2.46);

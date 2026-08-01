@@ -24,12 +24,8 @@ pub fn validate(data_json: &str) -> String {
     for sample in &samples {
         total_samples += 1;
 
-        let sample_id = sample.get("sample")
-            .and_then(|v| v.as_str())
-            .unwrap_or("?");
-        let value = sample.get("value")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0);
+        let sample_id = sample.get("sample").and_then(|v| v.as_str()).unwrap_or("?");
+        let value = sample.get("value").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
         let mut sample_row = format!("Sampel: {} (nilai: {:.4})\n", sample_id, value);
 
@@ -46,17 +42,27 @@ pub fn validate(data_json: &str) -> String {
             let rpd_limit = 20.0;
             let rpd_ok = rpd <= rpd_limit;
 
-            if rpd_ok { rpd_pass += 1; } else { rpd_fail += 1; }
+            if rpd_ok {
+                rpd_pass += 1;
+            } else {
+                rpd_fail += 1;
+            }
 
             sample_row.push_str(&format!(
                 "  RPD: |{:.4} - {:.4}| / {:.4} × 100 = {:.1}% {} (batas: {}%)\n",
-                value, dup, avg, rpd,
+                value,
+                dup,
+                avg,
+                rpd,
                 if rpd_ok { "LULUS ✓" } else { "GAGAL ✗" },
                 rpd_limit
             ));
 
             if !rpd_ok {
-                flags.push(format!("{}: RPD {:.1}% melebihi batas {}%", sample_id, rpd, rpd_limit));
+                flags.push(format!(
+                    "{}: RPD {:.1}% melebihi batas {}%",
+                    sample_id, rpd, rpd_limit
+                ));
             }
         }
 
@@ -73,16 +79,30 @@ pub fn validate(data_json: &str) -> String {
 
             let recovery_ok = recovery >= 80.0 && recovery <= 120.0;
 
-            if recovery_ok { spike_pass += 1; } else { spike_fail += 1; }
+            if recovery_ok {
+                spike_pass += 1;
+            } else {
+                spike_fail += 1;
+            }
 
             sample_row.push_str(&format!(
                 "  Spike Recovery: ({:.4} - {:.4}) / {:.4} × 100 = {:.1}% {} (batas: 80-120%)\n",
-                spike, value, spike_amt, recovery,
-                if recovery_ok { "LULUS ✓" } else { "GAGAL ✗" }
+                spike,
+                value,
+                spike_amt,
+                recovery,
+                if recovery_ok {
+                    "LULUS ✓"
+                } else {
+                    "GAGAL ✗"
+                }
             ));
 
             if !recovery_ok {
-                flags.push(format!("{}: Recovery {:.1}% di luar 80-120%", sample_id, recovery));
+                flags.push(format!(
+                    "{}: Recovery {:.1}% di luar 80-120%",
+                    sample_id, recovery
+                ));
             }
         }
 
@@ -92,12 +112,20 @@ pub fn validate(data_json: &str) -> String {
             let mdl_estimate = value * 0.1;
             let blank_ok = blank < mdl_estimate.max(0.01); // at least 0.01
 
-            if blank_ok { blank_pass += 1; } else { blank_fail += 1; }
+            if blank_ok {
+                blank_pass += 1;
+            } else {
+                blank_fail += 1;
+            }
 
             sample_row.push_str(&format!(
                 "  Blank: {:.4} {} (MDL estimasi: {:.4})\n",
                 blank,
-                if blank_ok { "LULUS ✓" } else { "GAGAL ✗ — kontaminasi terdeteksi" },
+                if blank_ok {
+                    "LULUS ✓"
+                } else {
+                    "GAGAL ✗ — kontaminasi terdeteksi"
+                },
                 mdl_estimate.max(0.01)
             ));
 
@@ -112,7 +140,11 @@ pub fn validate(data_json: &str) -> String {
     // Overall assessment
     let total_checks = rpd_pass + rpd_fail + spike_pass + spike_fail + blank_pass + blank_fail;
     let total_pass = rpd_pass + spike_pass + blank_pass;
-    let pass_pct = if total_checks > 0 { (total_pass as f64 / total_checks as f64) * 100.0 } else { 100.0 };
+    let pass_pct = if total_checks > 0 {
+        (total_pass as f64 / total_checks as f64) * 100.0
+    } else {
+        100.0
+    };
 
     let overall = if flags.is_empty() {
         "LULUS — Semua parameter QA/QC memenuhi kriteria"
@@ -145,10 +177,22 @@ pub fn validate(data_json: &str) -> String {
 
     result.push_str("────────────────────────────────────────\n");
     result.push_str("RINGKASAN:\n");
-    result.push_str(&format!("• RPD          : {} lulus, {} gagal\n", rpd_pass, rpd_fail));
-    result.push_str(&format!("• Spike Recov. : {} lulus, {} gagal\n", spike_pass, spike_fail));
-    result.push_str(&format!("• Blank        : {} lulus, {} gagal\n", blank_pass, blank_fail));
-    result.push_str(&format!("• Total        : {}/{} lulus ({:.0}%)\n\n", total_pass, total_checks, pass_pct));
+    result.push_str(&format!(
+        "• RPD          : {} lulus, {} gagal\n",
+        rpd_pass, rpd_fail
+    ));
+    result.push_str(&format!(
+        "• Spike Recov. : {} lulus, {} gagal\n",
+        spike_pass, spike_fail
+    ));
+    result.push_str(&format!(
+        "• Blank        : {} lulus, {} gagal\n",
+        blank_pass, blank_fail
+    ));
+    result.push_str(&format!(
+        "• Total        : {}/{} lulus ({:.0}%)\n\n",
+        total_pass, total_checks, pass_pct
+    ));
 
     if !flags.is_empty() {
         result.push_str("FLAG (CATATAN):\n");

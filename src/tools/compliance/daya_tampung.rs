@@ -13,7 +13,10 @@ pub fn calculate(
         return format!("ERROR [E102]: Parameter harus > 0. {}", q_river_m3s);
     }
     if q_waste_m3s < 0.0 {
-        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", q_waste_m3s);
+        return format!(
+            "ERROR [E102]: Parameter tidak boleh negatif. {}",
+            q_waste_m3s
+        );
     }
     if c_standard_mgl <= 0.0 {
         return format!("ERROR [E102]: Parameter harus > 0. {}", c_standard_mgl);
@@ -50,15 +53,36 @@ pub fn calculate(
     out.push_str(&format!("C Limbah         : {:.2} mg/L\n\n", c_waste_mgl));
     out.push_str("Perhitungan Mass Balance:\n");
     out.push_str(&format!("  Kapasitas Beban = Q × (C_bm - C_hulu) × 86.4\n"));
-    out.push_str(&format!("                  = {:.4} × ({:.2} - {:.2}) × 86.4\n", q_river_m3s, c_standard_mgl, c_upstream_mgl));
-    out.push_str(&format!("                  = {:.2} kg/hari\n\n", load_capacity));
+    out.push_str(&format!(
+        "                  = {:.4} × ({:.2} - {:.2}) × 86.4\n",
+        q_river_m3s, c_standard_mgl, c_upstream_mgl
+    ));
+    out.push_str(&format!(
+        "                  = {:.2} kg/hari\n\n",
+        load_capacity
+    ));
     out.push_str(&format!("  Beban Limbah    = q × C_limbah × 86.4\n"));
-    out.push_str(&format!("                  = {:.4} × {:.2} × 86.4\n", q_waste_m3s, c_waste_mgl));
-    out.push_str(&format!("                  = {:.2} kg/hari\n\n", load_waste));
-    out.push_str(&format!("  DTBP = {:.2} - {:.2} = {:.2} kg/hari\n\n", load_capacity, load_waste, dtbp));
-    out.push_str(&format!("Maks. Beban Izin    : {:.2} kg/hari\n", max_allowable_load));
+    out.push_str(&format!(
+        "                  = {:.4} × {:.2} × 86.4\n",
+        q_waste_m3s, c_waste_mgl
+    ));
+    out.push_str(&format!(
+        "                  = {:.2} kg/hari\n\n",
+        load_waste
+    ));
+    out.push_str(&format!(
+        "  DTBP = {:.2} - {:.2} = {:.2} kg/hari\n\n",
+        load_capacity, load_waste, dtbp
+    ));
+    out.push_str(&format!(
+        "Maks. Beban Izin    : {:.2} kg/hari\n",
+        max_allowable_load
+    ));
     if max_waste_conc.is_finite() {
-        out.push_str(&format!("Maks. C Limbah Izin : {:.2} mg/L (pada debit limbah saat ini)\n\n", max_waste_conc));
+        out.push_str(&format!(
+            "Maks. C Limbah Izin : {:.2} mg/L (pada debit limbah saat ini)\n\n",
+            max_waste_conc
+        ));
     } else {
         out.push_str("Maks. C Limbah Izin : ∞ (tidak ada debit limbah)\n\n");
     }

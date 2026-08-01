@@ -3,8 +3,15 @@
 
 pub fn check(waste_a: &str, waste_b: &str) -> String {
     let categories = [
-        "acid", "base", "oxidizer", "reducer", "water_reactive",
-        "flammable", "organic_solvent", "heavy_metal", "cyanide",
+        "acid",
+        "base",
+        "oxidizer",
+        "reducer",
+        "water_reactive",
+        "flammable",
+        "organic_solvent",
+        "heavy_metal",
+        "cyanide",
     ];
 
     let a_lower = waste_a.to_lowercase();
@@ -16,13 +23,15 @@ pub fn check(waste_a: &str, waste_b: &str) -> String {
     if a_idx.is_none() {
         return format!(
             "ERROR: Kategori limbah '{}' tidak dikenal.\nKategori tersedia: {}",
-            waste_a, categories.join(", ")
+            waste_a,
+            categories.join(", ")
         );
     }
     if b_idx.is_none() {
         return format!(
             "ERROR: Kategori limbah '{}' tidak dikenal.\nKategori tersedia: {}",
-            waste_b, categories.join(", ")
+            waste_b,
+            categories.join(", ")
         );
     }
 
@@ -107,8 +116,16 @@ pub fn check(waste_a: &str, waste_b: &str) -> String {
     result.push_str("Ref: PP 101/2014, EPA Waste Compatibility\n");
     result.push_str("══════════════════════════════════════════════\n\n");
 
-    result.push_str(&format!("Limbah A : {} ({})\n", category_id(&a_lower), waste_a));
-    result.push_str(&format!("Limbah B : {} ({})\n\n", category_id(&b_lower), waste_b));
+    result.push_str(&format!(
+        "Limbah A : {} ({})\n",
+        category_id(&a_lower),
+        waste_a
+    ));
+    result.push_str(&format!(
+        "Limbah B : {} ({})\n\n",
+        category_id(&b_lower),
+        waste_b
+    ));
 
     result.push_str(&format!("STATUS: {}\n", status));
     result.push_str(&format!("        {}\n\n", status_id));

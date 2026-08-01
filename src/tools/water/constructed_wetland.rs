@@ -1,15 +1,30 @@
 /// Constructed Wetland — k-C* Model
 /// Ce = C* + (Ci - C*) × exp(-k × t_hyd)
-/// Ref: Kadlec & Knight (1996), Treatment Wetlands
+/// Ref: Kadlec & Wallace (2009), Treatment Wetlands 2nd Ed. Values originally from Kadlec & Knight (1996).
 
-pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: f64, wetland_type: &str) -> String {
+pub fn design(
+    q_m3d: f64,
+    parameter: &str,
+    ci_mgl: f64,
+    ce_target: f64,
+    temp_c: f64,
+    wetland_type: &str,
+) -> String {
     let mut out = String::from("=== Desain Constructed Wetland (k-C* Model) ===\n");
-    out.push_str("Ref: Kadlec & Knight (1996), Treatment Wetlands\n\n");
+    out.push_str("Ref: Kadlec & Wallace (2009), Treatment Wetlands 2nd Ed.\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if ci_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if ce_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if temp_c < 5.0 || temp_c > 40.0 { return "ERROR: Suhu harus antara 5-40°C.".into(); }
+    if q_m3d <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if ci_mgl <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if ce_target < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if temp_c < 5.0 || temp_c > 40.0 {
+        return "ERROR: Suhu harus antara 5-40°C.".into();
+    }
 
     let param_lower = parameter.to_lowercase();
     let type_lower = wetland_type.to_lowercase();
@@ -31,13 +46,16 @@ pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: 
 
     // Check if target is achievable (must be > C*)
     if ce_target <= c_star {
-        return format!("ERROR [E102]: Parameter harus > C*. target={}, c_star={}", ce_target, c_star);
+        return format!(
+            "ERROR [E102]: Parameter harus > C*. target={}, c_star={}",
+            ce_target, c_star
+        );
     }
 
     // Area sizing: A = Q × ln((Ci-C*)/(Ce-C*)) / k
     // From Ce = C* + (Ci-C*) × exp(-k×t), where t = V/Q and V = A × depth
     let depth = match type_lower.as_str() {
-        "fws" => 0.3, // m typical FWS
+        "fws" => 0.3,  // m typical FWS
         "hssf" => 0.6, // m typical HSSF
         _ => 0.4,
     };
@@ -65,7 +83,11 @@ pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: 
         k20, temp_c, k_t, c_star));
 
     out.push_str("Desain wetland:\n");
-    out.push_str(&format!("  Luas = {:.0} m² ({:.2} ha)\n", area, area / 10000.0));
+    out.push_str(&format!(
+        "  Luas = {:.0} m² ({:.2} ha)\n",
+        area,
+        area / 10000.0
+    ));
     out.push_str(&format!("  Kedalaman = {:.1} m\n", depth));
     out.push_str(&format!("  Volume = {:.0} m³\n", volume));
     out.push_str(&format!("  HRT = {:.1} hari\n", hrt_required));
@@ -73,7 +95,10 @@ pub fn design(q_m3d: f64, parameter: &str, ci_mgl: f64, ce_target: f64, temp_c: 
     out.push_str(&format!("  Lebar = {:.1} m\n", width));
     out.push_str(&format!("  Rasio L:W = {:.1}:1\n\n", aspect));
 
-    out.push_str(&format!("Effluen prediksi:\n  {} effluent = {:.1} mg/L\n  Removal = {:.1}%\n\n", param_name, ce_actual, removal_pct));
+    out.push_str(&format!(
+        "Effluen prediksi:\n  {} effluent = {:.1} mg/L\n  Removal = {:.1}%\n\n",
+        param_name, ce_actual, removal_pct
+    ));
 
     // Plant species recommendation
     out.push_str("Rekomendasi tanaman (Indonesia tropis):\n");

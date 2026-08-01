@@ -24,7 +24,8 @@ pub async fn get_ispu(client: &Client, kota: &str) -> String {
     // Try KLHK ISPU API endpoint
     let url = format!("https://ispu.menlhk.go.id/api/ispu?kota={}", kota);
 
-    match client.get(&url)
+    match client
+        .get(&url)
         .header("Accept", "application/json")
         .timeout(std::time::Duration::from_secs(15))
         .send()
@@ -41,11 +42,15 @@ pub async fn get_ispu(client: &Client, kota: &str) -> String {
                         // If parsing fails, return raw data
                         return format!(
                             "Data ISPU dari KLHK untuk '{}':\n{}\n\nSumber: ispu.menlhk.go.id",
-                            kota, &body[..body.len().min(2000)]
+                            kota,
+                            &body[..body.len().min(2000)]
                         );
                     }
                     Err(e) => {
-                        return format!("Error membaca respons KLHK: {}\nGunakan referensi manual.", e);
+                        return format!(
+                            "Error membaca respons KLHK: {}\nGunakan referensi manual.",
+                            e
+                        );
                     }
                 }
             }
@@ -79,7 +84,9 @@ pub async fn get_ispu(client: &Client, kota: &str) -> String {
          • aqicn.org/city/{} (WAQI)\n\
          • iku.menlhk.go.id (IKU KLHK)\n\
          ══════════════════════════════════════════════",
-        kota, reference_stations, kota.to_lowercase().replace(' ', "-")
+        kota,
+        reference_stations,
+        kota.to_lowercase().replace(' ', "-")
     )
 }
 
@@ -95,7 +102,10 @@ fn format_ispu_response(data: &serde_json::Value, kota: &str) -> String {
 
     if let Some(records) = data.as_array() {
         for record in records {
-            let stasiun = record.get("stasiun").and_then(|v| v.as_str()).unwrap_or("N/A");
+            let stasiun = record
+                .get("stasiun")
+                .and_then(|v| v.as_str())
+                .unwrap_or("N/A");
             let pm25 = record.get("pm25").and_then(|v| v.as_f64()).unwrap_or(0.0);
             let pm10 = record.get("pm10").and_then(|v| v.as_f64()).unwrap_or(0.0);
             let so2 = record.get("so2").and_then(|v| v.as_f64()).unwrap_or(0.0);

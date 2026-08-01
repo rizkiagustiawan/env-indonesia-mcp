@@ -4,24 +4,24 @@
 // ══════════════════════════════════════════════════════════════
 // Indonesian ARKL defaults (Pedoman Kemenkes 2012)
 // ══════════════════════════════════════════════════════════════
-const ARKL_BW_ADULT: f64 = 55.0;       // kg (Indonesian adult average)
-const ARKL_BW_CHILD: f64 = 15.0;       // kg
+const ARKL_BW_ADULT: f64 = 55.0; // kg (Indonesian adult average)
+const ARKL_BW_CHILD: f64 = 15.0; // kg
 const ARKL_IR_INHAL_ADULT: f64 = 20.0; // m³/day
 const ARKL_IR_INHAL_CHILD: f64 = 12.0; // m³/day
-const ARKL_IR_ORAL_ADULT: f64 = 2.0;   // L/day (water ingestion)
-const ARKL_IR_ORAL_CHILD: f64 = 1.0;   // L/day
-const ARKL_IR_SOIL_ADULT: f64 = 50.0;  // mg/day (soil ingestion)
+const ARKL_IR_ORAL_ADULT: f64 = 2.0; // L/day (water ingestion)
+const ARKL_IR_ORAL_CHILD: f64 = 1.0; // L/day
+const ARKL_IR_SOIL_ADULT: f64 = 50.0; // mg/day (soil ingestion)
 const ARKL_IR_SOIL_CHILD: f64 = 200.0; // mg/day
-const ARKL_SA_ADULT: f64 = 5000.0;     // cm² (skin surface area)
-const ARKL_SA_CHILD: f64 = 2800.0;     // cm²
-const ARKL_FE_RESIDENTIAL: f64 = 350.0;   // days/year
+const ARKL_SA_ADULT: f64 = 5000.0; // cm² (skin surface area)
+const ARKL_SA_CHILD: f64 = 2800.0; // cm²
+const ARKL_FE_RESIDENTIAL: f64 = 350.0; // days/year
 const ARKL_FE_OCCUPATIONAL: f64 = 250.0;
 const ARKL_FE_SCHOOL: f64 = 240.0;
-const ARKL_DT_RESIDENTIAL: f64 = 30.0;    // years
+const ARKL_DT_RESIDENTIAL: f64 = 30.0; // years
 const ARKL_DT_OCCUPATIONAL: f64 = 25.0;
 const ARKL_DT_CHILD: f64 = 6.0;
-const ARKL_AT_CANCER: f64 = 70.0;         // years (WHO convention)
-const US_EPA_BW_ADULT: f64 = 70.0;        // kg (US EPA default)
+const ARKL_AT_CANCER: f64 = 70.0; // years (WHO convention)
+const US_EPA_BW_ADULT: f64 = 70.0; // kg (US EPA default)
 
 // ══════════════════════════════════════════════════════════════
 // RfD / RfC lookup (US EPA IRIS, verified 2024-2025)
@@ -29,7 +29,10 @@ const US_EPA_BW_ADULT: f64 = 70.0;        // kg (US EPA default)
 
 /// Returns (rfd_value, source_note). Units: mg/kg/day for oral, mg/m³ for inhalation RfC.
 fn get_rfd(contaminant: &str, route: &str) -> Option<(f64, &'static str)> {
-    match (contaminant.to_lowercase().as_str(), route.to_lowercase().as_str()) {
+    match (
+        contaminant.to_lowercase().as_str(),
+        route.to_lowercase().as_str(),
+    ) {
         ("arsenic" | "as", "oral") => Some((6e-5, "Arsenic (inorganic) - IRIS 2025")),
         ("chromium_vi" | "cr6" | "cr(vi)", "oral") => Some((9e-4, "Chromium(VI) - IRIS 2024")),
         ("chromium_vi" | "cr6" | "cr(vi)", "inhalation" | "inhalasi") => {
@@ -171,8 +174,14 @@ pub fn calculate_ilcr(
 
     r.push_str("INPUT:\n");
     r.push_str(&format!("• Jalur paparan (route)    : {}\n", route_name));
-    r.push_str(&format!("• Konsentrasi (C)          : {:.6}\n", concentration));
-    r.push_str(&format!("• Laju intake (IR)         : {:.4}\n", intake_rate));
+    r.push_str(&format!(
+        "• Konsentrasi (C)          : {:.6}\n",
+        concentration
+    ));
+    r.push_str(&format!(
+        "• Laju intake (IR)         : {:.4}\n",
+        intake_rate
+    ));
     r.push_str(&format!(
         "• Frekuensi paparan (EF)   : {:.0} hari/tahun\n",
         exposure_freq_days
@@ -344,7 +353,10 @@ pub fn calculate_hq(
         "• Konsentrasi (C)          : {:.6e}\n",
         concentration
     ));
-    r.push_str(&format!("• Laju intake (IR)         : {:.4}\n", intake_rate));
+    r.push_str(&format!(
+        "• Laju intake (IR)         : {:.4}\n",
+        intake_rate
+    ));
     r.push_str(&format!(
         "• Frekuensi paparan (EF)   : {:.0} hari/tahun\n",
         exposure_freq_days
@@ -523,7 +535,10 @@ pub fn calculate_arkl(
     r.push_str(&format!("   Kontaminan              : {}\n", contaminant));
     r.push_str(&format!("   Jalur paparan           : {}\n", route_name));
     r.push_str(&format!("   Populasi                : {}\n", pop_label));
-    r.push_str(&format!("   Skenario                : {}\n", scenario_label));
+    r.push_str(&format!(
+        "   Skenario                : {}\n",
+        scenario_label
+    ));
     r.push_str(&format!(
         "   Konsentrasi (C)         : {:.6e}\n",
         concentration
@@ -569,13 +584,9 @@ pub fn calculate_arkl(
             if hq_val <= 1.0 {
                 r.push_str("   Status                  : ✅ AMAN (HQ ≤ 1)\n\n");
             } else if hq_val <= 4.0 {
-                r.push_str(
-                    "   Status                  : ⚠️ PERLU PERHATIAN (HQ 1–4)\n\n",
-                );
+                r.push_str("   Status                  : ⚠️ PERLU PERHATIAN (HQ 1–4)\n\n");
             } else {
-                r.push_str(
-                    "   Status                  : ❌ TIDAK AMAN (HQ > 4)\n\n",
-                );
+                r.push_str("   Status                  : ❌ TIDAK AMAN (HQ > 4)\n\n");
             }
         }
         _ => {
@@ -597,13 +608,9 @@ pub fn calculate_arkl(
             if ilcr_val < 1e-6 {
                 r.push_str("   Status                  : ✅ DAPAT DITERIMA (< 10⁻⁶)\n\n");
             } else if ilcr_val < 1e-4 {
-                r.push_str(
-                    "   Status                  : ⚠️ DAPAT DIKELOLA (10⁻⁶ – 10⁻⁴)\n\n",
-                );
+                r.push_str("   Status                  : ⚠️ DAPAT DIKELOLA (10⁻⁶ – 10⁻⁴)\n\n");
             } else {
-                r.push_str(
-                    "   Status                  : ❌ TIDAK DAPAT DITERIMA (> 10⁻⁴)\n\n",
-                );
+                r.push_str("   Status                  : ❌ TIDAK DAPAT DITERIMA (> 10⁻⁴)\n\n");
             }
         }
         _ => {
@@ -611,7 +618,9 @@ pub fn calculate_arkl(
                 "   CSF tidak tersedia untuk '{}' jalur '{}'\n",
                 contaminant, route_name
             ));
-            r.push_str("   ILCR tidak dapat dihitung — kontaminan bukan karsinogen via jalur ini\n\n");
+            r.push_str(
+                "   ILCR tidak dapat dihitung — kontaminan bukan karsinogen via jalur ini\n\n",
+            );
         }
     }
 

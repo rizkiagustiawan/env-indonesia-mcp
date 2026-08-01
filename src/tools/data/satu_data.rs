@@ -12,18 +12,46 @@ pub async fn search(client: &Client, query: &str, limit: u32) -> String {
     match client.get(&url).send().await {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
             Ok(v) => {
-                if let Some(results) = v.get("result").and_then(|r| r.get("results")).and_then(|r| r.as_array()) {
-                    out.push_str(&format!("Found: {} datasets\n\n", v.get("result").and_then(|r| r.get("count")).and_then(|c| c.as_u64()).unwrap_or(0)));
+                if let Some(results) = v
+                    .get("result")
+                    .and_then(|r| r.get("results"))
+                    .and_then(|r| r.as_array())
+                {
+                    out.push_str(&format!(
+                        "Found: {} datasets\n\n",
+                        v.get("result")
+                            .and_then(|r| r.get("count"))
+                            .and_then(|c| c.as_u64())
+                            .unwrap_or(0)
+                    ));
                     for (i, ds) in results.iter().enumerate() {
                         let title = ds.get("title").and_then(|t| t.as_str()).unwrap_or("?");
-                        let org = ds.get("organization").and_then(|o| o.get("title")).and_then(|t| t.as_str()).unwrap_or("?");
+                        let org = ds
+                            .get("organization")
+                            .and_then(|o| o.get("title"))
+                            .and_then(|t| t.as_str())
+                            .unwrap_or("?");
                         let notes = ds.get("notes").and_then(|n| n.as_str()).unwrap_or("");
                         let url = ds.get("url").and_then(|u| u.as_str()).unwrap_or("");
-                        out.push_str(&format!("{}. {}\n   Org: {}\n   {}\n   URL: {}\n\n", i+1, title, org, &notes[..notes.len().min(200)], url));
+                        out.push_str(&format!(
+                            "{}. {}\n   Org: {}\n   {}\n   URL: {}\n\n",
+                            i + 1,
+                            title,
+                            org,
+                            &notes[..notes.len().min(200)],
+                            url
+                        ));
                     }
                 } else {
                     out.push_str("No results or API format changed.\n");
-                    out.push_str(&format!("Raw: {}\n", serde_json::to_string_pretty(&v).unwrap_or_default().chars().take(1000).collect::<String>()));
+                    out.push_str(&format!(
+                        "Raw: {}\n",
+                        serde_json::to_string_pretty(&v)
+                            .unwrap_or_default()
+                            .chars()
+                            .take(1000)
+                            .collect::<String>()
+                    ));
                 }
             }
             Err(e) => out.push_str(&format!("Parse error: {}\n", e)),

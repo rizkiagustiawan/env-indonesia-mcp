@@ -10,9 +10,15 @@ pub fn calculate(
     ground_type: &str,
     barrier_height_m: Option<f64>,
 ) -> String {
-    if vehicles_per_hour <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if speed_kmh <= 0.0 { return "ERROR [E102]: Parameter harus > 0 km/h.".into(); }
-    if distance_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0 m.".into(); }
+    if vehicles_per_hour <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if speed_kmh <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 km/h.".into();
+    }
+    if distance_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 m.".into();
+    }
     if heavy_vehicle_pct < 0.0 || heavy_vehicle_pct > 100.0 {
         return "ERROR: Persentase kendaraan berat harus 0-100%.".into();
     }
@@ -105,9 +111,16 @@ pub fn calculate(
         // Iterative: increase distance until noise drops below target
         let mut d = distance_m;
         loop {
-            let atten = if d > 13.5 { -10.0 * (d / 13.5).log10() } else { 0.0 };
-            let l_test = l_basic + speed_corr + hv_corr + atten + ground_corr + grad_corr - barrier_il;
-            if l_test <= target_db || d > 10000.0 { break; }
+            let atten = if d > 13.5 {
+                -10.0 * (d / 13.5).log10()
+            } else {
+                0.0
+            };
+            let l_test =
+                l_basic + speed_corr + hv_corr + atten + ground_corr + grad_corr - barrier_il;
+            if l_test <= target_db || d > 10000.0 {
+                break;
+            }
             d *= 1.05;
         }
         buffer_dist = d;
@@ -131,23 +144,48 @@ pub fn calculate(
         l_basic, speed_corr, hv_corr, dist_atten, ground_corr, grad_corr
     ));
     if barrier_il > 0.0 {
-        out.push_str(&format!("  Insertion loss barrier           = -{:.1} dBA\n", barrier_il));
+        out.push_str(&format!(
+            "  Insertion loss barrier           = -{:.1} dBA\n",
+            barrier_il
+        ));
     }
 
-    out.push_str(&format!("\n  L10 tanpa barrier = {:.1} dBA\n", l_no_barrier));
+    out.push_str(&format!(
+        "\n  L10 tanpa barrier = {:.1} dBA\n",
+        l_no_barrier
+    ));
     out.push_str(&format!("  L10 FINAL         = {:.1} dBA\n\n", l_final));
 
     // Compliance table
     out.push_str("KEPATUHAN KepmenLH 48/1996:\n");
-    out.push_str(&format!("  {:35} {:>8} {:>8} {:>10}\n", "Zona", "Baku Mutu", "Prediksi", "Status"));
-    out.push_str(&format!("  {:35} {:>8} {:>8} {:>10}\n", "─".repeat(35), "─".repeat(8), "─".repeat(8), "─".repeat(10)));
+    out.push_str(&format!(
+        "  {:35} {:>8} {:>8} {:>10}\n",
+        "Zona", "Baku Mutu", "Prediksi", "Status"
+    ));
+    out.push_str(&format!(
+        "  {:35} {:>8} {:>8} {:>10}\n",
+        "─".repeat(35),
+        "─".repeat(8),
+        "─".repeat(8),
+        "─".repeat(10)
+    ));
     for (name, limit) in zones {
-        let status = if l_final <= *limit { "✓ PATUH" } else { "✗ MELEBIHI" };
-        out.push_str(&format!("  {:35} {:>6.0} dBA {:>6.1} dBA {:>10}\n", name, limit, l_final, status));
+        let status = if l_final <= *limit {
+            "✓ PATUH"
+        } else {
+            "✗ MELEBIHI"
+        };
+        out.push_str(&format!(
+            "  {:35} {:>6.0} dBA {:>6.1} dBA {:>10}\n",
+            name, limit, l_final, status
+        ));
     }
 
     if l_final > target_db {
-        out.push_str(&format!("\nJARAK BUFFER MINIMUM (zona perumahan {:.0} dBA):\n  {:.0} m dari tepi jalan\n", target_db, buffer_dist));
+        out.push_str(&format!(
+            "\nJARAK BUFFER MINIMUM (zona perumahan {:.0} dBA):\n  {:.0} m dari tepi jalan\n",
+            target_db, buffer_dist
+        ));
     }
 
     out.push_str("\n══════════════════════════════════════════════\n");

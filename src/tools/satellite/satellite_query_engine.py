@@ -157,16 +157,109 @@ def query_grace(lat, lon):
     except Exception as e:
         print(f"ERROR: {e}")
 
+def query_frp(lat, lon, start_date='2024-01-01', end_date='2024-12-31'):
+    """Fire Radiative Power (FRP) time series from VIIRS SNPP/NOAA-20.
+    375m resolution, MW units. Monitors fire intensity over time.
+    Ref: VIIRS Active Fire product (Schroeder et al. 2014)
+    """
+    import ee, json, datetime
+    ee.Initialize()
+
+    point = ee.Geometry.Point([lon, lat])
+    roi = point.buffer(25000)  # 25km buffer
+
+    # VIIRS SNPP active fire
+    viirs_snpp = ee.ImageCollection('NASA/LANCE/SNPP_VIIRS/C2') \
+        .filterDate(start_date, end_date) \
+        .filterBounds(roi) \
+        .select(['frp', 'Bright_ti4', 'Bright_ti5', 'confidence'])
+
+    # VIIRS NOAA-20
+    viirs_n20 = ee.ImageCollection('NASA/LANCE/NOAA20_VIIRS/C2') \
+        .filterDate(start_date, end_date) \
+        .filterBounds(roi) \
+        .select(['frp', 'Bright_ti4', 'Bright_ti5', 'confidence'])
+
+    # Merge both sensors
+    viirs_all = viirs_snpp.merge(viirs_n20)
+
+    count = viirs_all.size().getInfo()
+
+    if count == 0:
+        return json.dumps({
+            "status": "NO_FIRE",
+            "message": f"Tidak ada hotspot terdeteksi di radius 25km dari ({lat}, {lon}) periode {start_date} - {end_date}",
+            "sensor": "VIIRS SNPP + NOAA-20",
+            "resolution": "375m"
+        }, indent=2)
+
+    # Aggregate FRP statistics
+    frp_stats = viirs_all.select('frp').reduce(
+        ee.Reducer.mean().combine(ee.Reducer.max(), '', True)
+            .combine(ee.Reducer.sum(), '', True)
+            .combine(ee.Reducer.count(), '', True)
+    ).reduceRegion(
+        reducer=ee.Reducer.first(),
+        geometry=roi, scale=375
+    ).getInfo()
+
+    # Monthly FRP time series
+    months = []
+    start = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    current = start
+    while current < end:
+        month_end = (current.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        if month_end > end:
+            month_end = end
+        monthly = viirs_all.filterDate(current.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')) \
+            .filterBounds(roi)
+        monthly_count = monthly.size().getInfo()
+        if monthly_count > 0:
+            monthly_frp_list = monthly.aggregate_array('frp').getInfo()
+            # Filter None values
+            valid_frp = [v for v in (monthly_frp_list or []) if v is not None]
+            total_frp = sum(valid_frp) if valid_frp else 0
+            hotspot_count = len(valid_frp)
+        else:
+            total_frp = 0
+            hotspot_count = 0
+        months.append({
+            'month': current.strftime('%Y-%m'),
+            'total_frp_mw': total_frp,
+            'hotspot_count': hotspot_count
+        })
+        current = month_end
+
+    result = {
+        "status": "FIRE_DETECTED",
+        "koordinat": f"{lat}, {lon}",
+        "periode": f"{start_date} - {end_date}",
+        "sensor": "VIIRS SNPP + NOAA-20 (375m)",
+        "total_deteksi": count,
+        "frp_mean_mw": frp_stats.get('frp_mean', 0),
+        "frp_max_mw": frp_stats.get('frp_max', 0),
+        "frp_total_mw": frp_stats.get('frp_sum', 0),
+        "monthly_timeseries": months,
+        "interpretasi": "FRP tinggi (>100 MW) = kebakaran besar/intens. FRP rendah (<10 MW) = titik panas kecil/smouldering.",
+        "ref": "Schroeder et al. 2014, VIIRS 375m Active Fire"
+    }
+
+    return json.dumps(result, indent=2)
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 4:
         sys.exit(1)
     mode = sys.argv[1]
     lat = float(sys.argv[2])
     lon = float(sys.argv[3])
-    
+
     if mode == 'modis': query_modis(lat, lon)
     elif mode == 'viirs': query_viirs(lat, lon)
     elif mode == 'srtm': query_srtm(lat, lon)
     elif mode == 'era5': query_era5(lat, lon)
     elif mode == 'dynamic_world': query_dw(lat, lon)
     elif mode == 'grace': query_grace(lat, lon)
+    elif mode == 'frp':
+        print(query_frp(lat, lon, sys.argv[4], sys.argv[5]))

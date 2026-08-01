@@ -6,9 +6,15 @@ pub fn calculate(compound: &str, foc: f64, bulk_density_kgm3: f64, porosity: f64
     let mut out = String::from("=== Koefisien Partisi & Faktor Retardasi ===\n");
     out.push_str("Ref: Schwarzenbach et al. (2003), Environmental Organic Chemistry\n\n");
 
-    if foc <= 0.0 || foc > 1.0 { return "ERROR: foc (fraksi karbon organik) harus antara 0-1.".into(); }
-    if bulk_density_kgm3 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if porosity <= 0.0 || porosity >= 1.0 { return "ERROR: Porositas harus antara 0 dan 1.".into(); }
+    if foc <= 0.0 || foc > 1.0 {
+        return "ERROR: foc (fraksi karbon organik) harus antara 0-1.".into();
+    }
+    if bulk_density_kgm3 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if porosity <= 0.0 || porosity >= 1.0 {
+        return "ERROR: Porositas harus antara 0 dan 1.".into();
+    }
 
     let compound_lower = compound.to_lowercase();
 
@@ -53,14 +59,23 @@ pub fn calculate(compound: &str, foc: f64, bulk_density_kgm3: f64, porosity: f64
         name, koc, foc, bulk_density_kgm3, porosity));
 
     out.push_str("Perhitungan:\n");
-    out.push_str(&format!("  Kd = Koc × foc = {:.0} × {:.4} = {:.2} L/kg\n", koc, foc, kd));
-    out.push_str(&format!("  R = 1 + (ρb/n) × Kd = 1 + ({:.3}/{:.2}) × {:.2} = {:.2}\n\n",
-        rho_b_kgl, porosity, kd, r_factor));
+    out.push_str(&format!(
+        "  Kd = Koc × foc = {:.0} × {:.4} = {:.2} L/kg\n",
+        koc, foc, kd
+    ));
+    out.push_str(&format!(
+        "  R = 1 + (ρb/n) × Kd = 1 + ({:.3}/{:.2}) × {:.2} = {:.2}\n\n",
+        rho_b_kgl, porosity, kd, r_factor
+    ));
 
     out.push_str("Hasil:\n");
     out.push_str(&format!("  Koefisien distribusi (Kd) = {:.2} L/kg\n", kd));
     out.push_str(&format!("  Faktor retardasi (R) = {:.2}\n", r_factor));
-    out.push_str(&format!("  Rasio kecepatan efektif (v/v_air) = {:.4} ({:.2}%)\n", v_ratio, v_ratio * 100.0));
+    out.push_str(&format!(
+        "  Rasio kecepatan efektif (v/v_air) = {:.4} ({:.2}%)\n",
+        v_ratio,
+        v_ratio * 100.0
+    ));
     out.push_str(&format!("  Mobilitas: {}\n\n", mobility));
 
     // Reference table

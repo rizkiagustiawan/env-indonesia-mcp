@@ -6,16 +6,27 @@ pub fn calculate(c0: f64, k: f64, t: f64, time_unit: &str) -> String {
     let mut out = String::from("=== Kinetika Orde Pertama ===\n");
     out.push_str("Ref: Tchobanoglous et al. (2003)\n\n");
 
-    if c0 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if k <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if t < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if c0 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if k <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if t < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let unit = match time_unit.to_lowercase().as_str() {
         "s" | "detik" => "detik",
         "min" | "menit" => "menit",
         "hr" | "jam" => "jam",
         "day" | "hari" => "hari",
-        _ => return format!("ERROR: Satuan waktu '{}' tidak dikenali. Pilihan: s, min, hr, day.", time_unit),
+        _ => {
+            return format!(
+                "ERROR: Satuan waktu '{}' tidak dikenali. Pilihan: s, min, hr, day.",
+                time_unit
+            )
+        }
     };
 
     // C(t)
@@ -33,9 +44,15 @@ pub fn calculate(c0: f64, k: f64, t: f64, time_unit: &str) -> String {
     // Time to reach a low target
     let removal_pct = (1.0 - ct / c0) * 100.0;
 
-    out.push_str(&format!("Input:\n  C₀ = {:.2} mg/L\n  k = {:.4} /{}\n  t = {:.2} {}\n\n", c0, k, unit, t, unit));
+    out.push_str(&format!(
+        "Input:\n  C₀ = {:.2} mg/L\n  k = {:.4} /{}\n  t = {:.2} {}\n\n",
+        c0, k, unit, t, unit
+    ));
 
-    out.push_str(&format!("C(t) = C₀ × exp(-k×t) = {:.2} × exp(-{:.4} × {:.2})\n", c0, k, t));
+    out.push_str(&format!(
+        "C(t) = C₀ × exp(-k×t) = {:.2} × exp(-{:.4} × {:.2})\n",
+        c0, k, t
+    ));
     out.push_str(&format!("C({:.2}) = {:.4} mg/L\n", t, ct));
     out.push_str(&format!("Removal = {:.2}%\n\n", removal_pct));
 
@@ -46,7 +63,10 @@ pub fn calculate(c0: f64, k: f64, t: f64, time_unit: &str) -> String {
 
     // Decay profile
     out.push_str("Profil peluruhan:\n");
-    out.push_str(&format!("  {:>8} | {:>12} | {:>8}\n", "Waktu", "Konsentrasi", "Removal"));
+    out.push_str(&format!(
+        "  {:>8} | {:>12} | {:>8}\n",
+        "Waktu", "Konsentrasi", "Removal"
+    ));
     let steps = [0.0, 0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0];
     for &mult in &steps {
         let ti = t_half * mult;

@@ -2,15 +2,31 @@
 /// OLR = Q × COD_in / V, HRT = V / Q
 /// Ref: Lettinga et al. (1980), van Haandel & Lettinga (1994)
 
-pub fn design(q_m3d: f64, cod_in_mgl: f64, cod_eff_target: f64, temperature_c: f64, waste_type: &str) -> String {
+pub fn design(
+    q_m3d: f64,
+    cod_in_mgl: f64,
+    cod_eff_target: f64,
+    temperature_c: f64,
+    waste_type: &str,
+) -> String {
     let mut out = String::from("=== Desain Reaktor UASB ===\n");
     out.push_str("Ref: Lettinga et al. (1980), van Haandel & Lettinga (1994)\n\n");
 
-    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if cod_in_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if cod_eff_target < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if cod_eff_target >= cod_in_mgl { return "ERROR: COD target harus < COD influent.".into(); }
-    if temperature_c < 15.0 || temperature_c > 40.0 { return "ERROR: Suhu harus antara 15-40°C untuk UASB.".into(); }
+    if q_m3d <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if cod_in_mgl <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if cod_eff_target < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if cod_eff_target >= cod_in_mgl {
+        return "ERROR: COD target harus < COD influent.".into();
+    }
+    if temperature_c < 15.0 || temperature_c > 40.0 {
+        return "ERROR: Suhu harus antara 15-40°C untuk UASB.".into();
+    }
 
     let waste_lower = waste_type.to_lowercase();
 
@@ -63,7 +79,10 @@ pub fn design(q_m3d: f64, cod_in_mgl: f64, cod_eff_target: f64, temperature_c: f
     out.push_str(&format!("Input:\n  Q = {:.0} m³/hari\n  COD influent = {:.0} mg/L\n  COD effluent target = {:.0} mg/L\n  Suhu = {:.1}°C\n  Jenis limbah = {} ({})\n",
         q_m3d, cod_in_mgl, cod_eff_target, temperature_c, waste_type, desc));
     if typical_cod != cod_in_mgl {
-        out.push_str(&format!("  COD tipikal untuk {} = {:.0} mg/L\n", waste_type, typical_cod));
+        out.push_str(&format!(
+            "  COD tipikal untuk {} = {:.0} mg/L\n",
+            waste_type, typical_cod
+        ));
     }
     out.push_str("\n");
 
@@ -72,24 +91,49 @@ pub fn design(q_m3d: f64, cod_in_mgl: f64, cod_eff_target: f64, temperature_c: f
 
     out.push_str("Desain reaktor:\n");
     out.push_str(&format!("  Volume reaktor = {:.1} m³\n", v_design));
-    out.push_str(&format!("  OLR aktual = {:.1} kg COD/m³/hari (desain: ≤{:.0})\n", actual_olr, design_olr));
-    out.push_str(&format!("  HRT aktual = {:.1} jam (desain: ≥{:.0})\n", actual_hrt, design_hrt_hr));
+    out.push_str(&format!(
+        "  OLR aktual = {:.1} kg COD/m³/hari (desain: ≤{:.0})\n",
+        actual_olr, design_olr
+    ));
+    out.push_str(&format!(
+        "  HRT aktual = {:.1} jam (desain: ≥{:.0})\n",
+        actual_hrt, design_hrt_hr
+    ));
     out.push_str(&format!("  Tinggi = {:.1} m\n", height));
     out.push_str(&format!("  Luas penampang = {:.1} m²\n", area));
     out.push_str(&format!("  Diameter (jika silinder) = {:.1} m\n", diameter));
-    out.push_str(&format!("  Upflow velocity = {:.2} m/jam {}\n\n",
-        v_up, if v_up <= 0.7 { "✅" } else { "❌ > 0.7 m/jam — risiko washout!" }));
+    out.push_str(&format!(
+        "  Upflow velocity = {:.2} m/jam {}\n\n",
+        v_up,
+        if v_up <= 0.7 {
+            "✅"
+        } else {
+            "❌ > 0.7 m/jam — risiko washout!"
+        }
+    ));
 
     out.push_str("Produksi biogas:\n");
     out.push_str(&format!("  CH₄ = {:.1} m³/hari (STP)\n", ch4_production));
-    out.push_str(&format!("  CH₄ = {:.1} m³/hari (pada {}°C)\n", ch4_actual, temperature_c));
-    out.push_str(&format!("  Biogas total (65% CH₄) = {:.1} m³/hari\n\n", biogas_production));
+    out.push_str(&format!(
+        "  CH₄ = {:.1} m³/hari (pada {}°C)\n",
+        ch4_actual, temperature_c
+    ));
+    out.push_str(&format!(
+        "  Biogas total (65% CH₄) = {:.1} m³/hari\n\n",
+        biogas_production
+    ));
 
-    out.push_str(&format!("Produksi lumpur:\n  Lumpur = {:.1} kg VSS/hari (Yobs = 0.10)\n\n", sludge_kgd));
+    out.push_str(&format!(
+        "Produksi lumpur:\n  Lumpur = {:.1} kg VSS/hari (Yobs = 0.10)\n\n",
+        sludge_kgd
+    ));
 
     // Energy potential
     let energy_kwh = ch4_production * 9.97 * 0.35; // 1 m³ CH4 = 9.97 kWh, 35% efficiency
-    out.push_str(&format!("Potensi energi listrik:\n  Energi = {:.1} kWh/hari (efisiensi genset 35%)\n", energy_kwh));
+    out.push_str(&format!(
+        "Potensi energi listrik:\n  Energi = {:.1} kWh/hari (efisiensi genset 35%)\n",
+        energy_kwh
+    ));
 
     out
 }

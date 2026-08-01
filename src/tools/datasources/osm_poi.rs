@@ -38,7 +38,13 @@ fn haversine_m(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
 }
 
 /// Query POI near a coordinate from OpenStreetMap Overpass API
-pub async fn query_poi(client: &Client, lat: f64, lon: f64, radius_m: f64, poi_type: &str) -> String {
+pub async fn query_poi(
+    client: &Client,
+    lat: f64,
+    lon: f64,
+    radius_m: f64,
+    poi_type: &str,
+) -> String {
     let (tag_key, tag_value) = poi_to_overpass_tags(poi_type);
 
     // Build Overpass API query
@@ -50,13 +56,13 @@ pub async fn query_poi(client: &Client, lat: f64, lon: f64, radius_m: f64, poi_t
          );\n\
          out center body;\n\
          >;out skel qt;",
-        tag_key, tag_value, radius_m, lat, lon,
-        tag_key, tag_value, radius_m, lat, lon
+        tag_key, tag_value, radius_m, lat, lon, tag_key, tag_value, radius_m, lat, lon
     );
 
     let url = "https://overpass-api.de/api/interpreter";
 
-    match client.post(url)
+    match client
+        .post(url)
         .body(format!("data={}", query))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .timeout(std::time::Duration::from_secs(30))
@@ -70,7 +76,10 @@ pub async fn query_poi(client: &Client, lat: f64, lon: f64, radius_m: f64, poi_t
                         if let Ok(data) = serde_json::from_str::<serde_json::Value>(&body) {
                             return format_poi_response(&data, lat, lon, radius_m, poi_type);
                         }
-                        return format!("Error parsing Overpass response: {}", &body[..body.len().min(500)]);
+                        return format!(
+                            "Error parsing Overpass response: {}",
+                            &body[..body.len().min(500)]
+                        );
                     }
                     Err(e) => return format!("Error reading Overpass response: {}", e),
                 }
@@ -99,7 +108,13 @@ pub async fn query_poi(client: &Client, lat: f64, lon: f64, radius_m: f64, poi_t
     }
 }
 
-fn format_poi_response(data: &serde_json::Value, center_lat: f64, center_lon: f64, radius_m: f64, poi_type: &str) -> String {
+fn format_poi_response(
+    data: &serde_json::Value,
+    center_lat: f64,
+    center_lon: f64,
+    radius_m: f64,
+    poi_type: &str,
+) -> String {
     let elements = match data.get("elements").and_then(|v| v.as_array()) {
         Some(e) => e,
         None => return "Tidak ada data ditemukan dari Overpass API.".to_string(),
@@ -118,8 +133,14 @@ fn format_poi_response(data: &serde_json::Value, center_lat: f64, center_lon: f6
         } else if elem_type == "way" {
             // Use center coordinates for ways
             let center = elem.get("center");
-            let la = center.and_then(|c| c.get("lat")).and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let lo = center.and_then(|c| c.get("lon")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let la = center
+                .and_then(|c| c.get("lat"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let lo = center
+                .and_then(|c| c.get("lon"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             (la, lo)
         } else {
             continue;
@@ -129,7 +150,8 @@ fn format_poi_response(data: &serde_json::Value, center_lat: f64, center_lon: f6
             continue;
         }
 
-        let name = elem.get("tags")
+        let name = elem
+            .get("tags")
             .and_then(|t| t.get("name"))
             .and_then(|v| v.as_str())
             .unwrap_or("(tanpa nama)");
@@ -150,7 +172,11 @@ fn format_poi_response(data: &serde_json::Value, center_lat: f64, center_lon: f6
          Sumber: OpenStreetMap Overpass API\n\
          ══════════════════════════════════════════════\n\n\
          Ditemukan: {} lokasi\n\n",
-        poi_type.to_uppercase(), radius_m, center_lat, center_lon, pois.len()
+        poi_type.to_uppercase(),
+        radius_m,
+        center_lat,
+        center_lon,
+        pois.len()
     );
 
     if pois.is_empty() {
@@ -165,7 +191,11 @@ fn format_poi_response(data: &serde_json::Value, center_lat: f64, center_lon: f6
             };
             result.push_str(&format!(
                 "{:>3}. {} | Jarak: {} | ({:.5}, {:.5})\n",
-                i + 1, name, dist_str, plat, plon
+                i + 1,
+                name,
+                dist_str,
+                plat,
+                plon
             ));
         }
         if pois.len() > 50 {

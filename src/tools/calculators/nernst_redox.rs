@@ -5,8 +5,12 @@ pub fn calculate(half_reaction: &str, temperature_c: f64, log_q: f64, n_electron
     let mut out = String::from("=== Persamaan Nernst — Potensial Redoks ===\n");
     out.push_str("Ref: Stumm & Morgan (1996), Aquatic Chemistry\n\n");
 
-    if temperature_c < 0.0 || temperature_c > 100.0 { return "ERROR: Suhu harus antara 0-100°C.".into(); }
-    if n_electrons == 0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if temperature_c < 0.0 || temperature_c > 100.0 {
+        return "ERROR: Suhu harus antara 0-100°C.".into();
+    }
+    if n_electrons == 0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     let reaction_lower = half_reaction.to_lowercase();
 
@@ -23,7 +27,11 @@ pub fn calculate(half_reaction: &str, temperature_c: f64, log_q: f64, n_electron
         _ => return format!("ERROR: Reaksi '{}' tidak dikenali.\nPilihan: o2/h2o, fe3+/fe2+, mno4-/mn2+, cr2o72-/cr3+, no3-/n2, no3-/nh4+, so42-/h2s, co2/ch4", half_reaction),
     };
 
-    let n = if n_electrons > 0 { n_electrons } else { n_default as u32 };
+    let n = if n_electrons > 0 {
+        n_electrons
+    } else {
+        n_default as u32
+    };
 
     // Nernst equation: E = E° - (RT/nF) × ln(Q) = E° - (2.303RT/nF) × log(Q)
     let r = 8.314; // J/(mol·K)
@@ -39,15 +47,27 @@ pub fn calculate(half_reaction: &str, temperature_c: f64, log_q: f64, n_electron
     out.push_str(&format!("Setengah reaksi: {}\n", description));
     out.push_str(&format!("E° = {:.3} V (standar)\n\n", e_standard));
 
-    out.push_str(&format!("Input:\n  Suhu = {:.1}°C ({:.1} K)\n  log(Q) = {:.2}\n  n (elektron) = {}\n\n", temperature_c, t_k, log_q, n));
+    out.push_str(&format!(
+        "Input:\n  Suhu = {:.1}°C ({:.1} K)\n  log(Q) = {:.2}\n  n (elektron) = {}\n\n",
+        temperature_c, t_k, log_q, n
+    ));
 
     out.push_str("Perhitungan:\n");
-    out.push_str(&format!("  Faktor Nernst (2.303RT/nF) = {:.4} V\n", nernst_factor));
+    out.push_str(&format!(
+        "  Faktor Nernst (2.303RT/nF) = {:.4} V\n",
+        nernst_factor
+    ));
     out.push_str(&format!("  E = E° - (2.303RT/nF) × log(Q)\n"));
-    out.push_str(&format!("  E = {:.3} - {:.4} × {:.2}\n", e_standard, nernst_factor, log_q));
+    out.push_str(&format!(
+        "  E = {:.3} - {:.4} × {:.2}\n",
+        e_standard, nernst_factor, log_q
+    ));
     out.push_str(&format!("  E = {:.4} V\n\n", e));
 
-    out.push_str(&format!("Energi bebas Gibbs:\n  ΔG = -nFE = {:.2} kJ/mol\n", delta_g));
+    out.push_str(&format!(
+        "Energi bebas Gibbs:\n  ΔG = -nFE = {:.2} kJ/mol\n",
+        delta_g
+    ));
     if delta_g < 0.0 {
         out.push_str("  → Reaksi spontan (ΔG < 0) ✅\n\n");
     } else {

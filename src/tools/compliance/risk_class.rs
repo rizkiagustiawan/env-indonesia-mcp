@@ -1,7 +1,12 @@
 /// Kelas Risiko Lingkungan (OSS)
 /// Ref: PP 22/2023, PermenLHK 4/2021
 
-pub fn determine(sector: &str, scale_description: &str, has_hazardous_waste: bool, near_protected_area: bool) -> String {
+pub fn determine(
+    sector: &str,
+    scale_description: &str,
+    has_hazardous_waste: bool,
+    near_protected_area: bool,
+) -> String {
     let s = sector.to_lowercase();
     let scale = scale_description.to_lowercase();
 
@@ -33,13 +38,14 @@ pub fn determine(sector: &str, scale_description: &str, has_hazardous_waste: boo
     };
 
     // Scale modifier
-    let scale_mod: i32 = if scale.contains("besar") || scale.contains("large") || scale.contains(">") {
-        1
-    } else if scale.contains("kecil") || scale.contains("small") || scale.contains("mikro") {
-        -1
-    } else {
-        0 // menengah/medium
-    };
+    let scale_mod: i32 =
+        if scale.contains("besar") || scale.contains("large") || scale.contains(">") {
+            1
+        } else if scale.contains("kecil") || scale.contains("small") || scale.contains("mikro") {
+            -1
+        } else {
+            0 // menengah/medium
+        };
 
     // B3 and protected area modifiers
     let b3_mod = if has_hazardous_waste { 1 } else { 0 };
@@ -75,10 +81,19 @@ pub fn determine(sector: &str, scale_description: &str, has_hazardous_waste: boo
     out.push_str(&format!("Input:\n"));
     out.push_str(&format!("  Sektor            : {}\n", sector));
     out.push_str(&format!("  Skala             : {}\n", scale_description));
-    out.push_str(&format!("  Limbah B3         : {}\n", if has_hazardous_waste { "Ya" } else { "Tidak" }));
-    out.push_str(&format!("  Dekat Kawasan Lindung: {}\n\n", if near_protected_area { "Ya" } else { "Tidak" }));
+    out.push_str(&format!(
+        "  Limbah B3         : {}\n",
+        if has_hazardous_waste { "Ya" } else { "Tidak" }
+    ));
+    out.push_str(&format!(
+        "  Dekat Kawasan Lindung: {}\n\n",
+        if near_protected_area { "Ya" } else { "Tidak" }
+    ));
     out.push_str(&format!("Skor Risiko: {} / 4\n", total_risk));
-    out.push_str(&format!("  Sektor: {} | Skala: {:+} | B3: {:+} | Kawasan Lindung: {:+}\n\n", sector_risk, scale_mod, b3_mod, prot_mod));
+    out.push_str(&format!(
+        "  Sektor: {} | Skala: {:+} | B3: {:+} | Kawasan Lindung: {:+}\n\n",
+        sector_risk, scale_mod, b3_mod, prot_mod
+    ));
     out.push_str(&format!("Kelas: {}\n", kelas));
     out.push_str(&format!("Dokumen Lingkungan: {}\n", dokumen));
     out.push_str(&format!("Penjelasan: {}\n\n", deskripsi));

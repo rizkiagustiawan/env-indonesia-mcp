@@ -51,12 +51,12 @@ pub fn validate_advanced_physics(
         let g = 9.81;
         let tau = rho * g * depth_m * slope_angle_deg.to_radians().sin();
         let yield_stress = 100.0; // Pa (batas minimum aliran lumpur pekat)
-        
+
         validations.push(format!(
             "[RHEOLOGI BINGHAM] Tegangan Geser (Shear Stress) lereng {:.1}° dengan kedalaman {:.1}m adalah {:.1} Pa.",
             slope_angle_deg, depth_m, tau
         ));
-        
+
         if tau < yield_stress {
             validations.push(format!(
                 "⛔ [RHEOLOGI] Tegangan Geser ({:.1} Pa) < Yield Stress ({} Pa). Aliran debris/lumpur TIDAK AKAN BERGERAK secara fisik karena viskoplastisitas tanah mengatasi gaya gravitasi.",

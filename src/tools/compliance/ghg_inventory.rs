@@ -110,8 +110,15 @@ pub fn calculate(sector: &str, activity: &str, amount: f64) -> String {
     out.push_str(&format!("  CO2 : {:.2} kg\n", co2));
     out.push_str(&format!("  CH4 : {:.4} kg\n", ch4));
     out.push_str(&format!("  N2O : {:.6} kg\n\n", n2o));
-    out.push_str(&format!("GWP (AR5): CO2=1, CH4={}, N2O={}\n", gwp_ch4 as i32, gwp_n2o as i32));
-    out.push_str(&format!("CO2-equivalent: {:.2} kg = {:.4} ton CO2e\n\n", co2e, co2e / 1000.0));
+    out.push_str(&format!(
+        "GWP (AR5): CO2=1, CH4={}, N2O={}\n",
+        gwp_ch4 as i32, gwp_n2o as i32
+    ));
+    out.push_str(&format!(
+        "CO2-equivalent: {:.2} kg = {:.4} ton CO2e\n\n",
+        co2e,
+        co2e / 1000.0
+    ));
 
     if co2e >= 1_000_000.0 {
         out.push_str(&format!("  ≈ {:.2} kiloton CO2e\n", co2e / 1_000_000.0));

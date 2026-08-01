@@ -27,12 +27,20 @@ fn haversine_m(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
 }
 
 /// Get elevation profile along a line between two points
-pub async fn profile(client: &Client, lat1: f64, lon1: f64, lat2: f64, lon2: f64, num_points: u32) -> String {
+pub async fn profile(
+    client: &Client,
+    lat1: f64,
+    lon1: f64,
+    lat2: f64,
+    lon2: f64,
+    num_points: u32,
+) -> String {
     let n = num_points.max(2).min(100);
     let points = interpolate_points(lat1, lon1, lat2, lon2, n);
 
     // Build locations string for Open-Elevation API
-    let locations: Vec<String> = points.iter()
+    let locations: Vec<String> = points
+        .iter()
         .map(|(lat, lon)| format!("{},{}", lat, lon))
         .collect();
     let locations_str = locations.join("|");
@@ -44,7 +52,8 @@ pub async fn profile(client: &Client, lat1: f64, lon1: f64, lat2: f64, lon2: f64
 
     let elevations: Vec<f64>;
 
-    match client.get(&url)
+    match client
+        .get(&url)
         .timeout(std::time::Duration::from_secs(30))
         .send()
         .await
@@ -55,14 +64,23 @@ pub async fn profile(client: &Client, lat1: f64, lon1: f64, lat2: f64, lon2: f64
                     Ok(body) => {
                         if let Ok(data) = serde_json::from_str::<serde_json::Value>(&body) {
                             if let Some(results) = data.get("results").and_then(|v| v.as_array()) {
-                                elevations = results.iter()
-                                    .map(|r| r.get("elevation").and_then(|v| v.as_f64()).unwrap_or(0.0))
+                                elevations = results
+                                    .iter()
+                                    .map(|r| {
+                                        r.get("elevation").and_then(|v| v.as_f64()).unwrap_or(0.0)
+                                    })
                                     .collect();
                             } else {
-                                return format!("Error: Unexpected response format from Open-Elevation: {}", &body[..body.len().min(500)]);
+                                return format!(
+                                    "Error: Unexpected response format from Open-Elevation: {}",
+                                    &body[..body.len().min(500)]
+                                );
                             }
                         } else {
-                            return format!("Error parsing Open-Elevation response: {}", &body[..body.len().min(500)]);
+                            return format!(
+                                "Error parsing Open-Elevation response: {}",
+                                &body[..body.len().min(500)]
+                            );
                         }
                     }
                     Err(e) => return format!("Error reading Open-Elevation response: {}", e),
@@ -141,17 +159,31 @@ pub async fn profile(client: &Client, lat1: f64, lon1: f64, lat2: f64, lon2: f64
          • Selisih elevasi   : {:.1} m\n\
          • Kemiringan rata-rata: {:.2}%\n\n\
          DATA PROFIL:\n",
-        lat1, lon1, lat2, lon2,
-        total_distance, total_distance / 1000.0, n,
-        max_elev, min_elev, avg_elev,
-        total_climb, total_descent, elev_diff, avg_slope
+        lat1,
+        lon1,
+        lat2,
+        lon2,
+        total_distance,
+        total_distance / 1000.0,
+        n,
+        max_elev,
+        min_elev,
+        avg_elev,
+        total_climb,
+        total_descent,
+        elev_diff,
+        avg_slope
     );
 
     result.push_str("  Jarak(m)   | Elevasi(m) | Lat        | Lon\n");
     result.push_str("  -----------|------------|------------|------------\n");
 
     for (i, ((lat, lon), elev)) in points.iter().zip(elevations.iter()).enumerate() {
-        let dist = if i == 0 { 0.0 } else { haversine_m(lat1, lon1, *lat, *lon) };
+        let dist = if i == 0 {
+            0.0
+        } else {
+            haversine_m(lat1, lon1, *lat, *lon)
+        };
         result.push_str(&format!(
             "  {:>9.1} | {:>10.1} | {:>10.5} | {:>10.5}\n",
             dist, elev, lat, lon

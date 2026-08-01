@@ -14,12 +14,24 @@ pub async fn weather(client: &Client, lat: f64, lon: f64) -> String {
             Ok(v) => {
                 // Current
                 if let Some(c) = v.get("current") {
-                    let temp = c.get("temperature_2m").and_then(|t| t.as_f64()).unwrap_or(0.0);
-                    let rh = c.get("relative_humidity_2m").and_then(|r| r.as_f64()).unwrap_or(0.0);
-                    let precip = c.get("precipitation").and_then(|p| p.as_f64()).unwrap_or(0.0);
-                    let wind = c.get("wind_speed_10m").and_then(|w| w.as_f64()).unwrap_or(0.0);
+                    let temp = c
+                        .get("temperature_2m")
+                        .and_then(|t| t.as_f64())
+                        .unwrap_or(0.0);
+                    let rh = c
+                        .get("relative_humidity_2m")
+                        .and_then(|r| r.as_f64())
+                        .unwrap_or(0.0);
+                    let precip = c
+                        .get("precipitation")
+                        .and_then(|p| p.as_f64())
+                        .unwrap_or(0.0);
+                    let wind = c
+                        .get("wind_speed_10m")
+                        .and_then(|w| w.as_f64())
+                        .unwrap_or(0.0);
                     let wcode = c.get("weather_code").and_then(|w| w.as_u64()).unwrap_or(0);
-                    
+
                     out.push_str(&format!("CURRENT: {:.1}°C | RH {:.0}% | Precip {:.1}mm | Wind {:.1}km/h | WMO:{}\n\n", 
                         temp, rh, precip, wind, wcode));
                 }
@@ -37,7 +49,10 @@ pub async fn weather(client: &Client, lat: f64, lon: f64) -> String {
                             let mx = tmax[i].as_f64().unwrap_or(0.0);
                             let mn = tmin[i].as_f64().unwrap_or(0.0);
                             let pr = precip[i].as_f64().unwrap_or(0.0);
-                            out.push_str(&format!("  {} | {:.0}-{:.0}°C | Rain: {:.1}mm\n", date, mn, mx, pr));
+                            out.push_str(&format!(
+                                "  {} | {:.0}-{:.0}°C | Rain: {:.1}mm\n",
+                                date, mn, mx, pr
+                            ));
                         }
                     }
                 }

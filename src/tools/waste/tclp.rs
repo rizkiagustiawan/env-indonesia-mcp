@@ -19,15 +19,51 @@ pub fn screen(parameters_json: &str) -> String {
     }
 
     let limits = [
-        TclpLimit { name: "As", cas: "7440-38-2", limit_mgl: 5.0 },
-        TclpLimit { name: "Ba", cas: "7440-39-3", limit_mgl: 100.0 },
-        TclpLimit { name: "Cd", cas: "7440-43-9", limit_mgl: 1.0 },
-        TclpLimit { name: "Cr", cas: "7440-47-3", limit_mgl: 5.0 },
-        TclpLimit { name: "Pb", cas: "7439-92-1", limit_mgl: 5.0 },
-        TclpLimit { name: "Hg", cas: "7439-97-6", limit_mgl: 0.2 },
-        TclpLimit { name: "Se", cas: "7782-49-2", limit_mgl: 1.0 },
-        TclpLimit { name: "Ag", cas: "7440-22-4", limit_mgl: 5.0 },
-        TclpLimit { name: "F", cas: "16984-48-8", limit_mgl: 150.0 },
+        TclpLimit {
+            name: "As",
+            cas: "7440-38-2",
+            limit_mgl: 5.0,
+        },
+        TclpLimit {
+            name: "Ba",
+            cas: "7440-39-3",
+            limit_mgl: 100.0,
+        },
+        TclpLimit {
+            name: "Cd",
+            cas: "7440-43-9",
+            limit_mgl: 1.0,
+        },
+        TclpLimit {
+            name: "Cr",
+            cas: "7440-47-3",
+            limit_mgl: 5.0,
+        },
+        TclpLimit {
+            name: "Pb",
+            cas: "7439-92-1",
+            limit_mgl: 5.0,
+        },
+        TclpLimit {
+            name: "Hg",
+            cas: "7439-97-6",
+            limit_mgl: 0.2,
+        },
+        TclpLimit {
+            name: "Se",
+            cas: "7782-49-2",
+            limit_mgl: 1.0,
+        },
+        TclpLimit {
+            name: "Ag",
+            cas: "7440-22-4",
+            limit_mgl: 5.0,
+        },
+        TclpLimit {
+            name: "F",
+            cas: "16984-48-8",
+            limit_mgl: 150.0,
+        },
     ];
 
     let mut rows = Vec::new();
@@ -45,7 +81,10 @@ pub fn screen(parameters_json: &str) -> String {
         let concentration = match param.get("concentration_mgl").and_then(|v| v.as_f64()) {
             Some(c) => c,
             None => {
-                rows.push(format!("│ {:4} │ ERROR: field 'concentration_mgl' tidak ada   │", name));
+                rows.push(format!(
+                    "│ {:4} │ ERROR: field 'concentration_mgl' tidak ada   │",
+                    name
+                ));
                 continue;
             }
         };
@@ -54,7 +93,9 @@ pub fn screen(parameters_json: &str) -> String {
         let name_trimmed = name_upper.trim();
 
         // Find matching limit
-        let matched_limit = limits.iter().find(|l| l.name.to_uppercase() == name_trimmed);
+        let matched_limit = limits
+            .iter()
+            .find(|l| l.name.to_uppercase() == name_trimmed);
 
         let (limit_str, status, is_fail) = match matched_limit {
             Some(lim) => {
@@ -99,7 +140,10 @@ pub fn screen(parameters_json: &str) -> String {
     result.push_str(&format!("KLASIFIKASI: {}\n\n", classification));
 
     if any_fail {
-        result.push_str(&format!("Parameter melebihi baku mutu: {}\n\n", fail_params.join(", ")));
+        result.push_str(&format!(
+            "Parameter melebihi baku mutu: {}\n\n",
+            fail_params.join(", ")
+        ));
         result.push_str("KONSEKUENSI (PP 101/2014):\n");
         result.push_str("• Wajib dikelola sebagai limbah B3\n");
         result.push_str("• Wajib TPS B3 berizin\n");

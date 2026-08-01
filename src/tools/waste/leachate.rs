@@ -1,20 +1,38 @@
 /// Perhitungan Timbulan Lindi (Leachate) — Metode Neraca Air
 /// Ref: PermenPU 3/2013, Tchobanoglous et al. (1993) Integrated Solid Waste Management
 
-pub fn calculate(area_m2: f64, monthly_rainfall_mm: &[f64], monthly_et_mm: &[f64], soil_storage_mm: f64, runoff_coeff: f64) -> String {
-    if area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+pub fn calculate(
+    area_m2: f64,
+    monthly_rainfall_mm: &[f64],
+    monthly_et_mm: &[f64],
+    soil_storage_mm: f64,
+    runoff_coeff: f64,
+) -> String {
+    if area_m2 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
     if monthly_rainfall_mm.len() != 12 {
-        return format!("ERROR: Data curah hujan harus 12 bulan, diberikan {} bulan.", monthly_rainfall_mm.len());
+        return format!(
+            "ERROR: Data curah hujan harus 12 bulan, diberikan {} bulan.",
+            monthly_rainfall_mm.len()
+        );
     }
     if monthly_et_mm.len() != 12 {
-        return format!("ERROR: Data evapotranspirasi harus 12 bulan, diberikan {} bulan.", monthly_et_mm.len());
+        return format!(
+            "ERROR: Data evapotranspirasi harus 12 bulan, diberikan {} bulan.",
+            monthly_et_mm.len()
+        );
     }
     if runoff_coeff < 0.0 || runoff_coeff > 1.0 {
         return "ERROR: Koefisien runoff harus antara 0 dan 1.".into();
     }
-    if soil_storage_mm < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if soil_storage_mm < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
-    let month_names = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    let month_names = [
+        "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+    ];
 
     let mut monthly_leachate_mm = Vec::with_capacity(12);
     let mut storage = soil_storage_mm;
@@ -72,9 +90,16 @@ pub fn calculate(area_m2: f64, monthly_rainfall_mm: &[f64], monthly_et_mm: &[f64
     result.push_str("Ref: PermenPU 3/2013, Tchobanoglous et al. (1993)\n");
     result.push_str("══════════════════════════════════════════════════════════════════\n\n");
 
-    result.push_str(&format!("Luas TPA             : {:.2} m² ({:.2} Ha)\n", area_m2, area_m2 / 10000.0));
+    result.push_str(&format!(
+        "Luas TPA             : {:.2} m² ({:.2} Ha)\n",
+        area_m2,
+        area_m2 / 10000.0
+    ));
     result.push_str(&format!("Koefisien runoff     : {:.2}\n", runoff_coeff));
-    result.push_str(&format!("Kapasitas simpan     : {:.1} mm\n\n", soil_storage_mm));
+    result.push_str(&format!(
+        "Kapasitas simpan     : {:.1} mm\n\n",
+        soil_storage_mm
+    ));
 
     result.push_str("L = P - ET - R - ΔS (per bulan)\n\n");
 
@@ -88,15 +113,33 @@ pub fn calculate(area_m2: f64, monthly_rainfall_mm: &[f64], monthly_et_mm: &[f64
     result.push_str("└─────┴──────────┴──────────┴──────────┴──────────┴────────────┘\n\n");
 
     result.push_str("REKAPITULASI TAHUNAN:\n");
-    result.push_str(&format!("• Total curah hujan      : {:.1} mm\n", total_rainfall));
+    result.push_str(&format!(
+        "• Total curah hujan      : {:.1} mm\n",
+        total_rainfall
+    ));
     result.push_str(&format!("• Total evapotranspirasi : {:.1} mm\n", total_et));
-    result.push_str(&format!("• Total runoff           : {:.1} mm\n", total_runoff));
-    result.push_str(&format!("• Total lindi            : {:.1} mm = {:.1} m³/tahun\n", total_leachate_mm, total_leachate_m3));
-    result.push_str(&format!("• Rata-rata harian       : {:.2} m³/hari\n", avg_daily_m3));
-    result.push_str(&format!("• Bulan puncak           : {} ({:.1} mm = {:.1} m³)\n\n", month_names[peak_month_idx], peak_leachate, peak_leachate_m3));
+    result.push_str(&format!(
+        "• Total runoff           : {:.1} mm\n",
+        total_runoff
+    ));
+    result.push_str(&format!(
+        "• Total lindi            : {:.1} mm = {:.1} m³/tahun\n",
+        total_leachate_mm, total_leachate_m3
+    ));
+    result.push_str(&format!(
+        "• Rata-rata harian       : {:.2} m³/hari\n",
+        avg_daily_m3
+    ));
+    result.push_str(&format!(
+        "• Bulan puncak           : {} ({:.1} mm = {:.1} m³)\n\n",
+        month_names[peak_month_idx], peak_leachate, peak_leachate_m3
+    ));
 
     result.push_str("KAPASITAS PENGOLAHAN REKOMENDASI:\n");
-    result.push_str(&format!("• Kapasitas desain IPAL  : {:.2} m³/hari (× 1.5 faktor keamanan)\n", design_capacity_m3));
+    result.push_str(&format!(
+        "• Kapasitas desain IPAL  : {:.2} m³/hari (× 1.5 faktor keamanan)\n",
+        design_capacity_m3
+    ));
 
     result.push_str("\nKARAKTERISTIK TIPIKAL LINDI:\n");
     result.push_str("• BOD     : 2.000 – 30.000 mg/L\n");

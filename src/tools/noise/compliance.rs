@@ -7,8 +7,12 @@ fn zone_limit(zone: &str) -> Option<(f64, &'static str)> {
         "a" | "perumahan" | "residential" => Some((55.0, "Zona A - Perumahan/Pemukiman (55 dBA)")),
         "b" | "perdagangan" | "commercial" => Some((70.0, "Zona B - Perdagangan/Jasa (70 dBA)")),
         "c" | "industri" | "industrial" => Some((73.0, "Zona C - Industri (73 dBA)")),
-        "d" | "hijau" | "green" | "konservasi" => Some((50.0, "Zona D - Ruang Terbuka Hijau (50 dBA)")),
-        "rumahsakit" | "hospital" | "rs" => Some((55.0, "Rumah Sakit / Fasilitas Kesehatan (55 dBA)")),
+        "d" | "hijau" | "green" | "konservasi" => {
+            Some((50.0, "Zona D - Ruang Terbuka Hijau (50 dBA)"))
+        }
+        "rumahsakit" | "hospital" | "rs" => {
+            Some((55.0, "Rumah Sakit / Fasilitas Kesehatan (55 dBA)"))
+        }
         "sekolah" | "school" => Some((55.0, "Sekolah / Lembaga Pendidikan (55 dBA)")),
         "ibadah" | "worship" => Some((55.0, "Tempat Ibadah (55 dBA)")),
         _ => None,
@@ -26,7 +30,11 @@ fn noise_at_distance(source_db: f64, distance_m: f64) -> f64 {
     // Additional ground absorption approximation: A_ground ≈ 4.8 - (2*h/r)*(17 + 300/r)
     // Simplified: use basic spherical divergence + minimal ground attenuation
     let geometric_divergence = 20.0 * distance_m.log10() + 11.0;
-    let a_ground = if distance_m > 100.0 { 3.0 } else { distance_m / 100.0 * 3.0 };
+    let a_ground = if distance_m > 100.0 {
+        3.0
+    } else {
+        distance_m / 100.0 * 3.0
+    };
     source_db - geometric_divergence - a_ground
 }
 
@@ -71,13 +79,18 @@ pub fn check(zone: &str, measured_db: f64, distance_m: f64, source_db: f64) -> S
     // Mitigation recommendations
     let mut mitigations = Vec::new();
     if !measured_compliant || !expected_compliant {
-        let excess = if !measured_compliant { measured_excess } else { expected_excess };
+        let excess = if !measured_compliant {
+            measured_excess
+        } else {
+            expected_excess
+        };
         if excess > 0.0 && excess <= 5.0 {
             mitigations.push("- Penanaman vegetasi penyerap bunyi (pengurangan 3-5 dBA)");
             mitigations.push("- Pembatasan jam operasi kegiatan bising");
         }
         if excess > 5.0 && excess <= 15.0 {
-            mitigations.push("- Pemasangan noise barrier (tembok/pagar beton, pengurangan 5-15 dBA)");
+            mitigations
+                .push("- Pemasangan noise barrier (tembok/pagar beton, pengurangan 5-15 dBA)");
             mitigations.push("- Pemindahan sumber kebisingan lebih jauh dari reseptor");
             mitigations.push("- Penanaman jalur hijau peredam bunyi (min. 10m lebar)");
         }
@@ -89,8 +102,16 @@ pub fn check(zone: &str, measured_db: f64, distance_m: f64, source_db: f64) -> S
         }
     }
 
-    let status_measured = if measured_compliant { "MEMENUHI ✓" } else { "MELEBIHI ✗" };
-    let status_expected = if expected_compliant { "MEMENUHI ✓" } else { "MELEBIHI ✗" };
+    let status_measured = if measured_compliant {
+        "MEMENUHI ✓"
+    } else {
+        "MELEBIHI ✗"
+    };
+    let status_expected = if expected_compliant {
+        "MEMENUHI ✓"
+    } else {
+        "MELEBIHI ✗"
+    };
 
     let mut result = format!(
         "══════════════════════════════════════════════\n\
@@ -108,7 +129,10 @@ pub fn check(zone: &str, measured_db: f64, distance_m: f64, source_db: f64) -> S
     );
 
     if !measured_compliant {
-        result.push_str(&format!("  → Kelebihan: {:.1} dBA di atas baku mutu\n", measured_excess));
+        result.push_str(&format!(
+            "  → Kelebihan: {:.1} dBA di atas baku mutu\n",
+            measured_excess
+        ));
     }
 
     result.push_str(&format!(
@@ -118,7 +142,10 @@ pub fn check(zone: &str, measured_db: f64, distance_m: f64, source_db: f64) -> S
     ));
 
     if !expected_compliant {
-        result.push_str(&format!("  → Kelebihan prediksi: {:.1} dBA di atas baku mutu\n", expected_excess));
+        result.push_str(&format!(
+            "  → Kelebihan prediksi: {:.1} dBA di atas baku mutu\n",
+            expected_excess
+        ));
     }
 
     result.push_str(&format!(
@@ -133,7 +160,9 @@ pub fn check(zone: &str, measured_db: f64, distance_m: f64, source_db: f64) -> S
             result.push_str(&format!("{}\n", m));
         }
     } else {
-        result.push_str("\nSTATUS: Kebisingan memenuhi baku mutu, tidak diperlukan mitigasi tambahan.\n");
+        result.push_str(
+            "\nSTATUS: Kebisingan memenuhi baku mutu, tidak diperlukan mitigasi tambahan.\n",
+        );
     }
 
     result.push_str("\n══════════════════════════════════════════════\n");

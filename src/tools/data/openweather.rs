@@ -2,10 +2,13 @@ use reqwest::Client;
 
 pub async fn air_pollution(client: &Client, lat: f64, lon: f64) -> String {
     let api_key = std::env::var("OPENWEATHER_API_KEY").unwrap_or_default();
-    
+
     let url = if !api_key.is_empty() {
         // Use OpenWeatherMap if key is available
-        format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={}&lon={}&appid={}", lat, lon, api_key)
+        format!(
+            "http://api.openweathermap.org/data/2.5/air_pollution?lat={}&lon={}&appid={}",
+            lat, lon, api_key
+        )
     } else {
         // Fallback to free Open-Meteo API
         format!(
@@ -15,20 +18,35 @@ pub async fn air_pollution(client: &Client, lat: f64, lon: f64) -> String {
     };
 
     let mut out = format!("=== Air Quality — ({:.4}, {:.4}) ===\n", lat, lon);
-    
+
     match client.get(&url).send().await {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
             Ok(v) => {
                 if let Some(current) = v.get("current") {
-                    let aqi = current.get("us_aqi").and_then(|a| a.as_f64()).unwrap_or(0.0);
+                    let aqi = current
+                        .get("us_aqi")
+                        .and_then(|a| a.as_f64())
+                        .unwrap_or(0.0);
                     let pm25 = current.get("pm2_5").and_then(|p| p.as_f64()).unwrap_or(0.0);
                     let pm10 = current.get("pm10").and_then(|p| p.as_f64()).unwrap_or(0.0);
-                    let no2 = current.get("nitrogen_dioxide").and_then(|n| n.as_f64()).unwrap_or(0.0);
-                    let so2 = current.get("sulphur_dioxide").and_then(|s| s.as_f64()).unwrap_or(0.0);
+                    let no2 = current
+                        .get("nitrogen_dioxide")
+                        .and_then(|n| n.as_f64())
+                        .unwrap_or(0.0);
+                    let so2 = current
+                        .get("sulphur_dioxide")
+                        .and_then(|s| s.as_f64())
+                        .unwrap_or(0.0);
                     let o3 = current.get("ozone").and_then(|o| o.as_f64()).unwrap_or(0.0);
-                    let co = current.get("carbon_monoxide").and_then(|c| c.as_f64()).unwrap_or(0.0);
-                    let uv = current.get("uv_index").and_then(|u| u.as_f64()).unwrap_or(0.0);
-                    
+                    let co = current
+                        .get("carbon_monoxide")
+                        .and_then(|c| c.as_f64())
+                        .unwrap_or(0.0);
+                    let uv = current
+                        .get("uv_index")
+                        .and_then(|u| u.as_f64())
+                        .unwrap_or(0.0);
+
                     let category = match aqi as u32 {
                         0..=50 => "BAIK (Good)",
                         51..=100 => "SEDANG (Moderate)",

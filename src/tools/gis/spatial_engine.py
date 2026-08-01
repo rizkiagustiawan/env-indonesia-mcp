@@ -5,6 +5,12 @@ Uses geopandas for vector ops, GEE for raster suitability analysis
 import sys, json, os
 import numpy as np
 
+# Provenance
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from provenance import create_provenance
+except: create_provenance = None
+
 
 def buffer_analysis(geojson_str, distance_m, output_path):
     """Buffer GeoJSON geometry by distance in meters"""

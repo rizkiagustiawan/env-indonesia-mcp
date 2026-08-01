@@ -30,19 +30,35 @@ pub fn calculate(
             let land_per_capita_ha = 0.07;
             let optimal_pop = area_ha / land_per_capita_ha;
             let ratio = population / optimal_pop;
-            let status = if ratio <= 1.0 { "Masih Mampu (DDL Belum Terlampaui) ✅" } else { "Terlampaui (DDL Terlampaui) ❌" };
+            let status = if ratio <= 1.0 {
+                "Masih Mampu (DDL Belum Terlampaui) ✅"
+            } else {
+                "Terlampaui (DDL Terlampaui) ❌"
+            };
 
             out.push_str("Pendekatan: Berbasis Populasi\n\n");
-            out.push_str(&format!("Kebutuhan lahan/kapita : {:.2} ha\n", land_per_capita_ha));
-            out.push_str(&format!("Daya Dukung Populasi   : {:.0} jiwa\n", optimal_pop));
-            out.push_str(&format!("Populasi Aktual        : {:.0} jiwa\n", population));
+            out.push_str(&format!(
+                "Kebutuhan lahan/kapita : {:.2} ha\n",
+                land_per_capita_ha
+            ));
+            out.push_str(&format!(
+                "Daya Dukung Populasi   : {:.0} jiwa\n",
+                optimal_pop
+            ));
+            out.push_str(&format!(
+                "Populasi Aktual        : {:.0} jiwa\n",
+                population
+            ));
             out.push_str(&format!("Rasio (aktual/DDL)     : {:.2}\n\n", ratio));
             out.push_str(&format!("Status: {}\n", status));
         }
         "water" | "air" => {
             let supply = match water_supply_m3_yr {
                 Some(v) if v > 0.0 => v,
-                _ => return "ERROR: water_supply_m3_yr harus diisi dan > 0 untuk pendekatan air.".into(),
+                _ => {
+                    return "ERROR: water_supply_m3_yr harus diisi dan > 0 untuk pendekatan air."
+                        .into()
+                }
             };
             let demand_per_cap = match water_demand_m3_yr {
                 Some(v) if v > 0.0 => v,
@@ -54,12 +70,25 @@ pub fn calculate(
             let total_demand = demand_per_cap * population;
             let ddl_pop = supply / demand_per_cap;
             let ratio = total_demand / supply;
-            let status = if ratio <= 1.0 { "Masih Mampu (DDL Belum Terlampaui) ✅" } else { "Terlampaui (DDL Terlampaui) ❌" };
+            let status = if ratio <= 1.0 {
+                "Masih Mampu (DDL Belum Terlampaui) ✅"
+            } else {
+                "Terlampaui (DDL Terlampaui) ❌"
+            };
 
             out.push_str("Pendekatan: Berbasis Sumber Daya Air\n\n");
-            out.push_str(&format!("Pasokan Air            : {:.0} m³/tahun\n", supply));
-            out.push_str(&format!("Kebutuhan Air/kapita   : {:.1} m³/tahun\n", demand_per_cap));
-            out.push_str(&format!("Total Kebutuhan Air    : {:.0} m³/tahun\n", total_demand));
+            out.push_str(&format!(
+                "Pasokan Air            : {:.0} m³/tahun\n",
+                supply
+            ));
+            out.push_str(&format!(
+                "Kebutuhan Air/kapita   : {:.1} m³/tahun\n",
+                demand_per_cap
+            ));
+            out.push_str(&format!(
+                "Total Kebutuhan Air    : {:.0} m³/tahun\n",
+                total_demand
+            ));
             out.push_str(&format!("DDL Populasi (air)     : {:.0} jiwa\n", ddl_pop));
             out.push_str(&format!("Rasio (demand/supply)  : {:.2}\n\n", ratio));
             out.push_str(&format!("Status: {}\n", status));
@@ -79,12 +108,25 @@ pub fn calculate(
             let total_demand = demand_per_cap * population;
             let ddl_pop = production / demand_per_cap;
             let ratio = total_demand / production;
-            let status = if ratio <= 1.0 { "Masih Mampu (DDL Belum Terlampaui) ✅" } else { "Terlampaui (DDL Terlampaui) ❌" };
+            let status = if ratio <= 1.0 {
+                "Masih Mampu (DDL Belum Terlampaui) ✅"
+            } else {
+                "Terlampaui (DDL Terlampaui) ❌"
+            };
 
             out.push_str("Pendekatan: Berbasis Produksi Pangan\n\n");
-            out.push_str(&format!("Produksi Pangan        : {:.0} ton/tahun\n", production));
-            out.push_str(&format!("Kebutuhan/kapita       : {:.2} ton/tahun\n", demand_per_cap));
-            out.push_str(&format!("Total Kebutuhan Pangan : {:.0} ton/tahun\n", total_demand));
+            out.push_str(&format!(
+                "Produksi Pangan        : {:.0} ton/tahun\n",
+                production
+            ));
+            out.push_str(&format!(
+                "Kebutuhan/kapita       : {:.2} ton/tahun\n",
+                demand_per_cap
+            ));
+            out.push_str(&format!(
+                "Total Kebutuhan Pangan : {:.0} ton/tahun\n",
+                total_demand
+            ));
             out.push_str(&format!("DDL Populasi (pangan)  : {:.0} jiwa\n", ddl_pop));
             out.push_str(&format!("Rasio (demand/prod)    : {:.2}\n\n", ratio));
             out.push_str(&format!("Status: {}\n", status));

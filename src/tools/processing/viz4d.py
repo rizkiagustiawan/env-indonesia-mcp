@@ -19,10 +19,9 @@ def render_4d_terrain_rotation(dem_path, output_gif, title="4D Terrain", exagger
         with rasterio.open(dem_path) as src:
             dem = src.read(1)
         
-        # Downsample
-        max_dim = 300
-        if dem.shape[0] > max_dim or dem.shape[1] > max_dim:
-            factor = max(dem.shape[0] // max_dim, dem.shape[1] // max_dim, 1)
+        max_safe_dim = 600 # GIF rendering in CPU is extremely slow, must be aggressively downsampled
+        if dem.shape[0] > max_safe_dim or dem.shape[1] > max_safe_dim:
+            factor = max(dem.shape[0] // max_safe_dim, dem.shape[1] // max_safe_dim, 1)
             dem = dem[::factor, ::factor]
         
         dem = np.where(dem < -9000, np.nan, dem)
@@ -39,7 +38,7 @@ def render_4d_terrain_rotation(dem_path, output_gif, title="4D Terrain", exagger
         colors = plt.cm.terrain((dem - np.nanmin(dem)) / (np.nanmax(dem) - np.nanmin(dem) + 0.001))
         
         surf = ax.plot_surface(x, y, dem * exaggeration, facecolors=colors,
-                              rstride=2, cstride=2, antialiased=True, shade=True)
+                              rstride=3, cstride=3, antialiased=False, shade=True)
         
         ax.set_title(title, fontsize=14, fontweight='bold')
         ax.set_zlabel(f'Elevasi (m) x{exaggeration}')

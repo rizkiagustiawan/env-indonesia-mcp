@@ -19,10 +19,14 @@ pub async fn get_climate_data(client: &Client, station_id: &str, parameter: &str
     let params = valid_parameters();
     let param_valid = params.iter().any(|(p, _)| *p == parameter.to_lowercase());
     if !param_valid {
-        let available: Vec<String> = params.iter().map(|(p, d)| format!("  {} - {}", p, d)).collect();
+        let available: Vec<String> = params
+            .iter()
+            .map(|(p, d)| format!("  {} - {}", p, d))
+            .collect();
         return format!(
             "Parameter '{}' tidak valid.\nParameter tersedia:\n{}",
-            parameter, available.join("\n")
+            parameter,
+            available.join("\n")
         );
     }
 
@@ -41,7 +45,8 @@ pub async fn get_climate_data(client: &Client, station_id: &str, parameter: &str
         station_id, param_code
     );
 
-    match client.get(&url)
+    match client
+        .get(&url)
         .header("Accept", "application/json")
         .timeout(std::time::Duration::from_secs(20))
         .send()
@@ -70,7 +75,11 @@ pub async fn get_climate_data(client: &Client, station_id: &str, parameter: &str
 
     // Fallback: provide reference station information
     let station_info = get_station_info(station_id);
-    let param_desc = params.iter().find(|(p, _)| *p == parameter).map(|(_, d)| *d).unwrap_or("N/A");
+    let param_desc = params
+        .iter()
+        .find(|(p, _)| *p == parameter)
+        .map(|(_, d)| *d)
+        .unwrap_or("N/A");
 
     format!(
         "══════════════════════════════════════════════\n\
@@ -111,9 +120,16 @@ fn format_climate_response(data: &serde_json::Value, station_id: &str, parameter
     );
 
     if let Some(records) = data.as_array() {
-        result.push_str(&format!("Parameter: {}\nJumlah data: {}\n\n", parameter, records.len()));
+        result.push_str(&format!(
+            "Parameter: {}\nJumlah data: {}\n\n",
+            parameter,
+            records.len()
+        ));
         for record in records.iter().take(30) {
-            let date = record.get("Tanggal").and_then(|v| v.as_str()).unwrap_or("N/A");
+            let date = record
+                .get("Tanggal")
+                .and_then(|v| v.as_str())
+                .unwrap_or("N/A");
             let value = record.get("Nilai").and_then(|v| v.as_f64()).unwrap_or(0.0);
             result.push_str(&format!("{}: {:.1}\n", date, value));
         }
@@ -132,14 +148,35 @@ fn format_climate_response(data: &serde_json::Value, station_id: &str, parameter
 
 fn get_station_info(station_id: &str) -> String {
     let stations = vec![
-        ("97120", "Stasiun Meteorologi Selaparang, Mataram, NTB (-8.53°, 116.08°)"),
-        ("97230", "Stasiun Meteorologi Lombok Tengah (-8.73°, 116.28°)"),
-        ("97330", "Stasiun Klimatologi Kediri, Lombok Barat (-8.65°, 116.12°)"),
-        ("97410", "Stasiun Meteorologi Sultan M. Kaharuddin, Sumbawa (-8.49°, 117.41°)"),
+        (
+            "97120",
+            "Stasiun Meteorologi Selaparang, Mataram, NTB (-8.53°, 116.08°)",
+        ),
+        (
+            "97230",
+            "Stasiun Meteorologi Lombok Tengah (-8.73°, 116.28°)",
+        ),
+        (
+            "97330",
+            "Stasiun Klimatologi Kediri, Lombok Barat (-8.65°, 116.12°)",
+        ),
+        (
+            "97410",
+            "Stasiun Meteorologi Sultan M. Kaharuddin, Sumbawa (-8.49°, 117.41°)",
+        ),
         ("97510", "Stasiun Meteorologi Bima (-8.54°, 118.69°)"),
-        ("96749", "Stasiun Meteorologi Juanda, Surabaya (-7.38°, 112.77°)"),
-        ("96839", "Stasiun Meteorologi Ngurah Rai, Bali (-8.75°, 115.17°)"),
-        ("97072", "Stasiun Meteorologi Soekarno-Hatta, Jakarta (-6.12°, 106.66°)"),
+        (
+            "96749",
+            "Stasiun Meteorologi Juanda, Surabaya (-7.38°, 112.77°)",
+        ),
+        (
+            "96839",
+            "Stasiun Meteorologi Ngurah Rai, Bali (-8.75°, 115.17°)",
+        ),
+        (
+            "97072",
+            "Stasiun Meteorologi Soekarno-Hatta, Jakarta (-6.12°, 106.66°)",
+        ),
     ];
 
     for (id, info) in &stations {
@@ -148,5 +185,8 @@ fn get_station_info(station_id: &str) -> String {
         }
     }
 
-    format!("Stasiun '{}' tidak ditemukan dalam database referensi.", station_id)
+    format!(
+        "Stasiun '{}' tidak ditemukan dalam database referensi.",
+        station_id
+    )
 }

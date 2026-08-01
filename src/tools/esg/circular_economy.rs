@@ -11,14 +11,23 @@ pub fn calculate(
     product_lifetime_years: f64,
     industry_avg_lifetime: f64,
 ) -> String {
-    if mass_product_kg <= 0.0 { return "ERROR [E102]: Parameter harus > 0 kg.".into(); }
-    if product_lifetime_years <= 0.0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
-    if industry_avg_lifetime <= 0.0 { return "ERROR [E102]: Parameter harus > 0 tahun.".into(); }
+    if mass_product_kg <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 kg.".into();
+    }
+    if product_lifetime_years <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 tahun.".into();
+    }
+    if industry_avg_lifetime <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0 tahun.".into();
+    }
 
     // Validate percentages
     let total_input_pct = virgin_feedstock_pct + recycled_input_pct + reused_input_pct;
     if (total_input_pct - 100.0).abs() > 5.0 {
-        return format!("ERROR: Total input (virgin + recycled + reused) = {:.1}%, harus mendekati 100%.", total_input_pct);
+        return format!(
+            "ERROR: Total input (virgin + recycled + reused) = {:.1}%, harus mendekati 100%.",
+            total_input_pct
+        );
     }
     let total_output_pct = recycled_output_pct + reused_output_pct;
     if total_output_pct > 100.0 {
@@ -89,21 +98,38 @@ pub fn calculate(
     out.push_str(&format!("  F(X) = 0.9/X             = {:.4}\n", f_x));
     out.push_str(&format!("  MCI = 1 - LFI × F(X)    = {:.4}\n\n", mci));
 
-    out.push_str(&format!("HASIL:\n  {} MCI Score = {:.2} → {}\n\n", emoji, mci, class));
+    out.push_str(&format!(
+        "HASIL:\n  {} MCI Score = {:.2} → {}\n\n",
+        emoji, mci, class
+    ));
 
     // Visual bar
     let bar_len = 40;
     let filled = (mci * bar_len as f64) as usize;
     let empty = bar_len - filled;
-    out.push_str(&format!("  [{}{}] {:.0}%\n", "█".repeat(filled), "░".repeat(empty), mci * 100.0));
+    out.push_str(&format!(
+        "  [{}{}] {:.0}%\n",
+        "█".repeat(filled),
+        "░".repeat(empty),
+        mci * 100.0
+    ));
     out.push_str("   0%        25%       50%       75%      100%\n");
     out.push_str("   LINEAR ◄─────────────────────────► CIRCULAR\n\n");
 
     // Gap analysis
     out.push_str("ANALISIS GAP SIRKULARITAS:\n");
-    out.push_str(&format!("  Circularity gap          = {:.1}% (sisa menuju fully circular)\n", circularity_gap * 100.0));
-    out.push_str(&format!("  Virgin material gap      = {:.1}% (masih dari bahan baru)\n", virgin_gap));
-    out.push_str(&format!("  End-of-life waste        = {:.1}% (tidak di-recycle/reuse)\n\n", eol_waste_pct));
+    out.push_str(&format!(
+        "  Circularity gap          = {:.1}% (sisa menuju fully circular)\n",
+        circularity_gap * 100.0
+    ));
+    out.push_str(&format!(
+        "  Virgin material gap      = {:.1}% (masih dari bahan baru)\n",
+        virgin_gap
+    ));
+    out.push_str(&format!(
+        "  End-of-life waste        = {:.1}% (tidak di-recycle/reuse)\n\n",
+        eol_waste_pct
+    ));
 
     // Improvement recommendations
     out.push_str("REKOMENDASI PENINGKATAN:\n");

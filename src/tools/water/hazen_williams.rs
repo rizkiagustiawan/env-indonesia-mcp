@@ -1,14 +1,28 @@
 /// Hazen-Williams: hf = (10.67 × L × Q^1.852) / (C^1.852 × D^4.87)
 /// Ref: Hazen & Williams (1903), Water Supply Engineering
 
-pub fn calculate(q_m3s: f64, length_m: f64, diameter_m: f64, c_coeff: f64, include_minor_losses: bool) -> String {
+pub fn calculate(
+    q_m3s: f64,
+    length_m: f64,
+    diameter_m: f64,
+    c_coeff: f64,
+    include_minor_losses: bool,
+) -> String {
     let mut out = String::from("=== Hazen-Williams Head Loss ===\n");
     out.push_str("Ref: Hazen & Williams (1903)\n\n");
 
-    if q_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if length_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if diameter_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if c_coeff <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if q_m3s <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if length_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if diameter_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if c_coeff <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     let pi = std::f64::consts::PI;
 
@@ -37,7 +51,10 @@ pub fn calculate(q_m3s: f64, length_m: f64, diameter_m: f64, c_coeff: f64, inclu
         out.push_str(&format!("  Minor losses = {:.3} m\n", minor_loss));
         out.push_str(&format!("  Total head loss = {:.3} m\n", total_loss));
     }
-    out.push_str(&format!("  Gradient hidraulik = {:.4} m/m\n", hf / length_m));
+    out.push_str(&format!(
+        "  Gradient hidraulik = {:.4} m/m\n",
+        hf / length_m
+    ));
     out.push_str(&format!("  Kecepatan aliran (v) = {:.2} m/s\n", velocity));
     out.push_str(&format!("  Estimasi Re = {:.0}\n\n", re));
 

@@ -2,17 +2,30 @@
 /// Ref: Metcalf & Eddy (2003), Monod kinetics, van't Hoff-Arrhenius
 
 pub fn design(q_m3d: f64, s0_mgl: f64, s_target_mgl: f64, temp_c: f64) -> String {
-    if q_m3d <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if s0_mgl <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if s_target_mgl < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if s_target_mgl >= s0_mgl { return "ERROR: BOD target harus < BOD influent.".into(); }
-    if temp_c < 4.0 || temp_c > 40.0 { return format!("ERROR: Suhu {}°C di luar rentang valid (4-40°C) untuk koreksi θ=1.047.", temp_c); }
+    if q_m3d <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if s0_mgl <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if s_target_mgl < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if s_target_mgl >= s0_mgl {
+        return "ERROR: BOD target harus < BOD influent.".into();
+    }
+    if temp_c < 4.0 || temp_c > 40.0 {
+        return format!(
+            "ERROR: Suhu {}°C di luar rentang valid (4-40°C) untuk koreksi θ=1.047.",
+            temp_c
+        );
+    }
 
     // Parameter kinetik (tipikal limbah domestik, 20°C)
-    let mu_max_20 = 6.0_f64;  // d⁻¹
-    let ks = 60.0;            // mg BOD/L
-    let y = 0.6;              // mg VSS/mg BOD
-    let kd_20 = 0.06;         // d⁻¹
+    let mu_max_20 = 6.0_f64; // d⁻¹
+    let ks = 60.0; // mg BOD/L
+    let y = 0.6; // mg VSS/mg BOD
+    let kd_20 = 0.06; // d⁻¹
     let theta_temp = 1.047_f64;
 
     // Koreksi suhu
@@ -33,7 +46,8 @@ pub fn design(q_m3d: f64, s0_mgl: f64, s_target_mgl: f64, temp_c: f64) -> String
     let s_monod = ks * (1.0 + kd * srt) / (srt * (y * mu_max - kd) - 1.0);
 
     // Kebutuhan oksigen
-    let o2_demand = q_m3d * (s0_mgl - s_target_mgl) / 1000.0 * (1.0 / y - 1.42 * kd * srt / (1.0 + kd * srt));
+    let o2_demand =
+        q_m3d * (s0_mgl - s_target_mgl) / 1000.0 * (1.0 / y - 1.42 * kd * srt / (1.0 + kd * srt));
 
     // Produksi lumpur
     let y_obs = y / (1.0 + kd * srt);
@@ -48,6 +62,14 @@ pub fn design(q_m3d: f64, s0_mgl: f64, s_target_mgl: f64, temp_c: f64) -> String
 
     // Cek baku mutu
     out.push_str("BAKU MUTU (PermenLHK 68/2016 — Limbah Domestik):\n");
-    out.push_str(&format!("  BOD effluent {:.0} mg/L {} (maks 30 mg/L)\n", s_target_mgl, if s_target_mgl <= 30.0 { "✅" } else { "❌ MELEBIHI" }));
+    out.push_str(&format!(
+        "  BOD effluent {:.0} mg/L {} (maks 30 mg/L)\n",
+        s_target_mgl,
+        if s_target_mgl <= 30.0 {
+            "✅"
+        } else {
+            "❌ MELEBIHI"
+        }
+    ));
     out
 }

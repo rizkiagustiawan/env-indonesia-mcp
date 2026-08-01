@@ -1,9 +1,18 @@
 /// Peluruhan Radioaktif (Radioactive Decay)
 /// Ref: IAEA Safety Standards, BAPETEN, Cember & Johnson (2009)
 
-pub fn calculate(isotope: &str, initial_activity_bq: f64, time_elapsed: f64, time_unit: &str) -> String {
-    if initial_activity_bq <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if time_elapsed < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+pub fn calculate(
+    isotope: &str,
+    initial_activity_bq: f64,
+    time_elapsed: f64,
+    time_unit: &str,
+) -> String {
+    if initial_activity_bq <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if time_elapsed < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     // Half-lives in seconds
     struct Isotope {
@@ -14,16 +23,66 @@ pub fn calculate(isotope: &str, initial_activity_bq: f64, time_elapsed: f64, tim
     }
 
     let isotopes = [
-        Isotope { name: "cs137",  display: "Cesium-137",      half_life_s: 30.17 * 365.25 * 86400.0,  half_life_display: "30.17 tahun" },
-        Isotope { name: "co60",   display: "Cobalt-60",       half_life_s: 5.27 * 365.25 * 86400.0,   half_life_display: "5.27 tahun" },
-        Isotope { name: "i131",   display: "Iodine-131",      half_life_s: 8.02 * 86400.0,            half_life_display: "8.02 hari" },
-        Isotope { name: "sr90",   display: "Strontium-90",    half_life_s: 28.8 * 365.25 * 86400.0,   half_life_display: "28.8 tahun" },
-        Isotope { name: "ra226",  display: "Radium-226",      half_life_s: 1600.0 * 365.25 * 86400.0, half_life_display: "1600 tahun" },
-        Isotope { name: "c14",    display: "Carbon-14",       half_life_s: 5730.0 * 365.25 * 86400.0, half_life_display: "5730 tahun" },
-        Isotope { name: "h3",     display: "Tritium (H-3)",   half_life_s: 12.3 * 365.25 * 86400.0,   half_life_display: "12.3 tahun" },
-        Isotope { name: "tc99m",  display: "Technetium-99m",  half_life_s: 6.0 * 3600.0,              half_life_display: "6 jam" },
-        Isotope { name: "u238",   display: "Uranium-238",     half_life_s: 4.47e9 * 365.25 * 86400.0, half_life_display: "4.47×10⁹ tahun" },
-        Isotope { name: "am241",  display: "Americium-241",   half_life_s: 432.2 * 365.25 * 86400.0,  half_life_display: "432.2 tahun" },
+        Isotope {
+            name: "cs137",
+            display: "Cesium-137",
+            half_life_s: 30.17 * 365.25 * 86400.0,
+            half_life_display: "30.17 tahun",
+        },
+        Isotope {
+            name: "co60",
+            display: "Cobalt-60",
+            half_life_s: 5.27 * 365.25 * 86400.0,
+            half_life_display: "5.27 tahun",
+        },
+        Isotope {
+            name: "i131",
+            display: "Iodine-131",
+            half_life_s: 8.02 * 86400.0,
+            half_life_display: "8.02 hari",
+        },
+        Isotope {
+            name: "sr90",
+            display: "Strontium-90",
+            half_life_s: 28.8 * 365.25 * 86400.0,
+            half_life_display: "28.8 tahun",
+        },
+        Isotope {
+            name: "ra226",
+            display: "Radium-226",
+            half_life_s: 1600.0 * 365.25 * 86400.0,
+            half_life_display: "1600 tahun",
+        },
+        Isotope {
+            name: "c14",
+            display: "Carbon-14",
+            half_life_s: 5730.0 * 365.25 * 86400.0,
+            half_life_display: "5730 tahun",
+        },
+        Isotope {
+            name: "h3",
+            display: "Tritium (H-3)",
+            half_life_s: 12.3 * 365.25 * 86400.0,
+            half_life_display: "12.3 tahun",
+        },
+        Isotope {
+            name: "tc99m",
+            display: "Technetium-99m",
+            half_life_s: 6.0 * 3600.0,
+            half_life_display: "6 jam",
+        },
+        Isotope {
+            name: "u238",
+            display: "Uranium-238",
+            half_life_s: 4.47e9 * 365.25 * 86400.0,
+            half_life_display: "4.47×10⁹ tahun",
+        },
+        Isotope {
+            name: "am241",
+            display: "Americium-241",
+            half_life_s: 432.2 * 365.25 * 86400.0,
+            half_life_display: "432.2 tahun",
+        },
     ];
 
     let iso_lower = isotope.to_lowercase();
@@ -33,7 +92,8 @@ pub fn calculate(isotope: &str, initial_activity_bq: f64, time_elapsed: f64, tim
             let available: Vec<&str> = isotopes.iter().map(|i| i.name).collect();
             return format!(
                 "ERROR: Isotop '{}' tidak dikenal.\nIsotop tersedia: {}",
-                isotope, available.join(", ")
+                isotope,
+                available.join(", ")
             );
         }
     };
@@ -97,15 +157,31 @@ pub fn calculate(isotope: &str, initial_activity_bq: f64, time_elapsed: f64, tim
 
     result.push_str("INPUT:\n");
     result.push_str(&format!("• Isotop               : {}\n", iso.display));
-    result.push_str(&format!("• Waktu paruh (t½)     : {}\n", iso.half_life_display));
-    result.push_str(&format!("• Aktivitas awal (A₀)  : {:.4} {} ({:.2e} Bq)\n", init_val, init_unit, initial_activity_bq));
-    result.push_str(&format!("• Waktu berlalu        : {:.2} {}\n", time_elapsed, time_unit));
+    result.push_str(&format!(
+        "• Waktu paruh (t½)     : {}\n",
+        iso.half_life_display
+    ));
+    result.push_str(&format!(
+        "• Aktivitas awal (A₀)  : {:.4} {} ({:.2e} Bq)\n",
+        init_val, init_unit, initial_activity_bq
+    ));
+    result.push_str(&format!(
+        "• Waktu berlalu        : {:.2} {}\n",
+        time_elapsed, time_unit
+    ));
     result.push_str(&format!("• Konstanta peluruhan  : {:.6e} s⁻¹\n\n", lambda));
 
     result.push_str("HASIL:\n");
     result.push_str(&format!("• Jumlah waktu paruh   : {:.4}\n", n_half_lives));
-    result.push_str(&format!("• Aktivitas tersisa    : {:.4} {} ({:.2e} Bq)\n", act_val, act_unit, remaining_activity));
-    result.push_str(&format!("• Fraksi tersisa       : {:.6} ({:.4}%)\n\n", fraction_remaining, fraction_remaining * 100.0));
+    result.push_str(&format!(
+        "• Aktivitas tersisa    : {:.4} {} ({:.2e} Bq)\n",
+        act_val, act_unit, remaining_activity
+    ));
+    result.push_str(&format!(
+        "• Fraksi tersisa       : {:.6} ({:.4}%)\n\n",
+        fraction_remaining,
+        fraction_remaining * 100.0
+    ));
 
     if initial_activity_bq > clearance_bq {
         result.push_str(&format!(

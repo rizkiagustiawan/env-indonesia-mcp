@@ -3,16 +3,29 @@
 /// P = (ρ × g × Q × TDH) / (η × 1000) [kW]
 /// Ref: Cengel & Cimbala, Fluid Mechanics; Hydraulic Institute Standards
 
-pub fn calculate(q_m3s: f64, static_lift_m: f64, friction_loss_m: f64, velocity_head_m: f64, pressure_head_m: f64, efficiency: f64) -> String {
+pub fn calculate(
+    q_m3s: f64,
+    static_lift_m: f64,
+    friction_loss_m: f64,
+    velocity_head_m: f64,
+    pressure_head_m: f64,
+    efficiency: f64,
+) -> String {
     let mut out = String::from("=== Sizing Pompa ===\n");
     out.push_str("Ref: Cengel & Cimbala, Fluid Mechanics\n\n");
 
-    if q_m3s <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if efficiency <= 0.0 || efficiency > 1.0 { return "ERROR: Efisiensi pompa harus antara 0 dan 1.".into(); }
-    if static_lift_m < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if q_m3s <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if efficiency <= 0.0 || efficiency > 1.0 {
+        return "ERROR: Efisiensi pompa harus antara 0 dan 1.".into();
+    }
+    if static_lift_m < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let rho = 998.0; // kg/m³ (water at 20°C)
-    let g = 9.81;    // m/s²
+    let g = 9.81; // m/s²
 
     let tdh = static_lift_m + friction_loss_m + velocity_head_m + pressure_head_m;
 
@@ -28,10 +41,15 @@ pub fn calculate(q_m3s: f64, static_lift_m: f64, friction_loss_m: f64, velocity_
         q_m3s, q_m3s * 1000.0, static_lift_m, friction_loss_m, velocity_head_m, pressure_head_m, efficiency * 100.0));
 
     out.push_str("Hasil:\n");
-    out.push_str(&format!("  TDH = {:.2} + {:.2} + {:.2} + {:.2} = {:.2} m\n",
-        static_lift_m, friction_loss_m, velocity_head_m, pressure_head_m, tdh));
+    out.push_str(&format!(
+        "  TDH = {:.2} + {:.2} + {:.2} + {:.2} = {:.2} m\n",
+        static_lift_m, friction_loss_m, velocity_head_m, pressure_head_m, tdh
+    ));
     out.push_str(&format!("  Water power = {:.3} kW\n", water_power_kw));
-    out.push_str(&format!("  Motor power = {:.3} kW ({:.2} HP)\n\n", power_kw, power_hp));
+    out.push_str(&format!(
+        "  Motor power = {:.3} kW ({:.2} HP)\n\n",
+        power_kw, power_hp
+    ));
 
     // NPSH check
     let h_atm = 10.33; // m (atmospheric pressure at sea level)

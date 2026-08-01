@@ -5,7 +5,10 @@ pub fn check(zone: &str, measured_db: f64) -> String {
     let z = zone.to_lowercase();
 
     if measured_db < 0.0 {
-        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", measured_db);
+        return format!(
+            "ERROR [E102]: Parameter tidak boleh negatif. {}",
+            measured_db
+        );
     }
 
     // KepmenLH 48/1996 limits in dBA
@@ -18,19 +21,27 @@ pub fn check(zone: &str, measured_db: f64) -> String {
         "sekolah" | "school" => (55.0, "Sekolah & Sejenisnya"),
         "ibadah" | "tempat_ibadah" | "worship" => (55.0, "Tempat Ibadah"),
         "ruang_terbuka_hijau" | "rth" | "taman" => (50.0, "Ruang Terbuka Hijau"),
-        _ => return format!(
-            "ERROR: Zona '{}' tidak ditemukan dalam KepmenLH 48/1996.\n\
+        _ => {
+            return format!(
+                "ERROR: Zona '{}' tidak ditemukan dalam KepmenLH 48/1996.\n\
              Zona valid: perumahan, perdagangan, perkantoran, industri, rumah_sakit,\n\
              sekolah, ibadah, ruang_terbuka_hijau",
-            zone
-        ),
+                zone
+            )
+        }
     };
 
     let pct = (measured_db / limit) * 100.0;
     let selisih = measured_db - limit;
-    let status = if measured_db <= limit { "Memenuhi Baku Mutu ✅" } else { "Melebihi Baku Mutu ❌" };
+    let status = if measured_db <= limit {
+        "Memenuhi Baku Mutu ✅"
+    } else {
+        "Melebihi Baku Mutu ❌"
+    };
 
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Kebisingan\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    let mut out = String::from(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Kebisingan\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+    );
     out.push_str("Ref: KepmenLH No. 48 Tahun 1996\n\n");
     out.push_str(&format!("Zona        : {} ({})\n", zone, zone_desc));
     out.push_str(&format!("Terukur     : {:.1} dBA\n", measured_db));

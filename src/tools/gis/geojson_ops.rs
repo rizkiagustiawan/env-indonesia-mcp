@@ -11,28 +11,57 @@ pub fn analyze(geojson_str: &str) -> String {
                 if let Some(features) = gj.get("features").and_then(|f| f.as_array()) {
                     out.push_str(&format!("Features: {}\n", features.len()));
                     for (i, f) in features.iter().take(5).enumerate() {
-                        let geom_type = f.get("geometry").and_then(|g| g.get("type")).and_then(|t| t.as_str()).unwrap_or("?");
-                        let props = f.get("properties").cloned().unwrap_or(serde_json::json!({}));
-                        out.push_str(&format!("  Feature {}: {} | props: {}\n", i, geom_type, 
-                            serde_json::to_string(&props).unwrap_or_default().chars().take(100).collect::<String>()));
+                        let geom_type = f
+                            .get("geometry")
+                            .and_then(|g| g.get("type"))
+                            .and_then(|t| t.as_str())
+                            .unwrap_or("?");
+                        let props = f
+                            .get("properties")
+                            .cloned()
+                            .unwrap_or(serde_json::json!({}));
+                        out.push_str(&format!(
+                            "  Feature {}: {} | props: {}\n",
+                            i,
+                            geom_type,
+                            serde_json::to_string(&props)
+                                .unwrap_or_default()
+                                .chars()
+                                .take(100)
+                                .collect::<String>()
+                        ));
                     }
                 }
             } else if gtype == "Feature" {
-                let geom_type = gj.get("geometry").and_then(|g| g.get("type")).and_then(|t| t.as_str()).unwrap_or("?");
+                let geom_type = gj
+                    .get("geometry")
+                    .and_then(|g| g.get("type"))
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("?");
                 out.push_str(&format!("Geometry: {}\n", geom_type));
                 if let Some(coords) = gj.get("geometry").and_then(|g| g.get("coordinates")) {
-                    out.push_str(&format!("Coordinates preview: {}\n", 
-                        serde_json::to_string(coords).unwrap_or_default().chars().take(200).collect::<String>()));
+                    out.push_str(&format!(
+                        "Coordinates preview: {}\n",
+                        serde_json::to_string(coords)
+                            .unwrap_or_default()
+                            .chars()
+                            .take(200)
+                            .collect::<String>()
+                    ));
                 }
             }
-            
+
             // Panggil Geopandas Python script untuk hitung Area
             let py_script = "/home/awan/Documents/env-indonesia-mcp/src/tools/gis/geojson_area.py";
-            match Command::new("python3").arg(py_script).arg(geojson_str).output() {
+            match Command::new("python3")
+                .arg(py_script)
+                .arg(geojson_str)
+                .output()
+            {
                 Ok(output) => {
                     let py_out = String::from_utf8_lossy(&output.stdout);
                     out.push_str(&py_out);
-                },
+                }
                 Err(_) => {}
             }
 

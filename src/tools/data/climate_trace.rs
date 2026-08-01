@@ -5,12 +5,18 @@ pub async fn emissions(client: &Client, sector: Option<String>) -> String {
     out.push_str("Source: climatetrace.org\n\n");
 
     let url = "https://api.climatetrace.org/v6/country/emissions?since=2023&to=2024&countries=IDN";
-    
+
     match client.get(url).send().await {
         Ok(resp) => match resp.text().await {
             Ok(body) => {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&body) {
-                    out.push_str(&serde_json::to_string_pretty(&v).unwrap_or_default().chars().take(3000).collect::<String>());
+                    out.push_str(
+                        &serde_json::to_string_pretty(&v)
+                            .unwrap_or_default()
+                            .chars()
+                            .take(3000)
+                            .collect::<String>(),
+                    );
                 } else {
                     out.push_str(&body[..body.len().min(2000)]);
                 }
@@ -29,7 +35,10 @@ pub async fn emissions(client: &Client, sector: Option<String>) -> String {
             out.push_str("  Waste: ~150 MtCO2e (7%)\n");
             out.push_str("  Industry: ~150 MtCO2e (7%)\n");
             if let Some(s) = &sector {
-                out.push_str(&format!("\nFilter: {} — use Climate TRACE dashboard for detailed facility-level data\n", s));
+                out.push_str(&format!(
+                    "\nFilter: {} — use Climate TRACE dashboard for detailed facility-level data\n",
+                    s
+                ));
             }
         }
     }

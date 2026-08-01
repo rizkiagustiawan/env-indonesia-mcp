@@ -7,6 +7,8 @@ Uses Google Earth Engine (ee) for cloud processing and matplotlib for visualizat
 import sys
 import os
 import json
+import math
+import requests
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
@@ -355,6 +357,50 @@ def burned_area_mapping(lat, lon, buffer_km, fire_date, output_path):
             maxPixels=1e9
         )
         burned_ha = stats.getInfo().get('dNBR', 0) / 10000
+
+        # Thematic Cartography: Overlay severity raster di atas basemap SNI
+        try:
+            temp_tif = output_path.replace('.png', '_overlay.tif')
+            download_url = severity.toFloat().getDownloadURL({
+                'region': roi, 'scale': 20, 'format': 'GEO_TIFF', 'crs': 'EPSG:3857'
+            })
+            tif_data = requests.get(download_url, timeout=120).content
+            with open(temp_tif, 'wb') as f: f.write(tif_data)
+
+            import json
+            d = buffer_km / 111.0
+            dlon = d / math.cos(math.radians(lat))
+            geojson_data = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[lon-dlon,lat-d],[lon+dlon,lat-d],[lon+dlon,lat+d],[lon-dlon,lat+d],[lon-dlon,lat-d]]]}}]}
+
+            discrete_labels = {
+                '#1a9641': 'Regrowth',
+                '#73d216': 'Unburned',
+                '#f7f7f7': 'Unburned',
+                '#fee08b': 'Low Sev',
+                '#fdae61': 'Mod-Low',
+                '#f46d43': 'Mod-High',
+                '#d73027': 'High Sev',
+            }
+
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'gis'))
+            from cartography import generate_sni_map
+            generate_sni_map(json.dumps(geojson_data), output_path,
+                title="PETA BURN SEVERITY (dNBR)",
+                realtime=True, author="Rizki Agustiawan x ZeroClaw AI",
+                overlay_raster=temp_tif,
+                analysis_type='discrete', cmap='RdYlGn',
+                discrete_labels=discrete_labels,
+                colorbar_label='Burn Severity (USGS 7-class)',
+                analysis_stats={
+                    'Algoritma': 'dNBR+RdNBR',
+                    'Sensor': 'Sentinel-2 L2A',
+                    'Sumber': 'Google Earth Engine',
+                    'Area Terbakar': f'{burned_ha:.0f} Ha',
+                })
+            if os.path.exists(temp_tif): os.remove(temp_tif)
+            size = os.path.getsize(output_path) / 1024
+        except Exception as e:
+            print(f"[WARNING] Thematic cartography gagal, menggunakan thumbnail: {e}")
 
         return (f"SUCCESS: Peta area terbakar disimpan di {output_path} ({size:.1f} KB)\n"
                 f"Tanggal kebakaran: {fire_date}\n"

@@ -40,15 +40,21 @@ pub fn lookup(topic: &str) -> String {
         Reg { nomor: "PP 23/2021", judul: "Penyelenggaraan Kehutanan", topik: &["hutan", "kehutanan", "forest", "tata_guna_hutan"] },
     ];
 
-    let matches: Vec<&Reg> = regs.iter().filter(|r| {
-        r.topik.iter().any(|tp| t.contains(tp) || tp.contains(&t))
-            || r.judul.to_lowercase().contains(&t)
-            || r.nomor.to_lowercase().contains(&t)
-    }).collect();
+    let matches: Vec<&Reg> = regs
+        .iter()
+        .filter(|r| {
+            r.topik.iter().any(|tp| t.contains(tp) || tp.contains(&t))
+                || r.judul.to_lowercase().contains(&t)
+                || r.nomor.to_lowercase().contains(&t)
+        })
+        .collect();
 
     if matches.is_empty() {
         let mut out = String::from("=== Regulasi Lingkungan Indonesia ===\n\n");
-        out.push_str(&format!("Topik '{}' tidak ditemukan. Topik yang tersedia:\n\n", topic));
+        out.push_str(&format!(
+            "Topik '{}' tidak ditemukan. Topik yang tersedia:\n\n",
+            topic
+        ));
         out.push_str("  air, udara, limbah, b3, amdal, ukl_upl, sppl, kebisingan,\n");
         out.push_str("  getaran, kebauan, emisi, laut, sampah, hutan, karbon/ghg,\n");
         out.push_str("  ispu, storet, proper, iklh, oss, perizinan, izin, domestik\n");
@@ -57,7 +63,10 @@ pub fn lookup(topic: &str) -> String {
 
     let mut out = String::from("=== Regulasi Lingkungan Indonesia ===\n");
     out.push_str(&format!("Topik: '{}'\n\n", topic));
-    out.push_str(&format!("Ditemukan {} regulasi terkait:\n\n", matches.len()));
+    out.push_str(&format!(
+        "Ditemukan {} regulasi terkait:\n\n",
+        matches.len()
+    ));
 
     for (i, r) in matches.iter().enumerate() {
         out.push_str(&format!("  {}. {} — {}\n", i + 1, r.nomor, r.judul));

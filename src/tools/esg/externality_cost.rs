@@ -6,10 +6,16 @@ fn fmt_num(v: f64) -> String {
     let bytes: Vec<u8> = s.bytes().collect();
     let mut result = String::new();
     for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 { result.push('.'); }
+        if i > 0 && (bytes.len() - i) % 3 == 0 {
+            result.push('.');
+        }
         result.push(*b as char);
     }
-    if v < 0.0 { format!("-{}", result) } else { result }
+    if v < 0.0 {
+        format!("-{}", result)
+    } else {
+        result
+    }
 }
 
 fn fmt_usd(v: f64) -> String {
@@ -19,15 +25,23 @@ fn fmt_usd(v: f64) -> String {
     let bytes: Vec<u8> = int_part.bytes().collect();
     let mut result = String::new();
     for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 { result.push(','); }
+        if i > 0 && (bytes.len() - i) % 3 == 0 {
+            result.push(',');
+        }
         result.push(*b as char);
     }
     let formatted = format!("{}.{}", result, parts[1]);
-    if v < 0.0 { format!("-{}", formatted) } else { formatted }
+    if v < 0.0 {
+        format!("-{}", formatted)
+    } else {
+        formatted
+    }
 }
 
 pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) -> String {
-    if amount <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if amount <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     // Location multiplier for health damage (population density effect)
     let (loc_mult, loc_desc) = match location_type.to_lowercase().as_str() {
@@ -42,7 +56,12 @@ pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) 
         "ton" | "tonnes" => amount,
         "kg" => amount / 1000.0,
         "gram" | "g" => amount / 1_000_000.0,
-        _ => return format!("ERROR: Unit '{}' tidak dikenal. Gunakan: ton, kg, gram.", unit),
+        _ => {
+            return format!(
+                "ERROR: Unit '{}' tidak dikenal. Gunakan: ton, kg, gram.",
+                unit
+            )
+        }
     };
 
     // Damage cost data: (base_usd_per_ton, health_pct, ecosystem_pct, material_pct, climate_pct, source)
@@ -146,25 +165,55 @@ pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) 
     ));
 
     out.push_str("BREAKDOWN PER KATEGORI DAMPAK:\n");
-    out.push_str(&format!("  {:25} {:>12} {:>8}\n", "Kategori", "USD/ton", "%"));
-    out.push_str(&format!("  {:25} {:>12} {:>8}\n", "─".repeat(25), "─".repeat(12), "─".repeat(8)));
+    out.push_str(&format!(
+        "  {:25} {:>12} {:>8}\n",
+        "Kategori", "USD/ton", "%"
+    ));
+    out.push_str(&format!(
+        "  {:25} {:>12} {:>8}\n",
+        "─".repeat(25),
+        "─".repeat(12),
+        "─".repeat(8)
+    ));
     let total_pct = health_damage + ecosystem_damage + material_damage + climate_damage;
     if health_damage > 0.0 {
-        out.push_str(&format!("  {:25} {:>12.0} {:>7.1}%\n", "Kesehatan (health)", health_damage, health_damage / total_pct * 100.0));
+        out.push_str(&format!(
+            "  {:25} {:>12.0} {:>7.1}%\n",
+            "Kesehatan (health)",
+            health_damage,
+            health_damage / total_pct * 100.0
+        ));
     }
     if ecosystem_damage > 0.0 {
-        out.push_str(&format!("  {:25} {:>12.0} {:>7.1}%\n", "Ekosistem (ecosystem)", ecosystem_damage, ecosystem_damage / total_pct * 100.0));
+        out.push_str(&format!(
+            "  {:25} {:>12.0} {:>7.1}%\n",
+            "Ekosistem (ecosystem)",
+            ecosystem_damage,
+            ecosystem_damage / total_pct * 100.0
+        ));
     }
     if material_damage > 0.0 {
-        out.push_str(&format!("  {:25} {:>12.0} {:>7.1}%\n", "Material/infrastruktur", material_damage, material_damage / total_pct * 100.0));
+        out.push_str(&format!(
+            "  {:25} {:>12.0} {:>7.1}%\n",
+            "Material/infrastruktur",
+            material_damage,
+            material_damage / total_pct * 100.0
+        ));
     }
     if climate_damage > 0.0 {
-        out.push_str(&format!("  {:25} {:>12.0} {:>7.1}%\n", "Iklim (climate)", climate_damage, climate_damage / total_pct * 100.0));
+        out.push_str(&format!(
+            "  {:25} {:>12.0} {:>7.1}%\n",
+            "Iklim (climate)",
+            climate_damage,
+            climate_damage / total_pct * 100.0
+        ));
     }
 
     out.push_str(&format!(
         "\nTOTAL BIAYA KERUSAKAN:\n  USD {}\n  IDR {} (@ Rp {:.0}/USD)\n\n",
-        fmt_usd(total_damage_usd), fmt_num(total_damage_idr), usd_to_idr
+        fmt_usd(total_damage_usd),
+        fmt_num(total_damage_idr),
+        usd_to_idr
     ));
 
     // Comparison with compliance cost

@@ -1,12 +1,11 @@
+use rmcp::schemars::{self, JsonSchema};
 /// Physics-Informed Validator Engine untuk Environmental Engineering Indonesia
 /// Berdasarkan: USDA TR-55, FAO-56, RUSLE (Renard 1997), Streeter-Phelps (1925),
 /// PP 22/2021, PermenLHK 68/2016, KepMenLH 48/1996, CERC SPM 1984, APHA Standards
-/// 
+///
 /// Modul ini adalah "jantung" Physics-Informed Agent (PINN).
 /// Semua output LLM yang menyangkut data lingkungan WAJIB divalidasi di sini.
-
 use serde::{Deserialize, Serialize};
-use rmcp::schemars::{self, JsonSchema};
 
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct ValidatorParam {
@@ -107,7 +106,17 @@ pub fn validate(p: ValidatorParam) -> String {
         if v < -1.0 || v > 1.0 {
             errors.push(format!("[RADIOMETRI] NDVI={:.4} TIDAK VALID. Rentang matematis mutlak: -1.0 sampai 1.0. Rumus: (NIR-Red)/(NIR+Red).", v));
         } else {
-            let cat = if v < 0.0 { "Air/Awan/Salju" } else if v < 0.2 { "Tanah gundul/batu" } else if v < 0.4 { "Vegetasi jarang" } else if v < 0.6 { "Vegetasi sedang" } else { "Vegetasi lebat/hutan" };
+            let cat = if v < 0.0 {
+                "Air/Awan/Salju"
+            } else if v < 0.2 {
+                "Tanah gundul/batu"
+            } else if v < 0.4 {
+                "Vegetasi jarang"
+            } else if v < 0.6 {
+                "Vegetasi sedang"
+            } else {
+                "Vegetasi lebat/hutan"
+            };
             info.push(format!("[RADIOMETRI] NDVI={:.4} → {}", v, cat));
         }
     }
@@ -125,7 +134,10 @@ pub fn validate(p: ValidatorParam) -> String {
     }
     if let Some(v) = p.aod {
         if v < 0.0 {
-            errors.push(format!("[RADIOMETRI] AOD={:.3} TIDAK VALID. Aerosol Optical Depth tidak bisa negatif.", v));
+            errors.push(format!(
+                "[RADIOMETRI] AOD={:.3} TIDAK VALID. Aerosol Optical Depth tidak bisa negatif.",
+                v
+            ));
         } else if v > 2.0 {
             warnings.push(format!("[RADIOMETRI] AOD={:.3} sangat tinggi. Koreksi atmosferik Sen2Cor/6SV kemungkinan menghasilkan error besar pada band biru/hijau.", v));
         }
@@ -139,32 +151,72 @@ pub fn validate(p: ValidatorParam) -> String {
     }
     if let Some(v) = p.wind_speed {
         if v < 0.0 {
-            errors.push(format!("[FISIKA] Kecepatan angin={:.2} m/s negatif TIDAK VALID.", v));
+            errors.push(format!(
+                "[FISIKA] Kecepatan angin={:.2} m/s negatif TIDAK VALID.",
+                v
+            ));
         } else if v < 0.28 {
             errors.push(format!("[AERMOD/GAUSSIAN] Kecepatan angin={:.2} m/s < 0.28 m/s. Model dispersi atmosfer TIDAK VALID pada calm wind. Gaussian plume menghasilkan pembagian mendekati nol → konsentrasi tak hingga (singularitas).", v));
         }
     }
     if let Some(v) = p.pm25 {
-        if v < 0.0 { errors.push(format!("[UDARA] PM2.5={:.1} negatif TIDAK VALID.", v)); }
-        else if v > 65.0 { warnings.push(format!("[BAKU MUTU PP 22/2021] PM2.5={:.1} µg/m³ MELEBIHI baku mutu 24 jam (65 µg/m³).", v)); }
+        if v < 0.0 {
+            errors.push(format!("[UDARA] PM2.5={:.1} negatif TIDAK VALID.", v));
+        } else if v > 65.0 {
+            warnings.push(format!(
+                "[BAKU MUTU PP 22/2021] PM2.5={:.1} µg/m³ MELEBIHI baku mutu 24 jam (65 µg/m³).",
+                v
+            ));
+        }
     }
     if let Some(v) = p.pm10 {
-        if v < 0.0 { errors.push(format!("[UDARA] PM10={:.1} negatif TIDAK VALID.", v)); }
-        else if v > 150.0 { warnings.push(format!("[BAKU MUTU PP 22/2021] PM10={:.1} µg/m³ MELEBIHI baku mutu 24 jam (150 µg/m³).", v)); }
+        if v < 0.0 {
+            errors.push(format!("[UDARA] PM10={:.1} negatif TIDAK VALID.", v));
+        } else if v > 150.0 {
+            warnings.push(format!(
+                "[BAKU MUTU PP 22/2021] PM10={:.1} µg/m³ MELEBIHI baku mutu 24 jam (150 µg/m³).",
+                v
+            ));
+        }
     }
     if let Some(v) = p.no2 {
-        if v < 0.0 { errors.push(format!("[UDARA] NO2={:.1} negatif TIDAK VALID.", v)); }
-        else if v > 200.0 { warnings.push(format!("[BAKU MUTU PP 22/2021] NO2={:.1} µg/m³ MELEBIHI baku mutu 1 jam (200 µg/m³).", v)); }
+        if v < 0.0 {
+            errors.push(format!("[UDARA] NO2={:.1} negatif TIDAK VALID.", v));
+        } else if v > 200.0 {
+            warnings.push(format!(
+                "[BAKU MUTU PP 22/2021] NO2={:.1} µg/m³ MELEBIHI baku mutu 1 jam (200 µg/m³).",
+                v
+            ));
+        }
     }
     if let Some(v) = p.so2 {
-        if v < 0.0 { errors.push(format!("[UDARA] SO2={:.1} negatif TIDAK VALID.", v)); }
-        else if v > 75.0 { warnings.push(format!("[BAKU MUTU PP 22/2021] SO2={:.1} µg/m³ MELEBIHI baku mutu 24 jam (75 µg/m³).", v)); }
+        if v < 0.0 {
+            errors.push(format!("[UDARA] SO2={:.1} negatif TIDAK VALID.", v));
+        } else if v > 75.0 {
+            warnings.push(format!(
+                "[BAKU MUTU PP 22/2021] SO2={:.1} µg/m³ MELEBIHI baku mutu 24 jam (75 µg/m³).",
+                v
+            ));
+        }
     }
     if let Some(v) = p.ispu {
         if v < 0.0 || v > 500.0 {
-            errors.push(format!("[ISPU] Nilai={:.0} di luar rentang valid 0-500 (PermenLHK 14/2020).", v));
+            errors.push(format!(
+                "[ISPU] Nilai={:.0} di luar rentang valid 0-500 (PermenLHK 14/2020).",
+                v
+            ));
         } else {
-            let cat = if v <= 50.0 { "BAIK (Hijau)" } else if v <= 100.0 { "SEDANG (Biru)" } else if v <= 200.0 { "TIDAK SEHAT (Kuning)" } else if v <= 300.0 { "SANGAT TIDAK SEHAT (Merah)" } else { "BERBAHAYA (Hitam)" };
+            let cat = if v <= 50.0 {
+                "BAIK (Hijau)"
+            } else if v <= 100.0 {
+                "SEDANG (Biru)"
+            } else if v <= 200.0 {
+                "TIDAK SEHAT (Kuning)"
+            } else if v <= 300.0 {
+                "SANGAT TIDAK SEHAT (Merah)"
+            } else {
+                "BERBAHAYA (Hitam)"
+            };
             info.push(format!("[ISPU] Nilai={:.0} → Kategori: {}", v, cat));
         }
     }
@@ -199,7 +251,12 @@ pub fn validate(p: ValidatorParam) -> String {
     }
     // Runoff tidak boleh melebihi curah hujan
     if let (Some(p_rain), Some(q)) = (p.rainfall_mm, p.runoff_mm) {
-        if q < 0.0 { errors.push(format!("[HIDROLOGI] Runoff={:.1} mm TIDAK BOLEH negatif.", q)); }
+        if q < 0.0 {
+            errors.push(format!(
+                "[HIDROLOGI] Runoff={:.1} mm TIDAK BOLEH negatif.",
+                q
+            ));
+        }
         if q > p_rain {
             errors.push(format!("[KONSERVASI MASSA] Runoff={:.1} mm MELEBIHI curah hujan={:.1} mm. Limpasan tidak bisa melebihi input presipitasi (Hukum Konservasi Massa).", q, p_rain));
         }
@@ -230,10 +287,20 @@ pub fn validate(p: ValidatorParam) -> String {
         }
     }
     if let Some(v) = p.bod {
-        if v < 0.0 { errors.push(format!("[KIMIA AIR] BOD={:.2} mg/L TIDAK BOLEH negatif.", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[KIMIA AIR] BOD={:.2} mg/L TIDAK BOLEH negatif.",
+                v
+            ));
+        }
     }
     if let Some(v) = p.cod {
-        if v < 0.0 { errors.push(format!("[KIMIA AIR] COD={:.2} mg/L TIDAK BOLEH negatif.", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[KIMIA AIR] COD={:.2} mg/L TIDAK BOLEH negatif.",
+                v
+            ));
+        }
     }
     // COD harus >= BOD (karena COD mengukur SEMUA oksidasi)
     if let (Some(b), Some(c)) = (p.bod, p.cod) {
@@ -243,11 +310,19 @@ pub fn validate(p: ValidatorParam) -> String {
     }
     if let Some(v) = p.ph {
         if v < 0.0 || v > 14.0 {
-            errors.push(format!("[KIMIA AIR] pH={:.2} TIDAK VALID. Rentang: 0-14.", v));
+            errors.push(format!(
+                "[KIMIA AIR] pH={:.2} TIDAK VALID. Rentang: 0-14.",
+                v
+            ));
         }
     }
     if let Some(v) = p.tss {
-        if v < 0.0 { errors.push(format!("[KIMIA AIR] TSS={:.1} mg/L TIDAK BOLEH negatif.", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[KIMIA AIR] TSS={:.1} mg/L TIDAK BOLEH negatif.",
+                v
+            ));
+        }
     }
     // Streeter-Phelps: k2 harus > k1 untuk pemulihan sungai
     if let (Some(k1_v), Some(k2_v)) = (p.k1, p.k2) {
@@ -264,36 +339,71 @@ pub fn validate(p: ValidatorParam) -> String {
 
     // ========== EROSI TANAH (RUSLE) ==========
     if let Some(v) = p.r_erosivity {
-        if v < 0.0 { errors.push(format!("[RUSLE] R-erosivity={:.0} TIDAK BOLEH negatif.", v)); }
-        else if v > 15000.0 { warnings.push(format!("[RUSLE] R={:.0} sangat tinggi (>15000). Tipikal Indonesia: 2000-8000 MJ.mm/ha.hr.yr. Cek rumus Bols (1978).", v)); }
+        if v < 0.0 {
+            errors.push(format!("[RUSLE] R-erosivity={:.0} TIDAK BOLEH negatif.", v));
+        } else if v > 15000.0 {
+            warnings.push(format!("[RUSLE] R={:.0} sangat tinggi (>15000). Tipikal Indonesia: 2000-8000 MJ.mm/ha.hr.yr. Cek rumus Bols (1978).", v));
+        }
     }
     if let Some(v) = p.k_erodibility {
-        if v < 0.0 || v > 1.0 { errors.push(format!("[RUSLE] K-erodibility={:.3} TIDAK VALID. Rentang: 0 (sangat tahan) sampai 1 (sangat erodibel).", v)); }
+        if v < 0.0 || v > 1.0 {
+            errors.push(format!("[RUSLE] K-erodibility={:.3} TIDAK VALID. Rentang: 0 (sangat tahan) sampai 1 (sangat erodibel).", v));
+        }
     }
     if let Some(v) = p.c_cover {
-        if v < 0.0 || v > 1.0 { errors.push(format!("[RUSLE] C-cover={:.3} TIDAK VALID. 0=hutan primer tropis, 1=tanah gundul.", v)); }
+        if v < 0.0 || v > 1.0 {
+            errors.push(format!(
+                "[RUSLE] C-cover={:.3} TIDAK VALID. 0=hutan primer tropis, 1=tanah gundul.",
+                v
+            ));
+        }
     }
     if let Some(v) = p.p_practice {
-        if v < 0.0 || v > 1.0 { errors.push(format!("[RUSLE] P-practice={:.3} TIDAK VALID. 0=teras bangku sempurna, 1=tanpa konservasi.", v)); }
+        if v < 0.0 || v > 1.0 {
+            errors.push(format!("[RUSLE] P-practice={:.3} TIDAK VALID. 0=teras bangku sempurna, 1=tanpa konservasi.", v));
+        }
     }
 
     // ========== KEBISINGAN ==========
     if let Some(v) = p.noise_db {
-        if v < 0.0 { errors.push(format!("[AKUSTIK] Kebisingan={:.1} dB negatif TIDAK VALID.", v)); }
-        else if v > 194.0 { errors.push(format!("[AKUSTIK] Kebisingan={:.1} dB melebihi batas fisik maksimum gelombang suara di udara (194 dB). Ref: pressure wave = 1 atm.", v)); }
-        else if v > 70.0 { warnings.push(format!("[BAKU MUTU KepMenLH 48/1996] Kebisingan={:.1} dB MELEBIHI baku mutu zona industri (70 dB).", v)); }
-        else if v > 55.0 { warnings.push(format!("[BAKU MUTU KepMenLH 48/1996] Kebisingan={:.1} dB MELEBIHI baku mutu zona permukiman siang (55 dB).", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[AKUSTIK] Kebisingan={:.1} dB negatif TIDAK VALID.",
+                v
+            ));
+        } else if v > 194.0 {
+            errors.push(format!("[AKUSTIK] Kebisingan={:.1} dB melebihi batas fisik maksimum gelombang suara di udara (194 dB). Ref: pressure wave = 1 atm.", v));
+        } else if v > 70.0 {
+            warnings.push(format!("[BAKU MUTU KepMenLH 48/1996] Kebisingan={:.1} dB MELEBIHI baku mutu zona industri (70 dB).", v));
+        } else if v > 55.0 {
+            warnings.push(format!("[BAKU MUTU KepMenLH 48/1996] Kebisingan={:.1} dB MELEBIHI baku mutu zona permukiman siang (55 dB).", v));
+        }
     }
 
     // ========== GELOMBANG & PESISIR ==========
     if let Some(v) = p.wave_height {
-        if v < 0.0 { errors.push(format!("[OSEANOGRAFI] Tinggi gelombang Hs={:.2} m negatif TIDAK VALID.", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[OSEANOGRAFI] Tinggi gelombang Hs={:.2} m negatif TIDAK VALID.",
+                v
+            ));
+        }
     }
     if let Some(v) = p.wave_period {
-        if v <= 0.0 { errors.push(format!("[OSEANOGRAFI] Periode gelombang T={:.2} s harus positif (>0).", v)); }
+        if v <= 0.0 {
+            errors.push(format!(
+                "[OSEANOGRAFI] Periode gelombang T={:.2} s harus positif (>0).",
+                v
+            ));
+        }
     }
     if let Some(v) = p.current_speed {
-        if v < 0.0 { errors.push(format!("[OSEANOGRAFI] Kecepatan arus={:.2} m/s negatif TIDAK VALID.", v)); }
+        if v < 0.0 {
+            errors.push(format!(
+                "[OSEANOGRAFI] Kecepatan arus={:.2} m/s negatif TIDAK VALID.",
+                v
+            ));
+        }
     }
 
     // ========== FORMAT OUTPUT ==========
@@ -302,11 +412,16 @@ pub fn validate(p: ValidatorParam) -> String {
     out.push_str("PP 22/2021, PermenLHK 68/2016, KepMenLH 48/1996\n\n");
 
     if errors.is_empty() && warnings.is_empty() {
-        out.push_str("✅ VALID: Seluruh parameter mematuhi hukum fisika dan baku mutu Indonesia.\n");
+        out.push_str(
+            "✅ VALID: Seluruh parameter mematuhi hukum fisika dan baku mutu Indonesia.\n",
+        );
     }
 
     if !errors.is_empty() {
-        out.push_str(&format!("❌ {} PELANGGARAN FISIKA DITEMUKAN:\n", errors.len()));
+        out.push_str(&format!(
+            "❌ {} PELANGGARAN FISIKA DITEMUKAN:\n",
+            errors.len()
+        ));
         for (i, e) in errors.iter().enumerate() {
             out.push_str(&format!("  {}. {}\n", i + 1, e));
         }

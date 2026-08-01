@@ -1,7 +1,13 @@
 /// PROPER Scoring Engine (PermenLHK P.1/2021)
 /// Program Penilaian Peringkat Kinerja Perusahaan dalam Pengelolaan LH
 
-pub fn score(has_izin: bool, compliance_pct: f64, beyond_compliance: bool, community_dev: bool, circular_economy: bool) -> String {
+pub fn score(
+    has_izin: bool,
+    compliance_pct: f64,
+    beyond_compliance: bool,
+    community_dev: bool,
+    circular_economy: bool,
+) -> String {
     let mut out = String::from("=== PROPER Scoring Engine ===\n");
     out.push_str("Ref: PermenLHK No. P.1/2021\n\n");
 

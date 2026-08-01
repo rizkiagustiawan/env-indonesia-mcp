@@ -101,50 +101,80 @@ def add_watermark(image_bytes, text_top, text_bottom):
 
     return np.array(img)
 
-def generate_timelapse(lon, lat, buffer_km, start_year, end_year, sensor_type, output_gif):
+def generate_timelapse(lon, lat, buffer_km, start_year, end_year, sensor_type, output_gif, interval="annual"):
     try:
         point = ee.Geometry.Point([lon, lat])
         roi = point.buffer(buffer_km * 1000).bounds()
         
-        start_date = datetime(int(start_year), 1, 1)
-        end_date = datetime(int(end_year), 12, 31)
-        
         frames = []
-        current_date = start_date
         
-        print(f"Mengumpulkan frame dari {start_year} hingga {end_year} menggunakan {sensor_type}...")
+        print(f"Mengumpulkan frame dari {start_year} hingga {end_year} menggunakan {sensor_type} ({interval})...")
         
-        # Iterasi per bulan
-        while current_date < end_date:
-            next_date = current_date + relativedelta(months=1)
-            date_str_start = current_date.strftime('%Y-%m-%d')
-            date_str_end = next_date.strftime('%Y-%m-%d')
-            label = current_date.strftime('%B %Y')
-            
-            print(f"  Memproses {label}...")
-            
-            if sensor_type == "radar_s1":
-                img = get_s1_radar_composite(roi, date_str_start, date_str_end)
-            else:
-                img = get_s2_cloudless_composite(roi, date_str_start, date_str_end)
+        # Mode Tahunan (Annual Dry Season) - Ideal untuk membuang awan dan melacak ekspansi tambang/kota
+        if interval == "annual":
+            for y in range(int(start_year), int(end_year) + 1):
+                # Fokus ke Musim Kemarau (Juli - Oktober)
+                date_str_start = f"{y}-07-01"
+                date_str_end = f"{y}-10-31"
+                label = f"Tahun {y} (Dry Season)"
+                
+                print(f"  Memproses {label}...")
+                
+                if sensor_type == "radar_s1":
+                    img = get_s1_radar_composite(roi, date_str_start, date_str_end)
+                else:
+                    img = get_s2_cloudless_composite(roi, date_str_start, date_str_end)
 
-            try:
-                url = img.getThumbURL({
-                    'dimensions': 800, # Resolusi 800px untuk GIF HD
-                    'region': roi,
-                    'format': 'png'
-                })
+                try:
+                    url = img.getThumbURL({
+                        'dimensions': 1200, # Resolusi dinaikkan ke 1200px untuk skala regional
+                        'region': roi,
+                        'format': 'png'
+                    })
+                    
+                    r = requests.get(url)
+                    if r.status_code == 200:
+                        watermark_txt = f"{'Sentinel-1 SAR' if sensor_type == 'radar_s1' else 'Sentinel-2 RGB'} | Rizki Agustiawan x ZeroClaw AI"
+                        frame_array = add_watermark(r.content, label, watermark_txt)
+                        frames.append(frame_array)
+                except Exception as e:
+                    print(f"    Gagal unduh {label}: {e}")
+                    
+        # Mode Bulanan (Seperti aslinya)
+        else:
+            start_date = datetime(int(start_year), 1, 1)
+            end_date = datetime(int(end_year), 12, 31)
+            current_date = start_date
+            
+            while current_date < end_date:
+                next_date = current_date + relativedelta(months=1)
+                date_str_start = current_date.strftime('%Y-%m-%d')
+                date_str_end = next_date.strftime('%Y-%m-%d')
+                label = current_date.strftime('%B %Y')
                 
-                # Download and watermark
-                r = requests.get(url)
-                if r.status_code == 200:
-                    watermark_txt = f"{'Sentinel-1 SAR' if sensor_type == 'radar_s1' else 'Sentinel-2 Cloudless'} | ZeroClaw AI"
-                    frame_array = add_watermark(r.content, label, watermark_txt)
-                    frames.append(frame_array)
-            except Exception as e:
-                print(f"    Gagal memproses {label}: {e}")
+                print(f"  Memproses {label}...")
                 
-            current_date = next_date
+                if sensor_type == "radar_s1":
+                    img = get_s1_radar_composite(roi, date_str_start, date_str_end)
+                else:
+                    img = get_s2_cloudless_composite(roi, date_str_start, date_str_end)
+
+                try:
+                    url = img.getThumbURL({
+                        'dimensions': 800, 
+                        'region': roi,
+                        'format': 'png'
+                    })
+                    
+                    r = requests.get(url)
+                    if r.status_code == 200:
+                        watermark_txt = f"{'Sentinel-1 SAR' if sensor_type == 'radar_s1' else 'Sentinel-2 Cloudless'} | Rizki Agustiawan x ZeroClaw AI"
+                        frame_array = add_watermark(r.content, label, watermark_txt)
+                        frames.append(frame_array)
+                except Exception as e:
+                    print(f"    Gagal unduh {label}: {e}")
+                
+                current_date = next_date
 
         if not frames:
             return "ERROR: Gagal mengambil data satelit. Pastikan area tercover."
@@ -153,11 +183,26 @@ def generate_timelapse(lon, lat, buffer_km, start_year, end_year, sensor_type, o
         print(f"Menggabungkan {len(frames)} frames menjadi {output_gif}...")
         imageio.mimsave(output_gif, frames, format='GIF', fps=2, loop=0)
         
+        # Provenance metadata
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'gis'))
+            from provenance import create_provenance
+            create_provenance(output_gif,
+                tool='timelapse', gee_collection='COPERNICUS/S2_SR_HARMONIZED' if sensor_type == 'optik_s2' else 'COPERNICUS/S1_GRD',
+                date_range=[f'{start_year}-01-01', f'{end_year}-12-31'],
+                coordinates={'lat': lat, 'lon': lon, 'buffer_km': buffer_km},
+                algorithms=['Monthly composite', 's2cloudless' if sensor_type == 'optik_s2' else 'S1 median'],
+                parameters={'sensor': sensor_type, 'fps': 2})
+        except:
+            pass  # provenance is non-critical
+        
         size_mb = os.path.getsize(output_gif) / (1024*1024)
         return f"SUCCESS: 4D Timelapse disimpan di {output_gif} ({len(frames)} frames, {size_mb:.1f} MB)"
 
     except Exception as e:
-        return f"ERROR: {str(e)}"
+        import traceback
+        traceback.print_exc()
+        return f"ERROR [E502]: {str(e)}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -167,7 +212,8 @@ if __name__ == "__main__":
     parser.add_argument("--start_year", type=int, default=2023)
     parser.add_argument("--end_year", type=int, default=2024)
     parser.add_argument("--sensor", choices=["optik_s2", "radar_s1"], default="optik_s2")
+    parser.add_argument("--interval", choices=["monthly", "annual"], default="monthly")
     parser.add_argument("--output", required=True)
     
     args = parser.parse_args()
-    print(generate_timelapse(args.lon, args.lat, args.buffer_km, args.start_year, args.end_year, args.sensor, args.output))
+    print(generate_timelapse(args.lon, args.lat, args.buffer_km, args.start_year, args.end_year, args.sensor, args.output, args.interval))

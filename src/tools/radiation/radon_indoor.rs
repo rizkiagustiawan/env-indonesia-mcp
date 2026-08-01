@@ -1,11 +1,25 @@
 /// Estimasi Radon Indoor
 /// Ref: WHO Handbook on Indoor Radon (2009), ICRP 126 (2014)
 
-pub fn calculate(soil_radon_bq_m3: f64, floor_area_m2: f64, room_height_m: f64, ventilation_rate_ach: f64, floor_type: &str) -> String {
-    if soil_radon_bq_m3 < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if floor_area_m2 <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if room_height_m <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if ventilation_rate_ach <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+pub fn calculate(
+    soil_radon_bq_m3: f64,
+    floor_area_m2: f64,
+    room_height_m: f64,
+    ventilation_rate_ach: f64,
+    floor_type: &str,
+) -> String {
+    if soil_radon_bq_m3 < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if floor_area_m2 <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if room_height_m <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if ventilation_rate_ach <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     let ft_lower = floor_type.to_lowercase();
 
@@ -51,7 +65,11 @@ pub fn calculate(soil_radon_bq_m3: f64, floor_area_m2: f64, room_height_m: f64, 
     // Recommended ventilation for 100 Bq/m³ target
     let target_100 = 100.0;
     let required_lambda = entry_rate_bq_s / (target_100 * room_volume) - lambda_rn;
-    let required_ach = if required_lambda > 0.0 { required_lambda * 3600.0 } else { 0.0 };
+    let required_ach = if required_lambda > 0.0 {
+        required_lambda * 3600.0
+    } else {
+        0.0
+    };
 
     let mut result = String::new();
     result.push_str("══════════════════════════════════════════════\n");
@@ -62,31 +80,76 @@ pub fn calculate(soil_radon_bq_m3: f64, floor_area_m2: f64, room_height_m: f64, 
     result.push_str("FORMULA: C = E / ((λv + λ_Rn) × V)\n\n");
 
     result.push_str("INPUT:\n");
-    result.push_str(&format!("• Radon tanah          : {:.0} Bq/m³\n", soil_radon_bq_m3));
-    result.push_str(&format!("• Luas lantai          : {:.1} m²\n", floor_area_m2));
-    result.push_str(&format!("• Tinggi ruangan       : {:.1} m\n", room_height_m));
+    result.push_str(&format!(
+        "• Radon tanah          : {:.0} Bq/m³\n",
+        soil_radon_bq_m3
+    ));
+    result.push_str(&format!(
+        "• Luas lantai          : {:.1} m²\n",
+        floor_area_m2
+    ));
+    result.push_str(&format!(
+        "• Tinggi ruangan       : {:.1} m\n",
+        room_height_m
+    ));
     result.push_str(&format!("• Volume ruangan       : {:.1} m³\n", room_volume));
-    result.push_str(&format!("• Laju ventilasi       : {:.2} ACH\n", ventilation_rate_ach));
+    result.push_str(&format!(
+        "• Laju ventilasi       : {:.2} ACH\n",
+        ventilation_rate_ach
+    ));
     result.push_str(&format!("• Tipe lantai          : {}\n\n", floor_name));
 
     result.push_str("PERHITUNGAN:\n");
-    result.push_str(&format!("• Koefisien masuk      : {:.4} (Bq/m²/s)/(Bq/m³)\n", entry_coeff));
-    result.push_str(&format!("• Laju masuk (E)       : {:.4} Bq/s\n", entry_rate_bq_s));
+    result.push_str(&format!(
+        "• Koefisien masuk      : {:.4} (Bq/m²/s)/(Bq/m³)\n",
+        entry_coeff
+    ));
+    result.push_str(&format!(
+        "• Laju masuk (E)       : {:.4} Bq/s\n",
+        entry_rate_bq_s
+    ));
     result.push_str(&format!("• λv (ventilasi)       : {:.6e} s⁻¹\n", lambda_v));
-    result.push_str(&format!("• λ_Rn (peluruhan)     : {:.6e} s⁻¹\n\n", lambda_rn));
+    result.push_str(&format!(
+        "• λ_Rn (peluruhan)     : {:.6e} s⁻¹\n\n",
+        lambda_rn
+    ));
 
     result.push_str("HASIL:\n");
-    result.push_str(&format!("• Radon indoor (C)     : {:.1} Bq/m³\n", indoor_radon));
-    result.push_str(&format!("• Dosis efektif tahunan: {:.2} mSv/tahun\n\n", annual_dose_msv));
+    result.push_str(&format!(
+        "• Radon indoor (C)     : {:.1} Bq/m³\n",
+        indoor_radon
+    ));
+    result.push_str(&format!(
+        "• Dosis efektif tahunan: {:.2} mSv/tahun\n\n",
+        annual_dose_msv
+    ));
 
     result.push_str("KEPATUHAN:\n");
-    result.push_str(&format!("• WHO (100 Bq/m³)      : {} {}\n",
-        if who_compliant { "MEMENUHI ✓" } else { "TIDAK MEMENUHI ✗" },
-        if !who_compliant { "— perlu tindakan" } else { "" }
+    result.push_str(&format!(
+        "• WHO (100 Bq/m³)      : {} {}\n",
+        if who_compliant {
+            "MEMENUHI ✓"
+        } else {
+            "TIDAK MEMENUHI ✗"
+        },
+        if !who_compliant {
+            "— perlu tindakan"
+        } else {
+            ""
+        }
     ));
-    result.push_str(&format!("• ICRP (300 Bq/m³)     : {} {}\n\n",
-        if icrp_compliant { "MEMENUHI ✓" } else { "TIDAK MEMENUHI ✗" },
-        if !icrp_compliant { "— tindakan segera" } else { "" }
+    result.push_str(&format!(
+        "• ICRP (300 Bq/m³)     : {} {}\n\n",
+        if icrp_compliant {
+            "MEMENUHI ✓"
+        } else {
+            "TIDAK MEMENUHI ✗"
+        },
+        if !icrp_compliant {
+            "— tindakan segera"
+        } else {
+            ""
+        }
     ));
 
     if !who_compliant && required_ach > 0.0 {

@@ -8,18 +8,18 @@ pub fn check(parameter: &str, concentration: f64, averaging_time: &str) -> Strin
     // PP 41/1999 limits in µg/m³ (except opacity in %)
     let limit: Option<f64> = match (p.as_str(), t.as_str()) {
         // SO2
-        ("SO2", "1_hour" | "1h")   => Some(900.0),
+        ("SO2", "1_hour" | "1h") => Some(900.0),
         ("SO2", "24_hour" | "24h") => Some(365.0),
         ("SO2", "annual" | "1_year" | "tahunan") => Some(60.0),
         // CO (µg/m³)
-        ("CO", "1_hour" | "1h")   => Some(30000.0),
-        ("CO", "8_hour" | "8h")   => Some(10000.0),
+        ("CO", "1_hour" | "1h") => Some(30000.0),
+        ("CO", "8_hour" | "8h") => Some(10000.0),
         // NO2
-        ("NO2", "1_hour" | "1h")   => Some(400.0),
+        ("NO2", "1_hour" | "1h") => Some(400.0),
         ("NO2", "24_hour" | "24h") => Some(150.0),
         ("NO2", "annual" | "1_year" | "tahunan") => Some(100.0),
         // O3
-        ("O3", "1_hour" | "1h")   => Some(235.0),
+        ("O3", "1_hour" | "1h") => Some(235.0),
         ("O3", "annual" | "1_year" | "tahunan") => Some(50.0),
         // PM10
         ("PM10", "24_hour" | "24h") => Some(150.0),
@@ -38,7 +38,10 @@ pub fn check(parameter: &str, concentration: f64, averaging_time: &str) -> Strin
     };
 
     if concentration < 0.0 {
-        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", concentration);
+        return format!(
+            "ERROR [E102]: Parameter tidak boleh negatif. {}",
+            concentration
+        );
     }
 
     let limit = match limit {
@@ -52,7 +55,11 @@ pub fn check(parameter: &str, concentration: f64, averaging_time: &str) -> Strin
     };
 
     let pct = (concentration / limit) * 100.0;
-    let status = if concentration <= limit { "Memenuhi Baku Mutu ✅" } else { "Melebihi Baku Mutu ❌" };
+    let status = if concentration <= limit {
+        "Memenuhi Baku Mutu ✅"
+    } else {
+        "Melebihi Baku Mutu ❌"
+    };
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Udara Ambien\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
     out.push_str("Ref: PP No. 41 Tahun 1999\n\n");
@@ -63,7 +70,9 @@ pub fn check(parameter: &str, concentration: f64, averaging_time: &str) -> Strin
     out.push_str(&format!("Persentase  : {:.1}% dari baku mutu\n\n", pct));
     out.push_str(&format!("Status: {}\n", status));
 
-    out.push_str("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Catatan Regulasi:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    out.push_str(
+        "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Catatan Regulasi:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+    );
     out.push_str("1. Nilai baku mutu di atas mengacu PP 41/1999 yang masih berlaku\n");
     out.push_str("   secara hukum untuk udara ambien (outdoor).\n");
     out.push_str("2. PP 22/2021 adalah regulasi perlindungan lingkungan hidup\n");

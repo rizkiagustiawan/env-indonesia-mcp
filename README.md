@@ -1,4 +1,4 @@
-# Env-Indonesia-MCP: God Tier Environmental Engineering AI Agent
+# Env-Indonesia-MCP: Environmental Engineering AI Agent
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Tools](https://img.shields.io/badge/tools-219-orange.svg)

@@ -1,10 +1,25 @@
 use std::process::Command;
 
-pub fn simulate_4d(volume_m3: f64, oil_type: &str, wind_speed: f64, wind_dir: f64, current_speed: f64, current_dir: f64, hours: u32, output: &str) -> String {
+pub fn simulate_4d(
+    volume_m3: f64,
+    oil_type: &str,
+    wind_speed: f64,
+    wind_dir: f64,
+    current_speed: f64,
+    current_dir: f64,
+    hours: u32,
+    output: &str,
+) -> String {
     // Oil spill drift: 3% wind + 100% current
     let drift_wind = 0.03 * wind_speed;
-    let total_drift_x = (drift_wind * (wind_dir as f64).to_radians().sin() + current_speed * (current_dir as f64).to_radians().sin()) * (hours as f64) * 3600.0;
-    let total_drift_y = (drift_wind * (wind_dir as f64).to_radians().cos() + current_speed * (current_dir as f64).to_radians().cos()) * (hours as f64) * 3600.0;
+    let total_drift_x = (drift_wind * (wind_dir as f64).to_radians().sin()
+        + current_speed * (current_dir as f64).to_radians().sin())
+        * (hours as f64)
+        * 3600.0;
+    let total_drift_y = (drift_wind * (wind_dir as f64).to_radians().cos()
+        + current_speed * (current_dir as f64).to_radians().cos())
+        * (hours as f64)
+        * 3600.0;
     let total_km = (total_drift_x * total_drift_x + total_drift_y * total_drift_y).sqrt() / 1000.0;
 
     // Evaporation (first order decay)
@@ -39,8 +54,14 @@ pub fn simulate_4d(volume_m3: f64, oil_type: &str, wind_speed: f64, wind_dir: f6
             let v = volume_m3 * (-k_evap * (*t as f64)).exp();
             let a = 1000.0 * v.powf(0.67) * ((*t as f64) * 3600.0).powf(0.33) / 1e6;
             let d = total_km * (*t as f64) / (hours as f64);
-            out.push_str(&format!("  {}h: drift {:.1}km, volume {:.0}m³ ({:.0}%), area {:.3}km²\n",
-                t, d, v, v/volume_m3*100.0, a));
+            out.push_str(&format!(
+                "  {}h: drift {:.1}km, volume {:.0}m³ ({:.0}%), area {:.3}km²\n",
+                t,
+                d,
+                v,
+                v / volume_m3 * 100.0,
+                a
+            ));
         }
     }
 
@@ -57,16 +78,26 @@ pub fn simulate_4d(volume_m3: f64, oil_type: &str, wind_speed: f64, wind_dir: f6
             .join("src/tools/ocean_modeling/ocean_viz.py");
         let result = Command::new("python3")
             .arg(viz_script.to_str().unwrap_or("ocean_viz.py"))
-            .arg("--mode").arg("oil_spill_viz")
-            .arg("--output").arg(output)
-            .arg("--volume_m3").arg(format!("{}", volume_m3))
-            .arg("--oil_type").arg(oil_type)
-            .arg("--wind_speed").arg(format!("{}", wind_speed))
-            .arg("--wind_dir").arg(format!("{}", wind_dir))
-            .arg("--current_speed").arg(format!("{}", current_speed))
-            .arg("--current_dir").arg(format!("{}", current_dir))
-            .arg("--hours").arg(format!("{}", hours))
-            .arg("--title").arg("Oil Spill Trajectory")
+            .arg("--mode")
+            .arg("oil_spill_viz")
+            .arg("--output")
+            .arg(output)
+            .arg("--volume_m3")
+            .arg(format!("{}", volume_m3))
+            .arg("--oil_type")
+            .arg(oil_type)
+            .arg("--wind_speed")
+            .arg(format!("{}", wind_speed))
+            .arg("--wind_dir")
+            .arg(format!("{}", wind_dir))
+            .arg("--current_speed")
+            .arg(format!("{}", current_speed))
+            .arg("--current_dir")
+            .arg(format!("{}", current_dir))
+            .arg("--hours")
+            .arg(format!("{}", hours))
+            .arg("--title")
+            .arg("Oil Spill Trajectory")
             .output();
         match result {
             Ok(o) => {

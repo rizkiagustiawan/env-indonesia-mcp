@@ -5,8 +5,12 @@ pub fn calculate(compound: &str, concentration_mgl: f64, temperature_c: f64) -> 
     let mut out = String::from("=== Hukum Henry ===\n");
     out.push_str("Ref: Sander (2015), Compilation of Henry's Law Constants\n\n");
 
-    if concentration_mgl < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
-    if temperature_c < 0.0 || temperature_c > 80.0 { return "ERROR: Suhu harus antara 0-80°C.".into(); }
+    if concentration_mgl < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
+    if temperature_c < 0.0 || temperature_c > 80.0 {
+        return "ERROR: Suhu harus antara 0-80°C.".into();
+    }
 
     let compound_lower = compound.to_lowercase();
 
@@ -45,7 +49,11 @@ pub fn calculate(compound: &str, concentration_mgl: f64, temperature_c: f64) -> 
     out.push_str(&format!("Konstanta Henry:\n  KH (25°C) = {:.4e} atm·m³/mol\n  KH ({}°C) = {:.4e} atm·m³/mol\n  Hcc (dimensionless) = {:.4}\n\n",
         kh_25, temperature_c, kh_t, hcc));
 
-    out.push_str(&format!("Tekanan parsial:\n  p = KH × C = {:.4e} atm\n  p = {:.4} Pa\n\n", p_atm, p_atm * 101325.0));
+    out.push_str(&format!(
+        "Tekanan parsial:\n  p = KH × C = {:.4e} atm\n  p = {:.4} Pa\n\n",
+        p_atm,
+        p_atm * 101325.0
+    ));
 
     // Air stripping feasibility
     out.push_str("Kelayakan air stripping:\n");

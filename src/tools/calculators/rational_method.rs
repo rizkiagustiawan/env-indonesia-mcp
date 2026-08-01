@@ -6,12 +6,18 @@ pub fn calculate(c_coeff: f64, i_mm_hr: f64, a_ha: f64, land_use: &str) -> Strin
     let mut out = String::from("=== Metode Rasional — Debit Puncak ===\n");
     out.push_str("Ref: Kuichling (1889), Suripin (2004)\n\n");
 
-    if i_mm_hr <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
-    if a_ha <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+    if i_mm_hr <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
+    if a_ha <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
 
     // Lookup C from land use if c_coeff is 0
     let c = if c_coeff > 0.0 {
-        if c_coeff > 1.0 { return "ERROR: Koefisien limpasan (C) harus ≤ 1.".into(); }
+        if c_coeff > 1.0 {
+            return "ERROR: Koefisien limpasan (C) harus ≤ 1.".into();
+        }
         c_coeff
     } else {
         let land_lower = land_use.to_lowercase();
@@ -38,14 +44,23 @@ pub fn calculate(c_coeff: f64, i_mm_hr: f64, a_ha: f64, land_use: &str) -> Strin
     if c_coeff <= 0.0 {
         out.push_str(&format!(" ({})", land_use));
     }
-    out.push_str(&format!("\n  I (intensitas hujan) = {:.1} mm/jam\n  A (luas DAS) = {:.2} ha\n\n", i_mm_hr, a_ha));
+    out.push_str(&format!(
+        "\n  I (intensitas hujan) = {:.1} mm/jam\n  A (luas DAS) = {:.2} ha\n\n",
+        i_mm_hr, a_ha
+    ));
 
     out.push_str("Perhitungan:\n");
     out.push_str(&format!("  Q = C × I × A / 360\n"));
-    out.push_str(&format!("  Q = {:.2} × {:.1} × {:.2} / 360\n", c, i_mm_hr, a_ha));
+    out.push_str(&format!(
+        "  Q = {:.2} × {:.1} × {:.2} / 360\n",
+        c, i_mm_hr, a_ha
+    ));
     out.push_str(&format!("  Q = {:.4} m³/s ({:.1} L/s)\n\n", q_m3s, q_ls));
 
-    out.push_str(&format!("Kapasitas drainase yang direkomendasikan: ≥ {:.1} L/s\n\n", q_ls * 1.2));
+    out.push_str(&format!(
+        "Kapasitas drainase yang direkomendasikan: ≥ {:.1} L/s\n\n",
+        q_ls * 1.2
+    ));
 
     // Reference table
     out.push_str("Koefisien limpasan (C) tata guna lahan Indonesia:\n");

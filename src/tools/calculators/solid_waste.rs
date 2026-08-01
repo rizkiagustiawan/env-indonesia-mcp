@@ -19,8 +19,14 @@ pub fn calculate(population: u64, generation_rate_kg: f64) -> String {
 
     let mut out = String::from("=== Solid Waste Calculator ===\n");
     out.push_str("Ref: UU 18/2008, SNI 19-2454:2002, Jakstranas 2025\n\n");
-    out.push_str(&format!("Input:\n  Populasi = {} jiwa\n  Laju timbulan = {:.2} kg/orang/hari\n\n", population, generation_rate_kg));
-    out.push_str(&format!("Timbulan:\n  Harian = {:.1} ton/hari\n  Tahunan = {:.0} ton/tahun\n\n", daily_ton, annual_ton));
+    out.push_str(&format!(
+        "Input:\n  Populasi = {} jiwa\n  Laju timbulan = {:.2} kg/orang/hari\n\n",
+        population, generation_rate_kg
+    ));
+    out.push_str(&format!(
+        "Timbulan:\n  Harian = {:.1} ton/hari\n  Tahunan = {:.0} ton/tahun\n\n",
+        daily_ton, annual_ton
+    ));
     out.push_str(&format!("Komposisi (tipikal Indonesia):\n  Organik: {:.0}% ({:.1} ton/hari)\n  Plastik: {:.0}% ({:.1} ton/hari)\n  Kertas: {:.0}% ({:.1} ton/hari)\n  Logam: {:.0}% ({:.1} ton/hari)\n  Kaca: {:.0}% ({:.1} ton/hari)\n  Lainnya: {:.0}% ({:.1} ton/hari)\n\n",
         organik_pct, daily_ton * organik_pct / 100.0,
         plastik_pct, daily_ton * plastik_pct / 100.0,

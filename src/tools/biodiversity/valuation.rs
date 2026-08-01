@@ -27,34 +27,57 @@ pub fn calculate(method: &str, params_json: &str) -> String {
 }
 
 fn replacement_cost(params: &serde_json::Value) -> String {
-    let ecosystem = params.get("ecosystem")
+    let ecosystem = params
+        .get("ecosystem")
         .and_then(|v| v.as_str())
         .unwrap_or("mangrove");
-    let area_ha = params.get("area_ha")
+    let area_ha = params
+        .get("area_ha")
         .and_then(|v| v.as_f64())
         .unwrap_or(1.0);
-    let condition = params.get("condition")
+    let condition = params
+        .get("condition")
         .and_then(|v| v.as_str())
         .unwrap_or("sedang");
 
     // Reference values per hectare (IDR) based on Indonesian studies
     let (cost_per_ha, ecosystem_name, services) = match ecosystem.to_lowercase().as_str() {
-        "mangrove" => (350_000_000.0, "Hutan Mangrove",
-            "perlindungan pantai, nursery ikan, penyerapan karbon, kayu bakar"),
-        "terumbu_karang" | "coral" => (500_000_000.0, "Terumbu Karang",
-            "perikanan, pariwisata, perlindungan pantai, biodiversitas"),
-        "hutan_tropis" | "tropical_forest" => (250_000_000.0, "Hutan Tropis",
-            "kayu, HHBK, penyerapan karbon, pengaturan air, biodiversitas"),
-        "padang_lamun" | "seagrass" => (150_000_000.0, "Padang Lamun",
-            "nursery ikan, penyerapan karbon, stabilisasi sedimen"),
-        "rawa_gambut" | "peatland" => (200_000_000.0, "Rawa Gambut",
-            "penyimpanan karbon, pengaturan air, biodiversitas"),
-        "hutan_bakau" => (300_000_000.0, "Hutan Bakau",
-            "perlindungan pantai, perikanan, penyerapan karbon"),
-        "danau" | "lake" => (100_000_000.0, "Ekosistem Danau",
-            "air bersih, perikanan, pariwisata, pengaturan banjir"),
-        _ => (200_000_000.0, "Ekosistem Umum",
-            "jasa ekosistem umum"),
+        "mangrove" => (
+            350_000_000.0,
+            "Hutan Mangrove",
+            "perlindungan pantai, nursery ikan, penyerapan karbon, kayu bakar",
+        ),
+        "terumbu_karang" | "coral" => (
+            500_000_000.0,
+            "Terumbu Karang",
+            "perikanan, pariwisata, perlindungan pantai, biodiversitas",
+        ),
+        "hutan_tropis" | "tropical_forest" => (
+            250_000_000.0,
+            "Hutan Tropis",
+            "kayu, HHBK, penyerapan karbon, pengaturan air, biodiversitas",
+        ),
+        "padang_lamun" | "seagrass" => (
+            150_000_000.0,
+            "Padang Lamun",
+            "nursery ikan, penyerapan karbon, stabilisasi sedimen",
+        ),
+        "rawa_gambut" | "peatland" => (
+            200_000_000.0,
+            "Rawa Gambut",
+            "penyimpanan karbon, pengaturan air, biodiversitas",
+        ),
+        "hutan_bakau" => (
+            300_000_000.0,
+            "Hutan Bakau",
+            "perlindungan pantai, perikanan, penyerapan karbon",
+        ),
+        "danau" | "lake" => (
+            100_000_000.0,
+            "Ekosistem Danau",
+            "air bersih, perikanan, pariwisata, pengaturan banjir",
+        ),
+        _ => (200_000_000.0, "Ekosistem Umum", "jasa ekosistem umum"),
     };
 
     let condition_factor = match condition {
@@ -87,25 +110,37 @@ fn replacement_cost(params: &serde_json::Value) -> String {
          ekonomi lingkungan di Indonesia. Nilai aktual dapat bervariasi\n\
          tergantung lokasi, kondisi spesifik, dan metodologi yang digunakan.\n\
          ══════════════════════════════════════════════",
-        ecosystem_name, area_ha, condition, condition_factor, services,
-        cost_per_ha, condition_factor, total_value, annual_service
+        ecosystem_name,
+        area_ha,
+        condition,
+        condition_factor,
+        services,
+        cost_per_ha,
+        condition_factor,
+        total_value,
+        annual_service
     )
 }
 
 fn travel_cost(params: &serde_json::Value) -> String {
-    let site_name = params.get("site_name")
+    let site_name = params
+        .get("site_name")
         .and_then(|v| v.as_str())
         .unwrap_or("Kawasan Wisata Alam");
-    let visitors_per_year = params.get("visitors_per_year")
+    let visitors_per_year = params
+        .get("visitors_per_year")
         .and_then(|v| v.as_f64())
         .unwrap_or(10000.0);
-    let avg_travel_cost = params.get("avg_travel_cost_idr")
+    let avg_travel_cost = params
+        .get("avg_travel_cost_idr")
         .and_then(|v| v.as_f64())
         .unwrap_or(500000.0);
-    let avg_time_hours = params.get("avg_time_hours")
+    let avg_time_hours = params
+        .get("avg_time_hours")
         .and_then(|v| v.as_f64())
         .unwrap_or(4.0);
-    let avg_income_per_hour = params.get("avg_income_per_hour_idr")
+    let avg_income_per_hour = params
+        .get("avg_income_per_hour_idr")
         .and_then(|v| v.as_f64())
         .unwrap_or(25000.0);
 
@@ -132,29 +167,41 @@ fn travel_cost(params: &serde_json::Value) -> String {
          CATATAN: Consumer surplus dihitung menggunakan\n\
          pendekatan linear demand curve approximation.\n\
          ══════════════════════════════════════════════",
-        site_name, visitors_per_year,
-        avg_travel_cost, avg_time_hours, time_cost, total_individual_cost,
-        total_annual_value, consumer_surplus, total_annual_value + consumer_surplus
+        site_name,
+        visitors_per_year,
+        avg_travel_cost,
+        avg_time_hours,
+        time_cost,
+        total_individual_cost,
+        total_annual_value,
+        consumer_surplus,
+        total_annual_value + consumer_surplus
     )
 }
 
 fn hedonic(params: &serde_json::Value) -> String {
-    let property_near = params.get("property_value_near_idr")
+    let property_near = params
+        .get("property_value_near_idr")
         .and_then(|v| v.as_f64())
         .unwrap_or(500_000_000.0);
-    let property_far = params.get("property_value_far_idr")
+    let property_far = params
+        .get("property_value_far_idr")
         .and_then(|v| v.as_f64())
         .unwrap_or(400_000_000.0);
-    let num_properties = params.get("num_properties")
+    let num_properties = params
+        .get("num_properties")
         .and_then(|v| v.as_f64())
         .unwrap_or(100.0);
-    let amenity = params.get("amenity")
+    let amenity = params
+        .get("amenity")
         .and_then(|v| v.as_str())
         .unwrap_or("ruang terbuka hijau");
-    let distance_near = params.get("distance_near_m")
+    let distance_near = params
+        .get("distance_near_m")
         .and_then(|v| v.as_f64())
         .unwrap_or(500.0);
-    let distance_far = params.get("distance_far_m")
+    let distance_far = params
+        .get("distance_far_m")
         .and_then(|v| v.as_f64())
         .unwrap_or(2000.0);
 
@@ -182,43 +229,46 @@ fn hedonic(params: &serde_json::Value) -> String {
          masyarakat terhadap amenitas lingkungan tersebut.\n\
          ══════════════════════════════════════════════",
         amenity,
-        distance_near, property_near,
-        distance_far, property_far,
-        diff, pct_premium,
-        diff, num_properties, total_amenity_value,
-        amenity, pct_premium
+        distance_near,
+        property_near,
+        distance_far,
+        property_far,
+        diff,
+        pct_premium,
+        diff,
+        num_properties,
+        total_amenity_value,
+        amenity,
+        pct_premium
     )
 }
 
 fn damage_cost(params: &serde_json::Value) -> String {
-    let damage_type = params.get("damage_type")
+    let damage_type = params
+        .get("damage_type")
         .and_then(|v| v.as_str())
         .unwrap_or("pencemaran_air");
-    let area_ha = params.get("area_ha")
+    let area_ha = params
+        .get("area_ha")
         .and_then(|v| v.as_f64())
         .unwrap_or(10.0);
-    let severity = params.get("severity")
+    let severity = params
+        .get("severity")
         .and_then(|v| v.as_str())
         .unwrap_or("sedang");
-    let duration_years = params.get("duration_years")
+    let duration_years = params
+        .get("duration_years")
         .and_then(|v| v.as_f64())
         .unwrap_or(5.0);
 
     let (base_cost_per_ha, damage_desc, recovery_time) = match damage_type {
-        "pencemaran_air" | "water_pollution" =>
-            (50_000_000.0, "Pencemaran Air", "2-5 tahun"),
-        "pencemaran_udara" | "air_pollution" =>
-            (30_000_000.0, "Pencemaran Udara", "1-3 tahun"),
-        "pencemaran_tanah" | "soil_pollution" =>
-            (75_000_000.0, "Pencemaran Tanah", "5-20 tahun"),
-        "deforestasi" | "deforestation" =>
-            (250_000_000.0, "Deforestasi", "20-50 tahun"),
-        "erosi" | "erosion" =>
-            (40_000_000.0, "Erosi Tanah", "5-15 tahun"),
-        "banjir" | "flooding" =>
-            (100_000_000.0, "Kerusakan Banjir", "1-2 tahun"),
-        "tumpahan_minyak" | "oil_spill" =>
-            (200_000_000.0, "Tumpahan Minyak", "5-20 tahun"),
+        "pencemaran_air" | "water_pollution" => (50_000_000.0, "Pencemaran Air", "2-5 tahun"),
+        "pencemaran_udara" | "air_pollution" => (30_000_000.0, "Pencemaran Udara", "1-3 tahun"),
+        "pencemaran_tanah" | "soil_pollution" => (75_000_000.0, "Pencemaran Tanah", "5-20 tahun"),
+        "deforestasi" | "deforestation" => (250_000_000.0, "Deforestasi", "20-50 tahun"),
+        "erosi" | "erosion" => (40_000_000.0, "Erosi Tanah", "5-15 tahun"),
+        "banjir" | "flooding" => (100_000_000.0, "Kerusakan Banjir", "1-2 tahun"),
+        "tumpahan_minyak" | "oil_spill" => (200_000_000.0, "Tumpahan Minyak", "5-20 tahun"),
         _ => (50_000_000.0, "Kerusakan Lingkungan Umum", "3-10 tahun"),
     };
 
@@ -254,21 +304,33 @@ fn damage_cost(params: &serde_json::Value) -> String {
          CATATAN: Nilai ini dapat digunakan sebagai dasar\n\
          penetapan ganti rugi lingkungan hidup sesuai UU 32/2009.\n\
          ══════════════════════════════════════════════",
-        damage_desc, area_ha, severity, severity_factor, duration_years, recovery_time,
-        cleanup_cost, lost_productivity, ecosystem_service_loss, total_damage
+        damage_desc,
+        area_ha,
+        severity,
+        severity_factor,
+        duration_years,
+        recovery_time,
+        cleanup_cost,
+        lost_productivity,
+        ecosystem_service_loss,
+        total_damage
     )
 }
 
 fn benefit_transfer(params: &serde_json::Value) -> String {
-    let ecosystem = params.get("ecosystem")
+    let ecosystem = params
+        .get("ecosystem")
         .and_then(|v| v.as_str())
         .unwrap_or("mangrove");
-    let area_ha = params.get("area_ha")
+    let area_ha = params
+        .get("area_ha")
         .and_then(|v| v.as_f64())
         .unwrap_or(100.0);
-    let reference_value = params.get("reference_value_usd_per_ha")
+    let reference_value = params
+        .get("reference_value_usd_per_ha")
         .and_then(|v| v.as_f64());
-    let ppp_factor = params.get("ppp_factor")
+    let ppp_factor = params
+        .get("ppp_factor")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.35);
 
@@ -312,8 +374,14 @@ fn benefit_transfer(params: &serde_json::Value) -> String {
          perbedaan konteks antara lokasi referensi dan lokasi studi.\n\
          Faktor PPP digunakan untuk menyesuaikan perbedaan daya beli.\n\
          ══════════════════════════════════════════════",
-        ecosystem, area_ha, source_study,
-        ref_val_usd, ppp_factor, exchange_rate, adjusted_value,
-        total_annual, total_25_year
+        ecosystem,
+        area_ha,
+        source_study,
+        ref_val_usd,
+        ppp_factor,
+        exchange_rate,
+        adjusted_value,
+        total_annual,
+        total_25_year
     )
 }

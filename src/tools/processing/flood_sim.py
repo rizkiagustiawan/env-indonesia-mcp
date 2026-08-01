@@ -9,14 +9,20 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-def load_dem(dem_path, max_dim=300):
+def load_dem(dem_path, max_dim=None):
     import rasterio
     with rasterio.open(dem_path) as src:
         dem = src.read(1)
         transform = src.transform
-    if dem.shape[0] > max_dim or dem.shape[1] > max_dim:
-        factor = max(dem.shape[0] // max_dim, dem.shape[1] // max_dim, 1)
+        
+    # High resolution optimization. 
+    # Max 1500 to keep it detailed but prevent Matplotlib from hanging/OOM.
+    max_safe_dim = 1000
+    if dem.shape[0] > max_safe_dim or dem.shape[1] > max_safe_dim:
+        print(f"[WARNING] Matriks terlalu besar ({dem.shape}). Menurunkan resolusi ke max {max_safe_dim} agar tidak OOM...")
+        factor = max(dem.shape[0] // max_safe_dim, dem.shape[1] // max_safe_dim, 1)
         dem = dem[::factor, ::factor]
+
     dem = np.where(dem < -9000, np.nan, dem)
     dem = np.where(np.isnan(dem), np.nanmin(dem), dem)
     return dem
@@ -36,7 +42,7 @@ def render_flood_3d(dem_path, output_path, water_level_m, title="3D Flood Simula
         # Terrain surface
         terrain_colors = plt.cm.terrain((dem - np.nanmin(dem)) / (np.nanmax(dem) - np.nanmin(dem) + 0.001))
         ax.plot_surface(x, y, dem * exaggeration, facecolors=terrain_colors,
-                       rstride=2, cstride=2, antialiased=True, shade=True, alpha=0.9)
+                       rstride=2, cstride=2, antialiased=False, shade=True, alpha=0.9)
 
         # Water surface (flat plane at water_level)
         water = np.full_like(dem, water_level_m)
@@ -49,7 +55,7 @@ def render_flood_3d(dem_path, output_path, water_level_m, title="3D Flood Simula
         water_colors[~water_mask] = [0, 0, 0, 0]  # transparan
 
         ax.plot_surface(x, y, water_visible, facecolors=water_colors,
-                       rstride=2, cstride=2, antialiased=True, shade=False)
+                       rstride=2, cstride=2, antialiased=False, shade=False)
 
         # Stats
         flooded_area_pct = np.sum(water_mask) / water_mask.size * 100

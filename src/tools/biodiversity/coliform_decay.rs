@@ -1,12 +1,21 @@
 /// Peluruhan Coliform — Model Mancini
 /// Ref: Mancini (1978), PP 22/2021 tentang Baku Mutu Air
 
-pub fn calculate(initial_count_per_100ml: f64, temperature_c: f64, time_hours: f64, water_type: &str) -> String {
-    if initial_count_per_100ml <= 0.0 { return "ERROR [E102]: Parameter harus > 0.".into(); }
+pub fn calculate(
+    initial_count_per_100ml: f64,
+    temperature_c: f64,
+    time_hours: f64,
+    water_type: &str,
+) -> String {
+    if initial_count_per_100ml <= 0.0 {
+        return "ERROR [E102]: Parameter harus > 0.".into();
+    }
     if temperature_c < 0.0 || temperature_c > 45.0 {
         return "ERROR: Suhu harus antara 0 dan 45 °C.".into();
     }
-    if time_hours < 0.0 { return "ERROR [E102]: Parameter tidak boleh negatif.".into(); }
+    if time_hours < 0.0 {
+        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+    }
 
     let wt_lower = water_type.to_lowercase();
 
@@ -41,7 +50,7 @@ pub fn calculate(initial_count_per_100ml: f64, temperature_c: f64, time_hours: f
     };
 
     // PP 22/2021 coliform limits
-    let limit_class1 = 1000.0;  // per 100 mL
+    let limit_class1 = 1000.0; // per 100 mL
     let limit_class2 = 5000.0;
     let limit_class3 = 10000.0;
     let _limit_class4 = 10000.0; // same or no limit
@@ -75,34 +84,82 @@ pub fn calculate(initial_count_per_100ml: f64, temperature_c: f64, time_hours: f
     result.push_str("  T90 = ln(10) / k\n\n");
 
     result.push_str("INPUT:\n");
-    result.push_str(&format!("• Coliform awal (N₀)   : {:.0}/100mL\n", initial_count_per_100ml));
-    result.push_str(&format!("• Suhu air             : {:.1} °C\n", temperature_c));
+    result.push_str(&format!(
+        "• Coliform awal (N₀)   : {:.0}/100mL\n",
+        initial_count_per_100ml
+    ));
+    result.push_str(&format!(
+        "• Suhu air             : {:.1} °C\n",
+        temperature_c
+    ));
     result.push_str(&format!("• Waktu kontak         : {:.1} jam\n", time_hours));
     result.push_str(&format!("• Tipe perairan        : {}\n\n", water_name));
 
     result.push_str("PARAMETER PELURUHAN:\n");
     result.push_str(&format!("• k_base               : {:.2} hari⁻¹\n", k_base));
-    result.push_str(&format!("• k pada {:.1}°C         : {:.4} hari⁻¹ ({:.6} jam⁻¹)\n", temperature_c, k_day, k_hour));
-    result.push_str(&format!("• T90                  : {:.1} jam ({:.1} hari)\n\n", t90_hr, t90_hr / 24.0));
+    result.push_str(&format!(
+        "• k pada {:.1}°C         : {:.4} hari⁻¹ ({:.6} jam⁻¹)\n",
+        temperature_c, k_day, k_hour
+    ));
+    result.push_str(&format!(
+        "• T90                  : {:.1} jam ({:.1} hari)\n\n",
+        t90_hr,
+        t90_hr / 24.0
+    ));
 
     result.push_str("HASIL:\n");
-    result.push_str(&format!("• Coliform tersisa     : {:.0}/100mL\n", remaining));
-    result.push_str(&format!("• Log removal          : {:.2}-log\n", log_removal));
-    result.push_str(&format!("• Penurunan            : {:.1}%\n\n", (1.0 - remaining / initial_count_per_100ml) * 100.0));
+    result.push_str(&format!(
+        "• Coliform tersisa     : {:.0}/100mL\n",
+        remaining
+    ));
+    result.push_str(&format!(
+        "• Log removal          : {:.2}-log\n",
+        log_removal
+    ));
+    result.push_str(&format!(
+        "• Penurunan            : {:.1}%\n\n",
+        (1.0 - remaining / initial_count_per_100ml) * 100.0
+    ));
 
     result.push_str("KEPATUHAN PP 22/2021 (Baku Mutu Coliform):\n");
-    result.push_str(&format!("• Kelas I  (1.000/100mL)  : {}\n",
-        if comply_class1 { "MEMENUHI ✓" } else { "TIDAK MEMENUHI ✗" }));
-    result.push_str(&format!("• Kelas II (5.000/100mL)  : {}\n",
-        if comply_class2 { "MEMENUHI ✓" } else { "TIDAK MEMENUHI ✗" }));
-    result.push_str(&format!("• Kelas III (10.000/100mL) : {}\n\n",
-        if comply_class3 { "MEMENUHI ✓" } else { "TIDAK MEMENUHI ✗" }));
+    result.push_str(&format!(
+        "• Kelas I  (1.000/100mL)  : {}\n",
+        if comply_class1 {
+            "MEMENUHI ✓"
+        } else {
+            "TIDAK MEMENUHI ✗"
+        }
+    ));
+    result.push_str(&format!(
+        "• Kelas II (5.000/100mL)  : {}\n",
+        if comply_class2 {
+            "MEMENUHI ✓"
+        } else {
+            "TIDAK MEMENUHI ✗"
+        }
+    ));
+    result.push_str(&format!(
+        "• Kelas III (10.000/100mL) : {}\n\n",
+        if comply_class3 {
+            "MEMENUHI ✓"
+        } else {
+            "TIDAK MEMENUHI ✗"
+        }
+    ));
 
     if !comply_class1 {
         result.push_str("WAKTU YANG DIPERLUKAN:\n");
-        result.push_str(&format!("• Untuk Kelas I  : {:.1} jam ({:.1} hari)\n", time_to_class1, time_to_class1 / 24.0));
+        result.push_str(&format!(
+            "• Untuk Kelas I  : {:.1} jam ({:.1} hari)\n",
+            time_to_class1,
+            time_to_class1 / 24.0
+        ));
         if !comply_class2 {
-            result.push_str(&format!("• Untuk Kelas II : {:.1} jam ({:.1} hari)\n", time_to_class2, time_to_class2 / 24.0));
+            result.push_str(&format!(
+                "• Untuk Kelas II : {:.1} jam ({:.1} hari)\n",
+                time_to_class2,
+                time_to_class2 / 24.0
+            ));
         }
         result.push('\n');
     }

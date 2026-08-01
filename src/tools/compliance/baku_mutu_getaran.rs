@@ -5,7 +5,10 @@ pub fn check(zone: &str, vibration_mm_s: f64) -> String {
     let z = zone.to_lowercase();
 
     if vibration_mm_s < 0.0 {
-        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", vibration_mm_s);
+        return format!(
+            "ERROR [E102]: Parameter tidak boleh negatif. {}",
+            vibration_mm_s
+        );
     }
 
     // KepmenLH 49/1996 limits in mm/s
@@ -14,17 +17,25 @@ pub fn check(zone: &str, vibration_mm_s: f64) -> String {
         "kantor" | "perkantoran" | "office" => (5.0, "Perkantoran"),
         "industri" | "industrial" => (10.0, "Kawasan Industri"),
         "rumah_sakit" | "hospital" => (1.0, "Rumah Sakit & Fasilitas Kesehatan"),
-        _ => return format!(
-            "ERROR: Zona '{}' tidak ditemukan dalam KepmenLH 49/1996.\n\
+        _ => {
+            return format!(
+                "ERROR: Zona '{}' tidak ditemukan dalam KepmenLH 49/1996.\n\
              Zona valid: pemukiman, kantor, industri, rumah_sakit",
-            zone
-        ),
+                zone
+            )
+        }
     };
 
     let pct = (vibration_mm_s / limit) * 100.0;
-    let status = if vibration_mm_s <= limit { "Memenuhi Baku Mutu ✅" } else { "Melebihi Baku Mutu ❌" };
+    let status = if vibration_mm_s <= limit {
+        "Memenuhi Baku Mutu ✅"
+    } else {
+        "Melebihi Baku Mutu ❌"
+    };
 
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Getaran\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    let mut out = String::from(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Getaran\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+    );
     out.push_str("Ref: KepmenLH No. 49 Tahun 1996\n\n");
     out.push_str(&format!("Zona        : {} ({})\n", zone, zone_desc));
     out.push_str(&format!("Terukur     : {:.2} mm/s\n", vibration_mm_s));
