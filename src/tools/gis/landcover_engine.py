@@ -624,20 +624,26 @@ def ensemble_classification(lat, lon, buffer_km, training_geojson, start_date, e
         tif_data = requests.get(url, timeout=120).content
         with open(geotiff_path, 'wb') as f:
             f.write(tif_data)
-        print(f"GeoTIFF: {geotiff_path} ({len(tif_data)/1024:.1f} KB)")
+        if not json_output:
+            print(f"GeoTIFF: {geotiff_path} ({len(tif_data)/1024:.1f} KB)")
     except Exception as e:
-        print(f"GeoTIFF export gagal: {e}")
+        if not json_output:
+            print(f"GeoTIFF export gagal: {e}")
 
-    print(f"SUCCESS: Ensemble classification. Output: {output_path}")
-    print(f"Classifier: RF(100) + GBT(100) + SVM(RBF)")
-    agree_mean = agree_stats.get('agreement', agree_stats.get('agreement_mean', 'N/A'))
-    if isinstance(agree_mean, (int, float)):
-        print(f"Agreement rata-rata: {agree_mean:.2f}/3.0")
+    if json_output:
+        # For 'classify' we don't have validation data to run olofsson, so we emit warning
+        print(format_scientific_result("landcover_area", class_hist, sensor="Dynamic World", resolution_m=10))
     else:
-        print(f"Agreement rata-rata: {agree_mean}")
-    print(f"Distribusi kelas: {class_hist}")
-    print(f"Majority voting: mode() dari 3 classifier")
-    print(f"Band output: class_ensemble, class_rf, class_gbt, class_svm, agreement")
+        print(f"SUCCESS: Ensemble classification. Output: {output_path}")
+        print(f"Classifier: RF(100) + GBT(100) + SVM(RBF)")
+        agree_mean = agree_stats.get('agreement', agree_stats.get('agreement_mean', 'N/A'))
+        if isinstance(agree_mean, (int, float)):
+            print(f"Agreement rata-rata: {agree_mean:.2f}/3.0")
+        else:
+            print(f"Agreement rata-rata: {agree_mean}")
+        print(f"Distribusi kelas: {class_hist}")
+        print(f"Majority voting: mode() dari 3 classifier")
+        print(f"Band output: class_ensemble, class_rf, class_gbt, class_svm, agreement")
 
 
 def ccdc_change_detection(lat, lon, buffer_km, start_date, end_date, output_path):
@@ -892,10 +898,69 @@ def bfast_monitor(lat, lon, buffer_km, history_start, history_end, monitor_start
     print(f"Ref: Verbesselt et al. 2012 (BFASTmonitor concept, GEE adaptation)")
 
 
+import sys
+import json
+from datetime import datetime
+
+def format_scientific_result(parameter, class_hist, adjusted_areas=None, sensor="Dynamic World", resolution_m=10):
+    # Construct M2 compliant ScientificResult JSON
+    # We will pick the dominant class area for the 'value' field, but store all in claims/assumptions
+    if not class_hist:
+        return json.dumps({"status": "insufficient_data"})
+        
+    dominant_class = max(class_hist.items(), key=lambda x: x[1])
+    value = dominant_class[1]
+    
+    prov = {
+        "source_kind": "api",
+        "source_identifier": sensor.lower().replace(" ", "_"),
+        "acquisition_timestamp": datetime.utcnow().isoformat() + "Z",
+        "sensor": sensor,
+        "resolution": resolution_m
+    }
+    
+    claims = []
+    claims.append({"claim_type": "distribution", "description": json.dumps(class_hist)})
+    
+    uncertainty = None
+    if adjusted_areas and str(dominant_class[0]) in adjusted_areas:
+        adj, ci = adjusted_areas[str(dominant_class[0])]
+        value = adj # Use unbiased area
+        uncertainty = {
+            "uncertainty_type": "confidence_interval",
+            "lower": max(0, adj - ci),
+            "upper": adj + ci,
+            "method": "olofsson_2014",
+            "confidence_level": 0.95
+        }
+        claims.append({"claim_type": "accuracy", "description": "Area adjusted via Olofsson 2014 robust estimator."})
+    else:
+        claims.append({"claim_type": "warning", "description": "Raw pixel count used. Subject to allocation disagreement bias."})
+        
+    res = {
+        "parameter": parameter,
+        "value": value,
+        "unit": "ha",
+        "status": "valid",
+        "provenance": prov,
+        "claims": claims
+    }
+    if uncertainty:
+        res["uncertainty"] = uncertainty
+        
+    return json.dumps(res)
+
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("ERROR: Usage: landcover_engine.py <mode> [args...]")
+    if len(sys.argv) < 3:
+        print("Usage: python3 landcover_engine.py <mode> <args...> [--json-result]")
         sys.exit(1)
+        
+    # Check for json flag
+    json_output = False
+    if '--json-result' in sys.argv:
+        json_output = True
+        sys.argv.remove('--json-result')
+
 
     mode = sys.argv[1]
     try:

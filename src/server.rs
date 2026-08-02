@@ -2133,14 +2133,17 @@ impl EnvIndonesiaServer {
         description = "[LEGACY → use land_cover_classify] Land Cover Classifier via GEE Sentinel-2."
     )]
     fn gis_land_cover_classifier(&self) -> String {
-        tools::gis::landcover::classify(
+        match tools::gis::landcover::classify(
             -8.65,
             116.35,
             10.0,
-            "2024-01-01",
-            "2024-06-30",
+            "2023-01-01",
+            "2023-12-31",
             "/tmp/landcover.tif",
-        )
+        ) {
+            Ok(res) => serde_json::to_string_pretty(&res).unwrap_or_else(|e| format!("JSON Error: {}", e)),
+            Err(e) => e,
+        }
     }
 
     #[tool(
@@ -4016,14 +4019,17 @@ impl EnvIndonesiaServer {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
             return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
         }
-        tools::gis::landcover::classify(
+        match tools::gis::landcover::classify(
             p.lat,
             p.lon,
             p.buffer_km,
             &p.start_date,
             &p.end_date,
             &p.output_path,
-        )
+        ) {
+            Ok(res) => serde_json::to_string_pretty(&res).unwrap_or_else(|e| format!("JSON Error: {}", e)),
+            Err(e) => e,
+        }
     }
 
     #[tool(
