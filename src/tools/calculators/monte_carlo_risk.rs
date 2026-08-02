@@ -46,13 +46,14 @@ pub fn simulate(
     csf_mgkgd: f64,          // Cancer Slope Factor (mg/kg/day)⁻¹, 0 if non-carcinogen
 ) -> String {
     let n = n_iterations.max(100).min(100000) as usize;
+    
+    // 2D-MCA specific: we divide n_iterations to balance outer/inner loops.
+    // e.g. if n=1000, outer=20, inner=50.
+    let n_outer = (n as f64).sqrt().max(10.0) as usize;
+    let n_inner = n / n_outer;
+    
     let mut rng = Rng::new(42);
 
-    // Exposure parameter distributions (Indonesia-specific, Kemenkes 2012)
-    // BW: lognormal, median=55 kg adult, GSD=1.2
-    // fE: normal, mean=350 d/yr, std=15
-    // Dt: normal, mean=30 yr, std=5
-    // IR (ingestion rate): lognormal, median=2 L/d (water) or 0.03 kg/d (soil)
     let (bw_median, bw_gsd) = match population {
         "child" | "anak" => (18.0, 1.3),
         _ => (55.0, 1.2),
@@ -63,84 +64,81 @@ pub fn simulate(
         _ => (30.0, 5.0),
     };
     let (ir_median, ir_gsd) = match pathway {
-        "ingestion" | "oral" => (2.0, 1.3),       // L/day water
-        "inhalation" | "inhalasi" => (20.0, 1.2), // m³/day
-        "dermal" | "kulit" => (0.005, 1.5),       // kg/event
+        "ingestion" | "oral" => (2.0, 1.3),       
+        "inhalation" | "inhalasi" => (20.0, 1.2), 
+        "dermal" | "kulit" => (0.005, 1.5),       
         _ => (2.0, 1.3),
     };
 
-    let at_days = 365.0 * 70.0; // averaging time (lifetime = 70 yr)
+    let at_days = 365.0 * 70.0; 
 
-    let mut hq_values: Vec<f64> = Vec::with_capacity(n);
-    let mut ilcr_values: Vec<f64> = Vec::with_capacity(n);
-    let mut intake_values: Vec<f64> = Vec::with_capacity(n);
+    // We store the 95th percentile HQ and ILCR for *each* outer loop.
+    let mut hq_p95s = Vec::with_capacity(n_outer);
+    let mut ilcr_p95s = Vec::with_capacity(n_outer);
 
-    for _ in 0..n {
-        let c = rng.lognormal(concentration_mean, 1.0 + concentration_cv);
-        let bw = rng.lognormal(bw_median, bw_gsd).max(10.0);
-        let fe = rng.normal(fe_mean, fe_std).max(100.0).min(365.0);
-        let dt = rng.normal(dt_mean, dt_std).max(1.0);
-        let ir = rng.lognormal(ir_median, ir_gsd).max(0.001);
-
-        // Intake = (C × IR × fE × Dt) / (BW × AT)
-        let intake = c * ir * fe * dt / (bw * at_days);
-        intake_values.push(intake);
-
-        // HQ = Intake / RfD
-        let hq = if rfd_mgkgd > 0.0 {
-            intake / rfd_mgkgd
-        } else {
-            0.0
-        };
-        hq_values.push(hq);
-
-        // ILCR = Intake × CSF
-        let ilcr = intake * csf_mgkgd;
-        ilcr_values.push(ilcr);
-    }
-
-    // Sort for percentiles
-    hq_values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    ilcr_values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    intake_values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-
-    let percentile = |v: &[f64], p: f64| -> f64 {
+    let percentile = |mut v: Vec<f64>, p: f64| -> f64 {
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let idx = ((v.len() as f64 * p) as usize).min(v.len() - 1);
         v[idx]
     };
-    let mean = |v: &[f64]| -> f64 { v.iter().sum::<f64>() / v.len() as f64 };
 
-    let hq_exceed = hq_values.iter().filter(|&&x| x > 1.0).count();
-    let ilcr_exceed = ilcr_values.iter().filter(|&&x| x > 1e-4).count();
+    for _ in 0..n_outer {
+        // Epistemic variable: The "true" concentration parameter is uncertain.
+        let true_mean_c = rng.lognormal(concentration_mean, 1.0 + (concentration_cv / 2.0)); // Narrower CV for the true mean itself
+
+        let mut inner_hq = Vec::with_capacity(n_inner);
+        let mut inner_ilcr = Vec::with_capacity(n_inner);
+
+        for _ in 0..n_inner {
+            // Aleatory variables: Variability across the population.
+            let c = rng.lognormal(true_mean_c, 1.0 + concentration_cv);
+            let bw = rng.lognormal(bw_median, bw_gsd).max(10.0);
+            let fe = rng.normal(fe_mean, fe_std).max(100.0).min(365.0);
+            let dt = rng.normal(dt_mean, dt_std).max(1.0);
+            let ir = rng.lognormal(ir_median, ir_gsd).max(0.001);
+
+            let intake = c * ir * fe * dt / (bw * at_days);
+            
+            let hq = if rfd_mgkgd > 0.0 { intake / rfd_mgkgd } else { 0.0 };
+            inner_hq.push(hq);
+            
+            let ilcr = intake * csf_mgkgd;
+            inner_ilcr.push(ilcr);
+        }
+
+        // Calculate the P95 for this specific population reality
+        hq_p95s.push(percentile(inner_hq, 0.95));
+        ilcr_p95s.push(percentile(inner_ilcr, 0.95));
+    }
+
+    let hq_95_95 = percentile(hq_p95s.clone(), 0.95);
+    let ilcr_95_95 = percentile(ilcr_p95s.clone(), 0.95);
+    
+    let hq_50_95 = percentile(hq_p95s, 0.50);
+    let ilcr_50_95 = percentile(ilcr_p95s, 0.50);
 
     format!(
-        "=== MONTE CARLO RISK ASSESSMENT ===\n\
+        "=== TWO-DIMENSIONAL MONTE CARLO ANALYSIS (2D-MCA) ===\n\
          Ref: EPA RAGS Vol 3 (2001), Pedoman ARKL Kemenkes RI 2012\n\n\
-         INPUT:\n  Kontaminan: {}\n  Konsentrasi: {:.4} mg/L (CV={:.0}%)\n  Jalur: {}\n  Populasi: {} (BW median={:.0}kg)\n  Iterasi: {}\n\n\
-         DISTRIBUSI INTAKE (mg/kg/hari):\n  Mean = {:.2e}\n  P5 = {:.2e}\n  P25 = {:.2e}\n  P50 (median) = {:.2e}\n  P75 = {:.2e}\n  P95 = {:.2e}\n  P99 = {:.2e}\n\n\
-         HAZARD QUOTIENT (Non-Karsinogen):\n  RfD = {:.2e} mg/kg/hari\n  HQ Mean = {:.4}\n  HQ P50 = {:.4}\n  HQ P95 = {:.4}\n  HQ P99 = {:.4}\n  Prob(HQ > 1) = {:.1}%\n  Risiko: {}\n\n\
-         ILCR (Karsinogen):\n  CSF = {:.2e} (mg/kg/hari)⁻¹\n  ILCR Mean = {:.2e}\n  ILCR P50 = {:.2e}\n  ILCR P95 = {:.2e}\n  ILCR P99 = {:.2e}\n  Prob(ILCR > 10⁻⁴) = {:.1}%\n  Risiko: {}\n\n\
-         PERBANDINGAN DETERMINISTIK vs PROBABILISTIK:\n  Deterministik HQ = {:.4} (single value)\n  Probabilistik P95 HQ = {:.4} (95th percentile)\n  Rasio P95/det = {:.2}x\n",
-        contaminant, concentration_mean, concentration_cv * 100.0, pathway, population, bw_median, n,
-        mean(&intake_values),
-        percentile(&intake_values, 0.05), percentile(&intake_values, 0.25),
-        percentile(&intake_values, 0.50), percentile(&intake_values, 0.75),
-        percentile(&intake_values, 0.95), percentile(&intake_values, 0.99),
-        rfd_mgkgd,
-        mean(&hq_values), percentile(&hq_values, 0.50),
-        percentile(&hq_values, 0.95), percentile(&hq_values, 0.99),
-        100.0 * hq_exceed as f64 / n as f64,
-        if percentile(&hq_values, 0.95) > 1.0 { "TIDAK AMAN (P95 > 1)" } else { "AMAN (P95 ≤ 1)" },
-        csf_mgkgd,
-        mean(&ilcr_values), percentile(&ilcr_values, 0.50),
-        percentile(&ilcr_values, 0.95), percentile(&ilcr_values, 0.99),
-        100.0 * ilcr_exceed as f64 / n as f64,
-        if percentile(&ilcr_values, 0.95) > 1e-4 { "RISIKO TINGGI (P95 > 10⁻⁴)" }
-        else if percentile(&ilcr_values, 0.95) > 1e-6 { "RISIKO SEDANG (10⁻⁶ < P95 < 10⁻⁴)" }
-        else { "RISIKO RENDAH (P95 < 10⁻⁶)" },
-        // Deterministic comparison using median values
-        concentration_mean * ir_median * fe_mean * dt_mean / (bw_median * at_days) / rfd_mgkgd,
-        percentile(&hq_values, 0.95),
-        percentile(&hq_values, 0.95) / (concentration_mean * ir_median * fe_mean * dt_mean / (bw_median * at_days) / rfd_mgkgd).max(1e-10),
+         INPUT:\n  Kontaminan: {}\n  Konsentrasi: {:.4} mg/L (CV={:.0}%)\n  Jalur: {}\n  Populasi: {} (BW median={:.0}kg)\n  Iterasi: {} (Outer: {}, Inner: {})\n\n\
+         HAZARD QUOTIENT (Non-Karsinogen):\n  RfD = {:.2e} mg/kg/hari\n  HQ 50/95 (Median of P95s) = {:.4}\n  HQ 95/95 (95th of P95s) = {:.4}\n\n\
+         ILCR (Karsinogen):\n  CSF = {:.2e} (mg/kg/hari)⁻¹\n  ILCR 50/95 = {:.2e}\n  ILCR 95/95 = {:.2e}\n",
+        contaminant, concentration_mean, concentration_cv * 100.0, pathway, population, bw_median, n, n_outer, n_inner,
+        rfd_mgkgd, hq_50_95, hq_95_95,
+        csf_mgkgd, ilcr_50_95, ilcr_95_95
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_2d_mca_separates_epistemic_from_aleatory() {
+        let result = simulate("Pb", 0.05, 0.3, "ingestion", "child", 100, 0.003, 0.0);
+        
+        assert!(result.contains("TWO-DIMENSIONAL MONTE CARLO ANALYSIS (2D-MCA)"));
+        assert!(result.contains("HQ 95/95"));
+    }
+}
+
