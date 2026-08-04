@@ -1,45 +1,29 @@
-# Build
-/target/
+# Codebase Memory / Knowledge Graph artifacts
+.codebase-memory/
+.superpowers/
+
+# Documentation planning artifacts (AI generated)
+docs/superpowers/
+
+# Rust / Cargo
+target/
+Cargo.lock
 **/*.rs.bk
 
-# Python
+# Python (for the engine scripts)
 __pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-.eggs/
-*.egg
-venv/
+*.py[cod]
+*$py.class
 .venv/
+venv/
+env/
+ENV/
 
-# Environment
-.env
-.env.local
-*.key
-*.pem
-gee-key.json
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-# Temporary
-/tmp/
-*.tmp
-sentinel_temp.tif
-
-# Data (large files)
-*.tif
-*.tiff
-*.nc
-*.hdf
-*.pkl
-!resources/*.json
-!resources/*.geojson
