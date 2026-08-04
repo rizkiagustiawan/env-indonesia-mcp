@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
-    "commit": "8572a24c5847527c6a4e14f27db89538b2766ede",
-    "indexed_at": "2026-07-05T19:37:53Z",
+    "commit": "49ebe25a270e52734e67285a4a419e32570b2dec",
+    "indexed_at": "2026-08-01T18:36:13Z",
     "project": "home-awan-Documents-env-indonesia-mcp",
-    "nodes": 2667,
-    "edges": 6318,
-    "original_size": 6684672,
-    "compressed_size": 1625227,
-    "compression_level": 9
+    "nodes": 2938,
+    "edges": 6703,
+    "original_size": 10551296,
+    "compressed_size": 2237938,
+    "compression_level": 3
 }

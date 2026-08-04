@@ -12,3 +12,4 @@ pub mod sar;
 pub mod srtm;
 pub mod timelapse;
 pub mod viirs;
+pub mod planetary_computer;

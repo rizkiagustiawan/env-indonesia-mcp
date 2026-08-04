@@ -18,3 +18,4 @@ pub mod satellite;
 pub mod waste;
 pub mod water;
 pub mod wrappers;
+pub mod workflows;

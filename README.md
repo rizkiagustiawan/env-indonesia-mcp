@@ -67,3 +67,9 @@ Konfigurasi untuk ZeroClaw (atau MCP client lain):
 ## ⚠️ Disclaimer
 
 Tools ini ditujukan untuk **screening-level analysis** dan evaluasi awal proyek. Hasil dari tools ini **bukan** pengganti dari pemodelan tervalidasi yang memerlukan sertifikasi ahli (misalnya AERMOD, CALPUFF, atau HEC-RAS) yang diwajibkan untuk dokumen final persetujuan lingkungan (AMDAL/UKL-UPL).
+
+### 🚀 Elite God-Tier 10/10 Architecture (Updated)
+This MCP server acts as the scientific foundation for the Zeroclaw ecosystem:
+- **JAXA ALOS-2 L-Band Integration**: Defeats dense tropical canopy biases using Microsoft Planetary Computer STAC redundancy.
+- **Authentic Indonesian APIs**: Connects to BMKG and InaRISK (BNPB), with robust local GIS fallbacks for unstable government servers (BRIN Spacemap).
+- **Physics-Informed Validators**: Rejects hallucinatory parameters violating basic laws of physics (e.g. Mass Conservation in Hydrology, Newtonian Flow, and Cloud-covered Optical indices).
