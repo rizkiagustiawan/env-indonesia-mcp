@@ -101,3 +101,4 @@ pub async fn get_air_quality(client: &Client) -> String {
         ),
     }
 }
+pub mod circuit_breaker;

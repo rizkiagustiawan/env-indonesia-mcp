@@ -12,4 +12,8 @@ pub mod sar;
 pub mod srtm;
 pub mod timelapse;
 pub mod viirs;
+pub mod methane;
 pub mod planetary_computer;
+pub mod hotspot_scanner;
+pub mod peatland;
+pub mod foundation_models;

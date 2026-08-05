@@ -8,6 +8,10 @@ pub fn generate_4d_timelapse(
     end_year: u32,
     sensor: &str,
     output_path: &str,
+    interval: &str,
+    fps: u32,
+    start_date: Option<&str>,
+    end_date: Option<&str>,
 ) -> String {
     let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/satellite/timelapse_engine.py";
 
@@ -18,8 +22,13 @@ pub fn generate_4d_timelapse(
             "optik_s2"
         };
 
-    match Command::new("python3")
-        .arg(script)
+    let interval_val = match interval {
+        "daily" | "weekly" | "monthly" | "annual" => interval,
+        _ => "monthly",
+    };
+
+    let mut cmd = Command::new("python3");
+    cmd.arg(script)
         .arg("--lat")
         .arg(lat.to_string())
         .arg("--lon")
@@ -32,10 +41,21 @@ pub fn generate_4d_timelapse(
         .arg(end_year.to_string())
         .arg("--sensor")
         .arg(sensor_type)
+        .arg("--interval")
+        .arg(interval_val)
+        .arg("--fps")
+        .arg(fps.to_string())
         .arg("--output")
-        .arg(output_path)
-        .output()
-    {
+        .arg(output_path);
+
+    if let Some(sd) = start_date {
+        cmd.arg("--start_date").arg(sd);
+    }
+    if let Some(ed) = end_date {
+        cmd.arg("--end_date").arg(ed);
+    }
+
+    match cmd.output() {
         Ok(o) => {
             let out = String::from_utf8_lossy(&o.stdout).to_string();
             let err = String::from_utf8_lossy(&o.stderr).to_string();
