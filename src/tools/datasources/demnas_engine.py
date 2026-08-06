@@ -92,10 +92,13 @@ def _find_tiles(lat, lon, buffer_km):
     for feat in index.get('features', []):
         geom = feat.get('geometry', {})
         props = feat.get('properties', {})
-        name_file = props.get('NAME_FILE')
-
-        # Skip tiles without file
-        if not name_file:
+        
+        # NAMOBJ is the official RBI map sheet number (e.g. "1814-52")
+        # This is the identifier used for download, NOT NAME_FILE (which is always None)
+        namobj = props.get('NAMOBJ')
+        
+        # Skip tiles without NAMOBJ
+        if not namobj:
             continue
 
         # Get tile bbox from geometry
@@ -120,12 +123,12 @@ def _find_tiles(lat, lon, buffer_km):
             if (tile_bbox[0] <= bbox[2] and tile_bbox[2] >= bbox[0] and
                     tile_bbox[1] <= bbox[3] and tile_bbox[3] >= bbox[1]):
                 matching.append({
-                    'namobj': props.get('NAMOBJ', '?'),
-                    'name_file': name_file,
+                    'namobj': namobj,
+                    'name_file': namobj,  # keep for backward compat
                     'region': props.get('REGION', '?'),
                     'sensor': props.get('SENSOR', '?'),
                     'skala': props.get('SKALA', '?'),
-                    'tahun': props.get('Tahun', '?'),
+                    'tahun': props.get('Tahun', props.get('THN_BUAT1', '?')),
                     'bbox': tile_bbox,
                 })
         except:

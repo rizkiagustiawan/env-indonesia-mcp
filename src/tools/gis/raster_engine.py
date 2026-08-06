@@ -139,43 +139,205 @@ def band_math_local(input_path, expression, output_path):
     print(f"Stats: mean={np.nanmean(result):.4f}, min={np.nanmin(result):.4f}, max={np.nanmax(result):.4f}")
 
 
-def dem_analysis_gee(lat, lon, buffer_km, analysis_type, output_path):
-    """Compute slope/aspect/hillshade. Prioritize DEMNAS 8m via BIG, fallback to SRTM 30m"""
-    import ee
-    ee.Initialize()
-    import requests
-    import sys
+def _compute_slope_horn(dem_array, resolution_m):
+    """Compute slope in degrees using Horn's method (3x3 window).
     
-    # Try BIG DEMNAS Auto-Download first
+    Ref: Horn, B.K.P. (1981) Hill Shading and the Reflectance Map.
+    Uses standard 3x3 kernel with diagonal weighting (2x for cardinal directions).
+    """
+    import numpy as np
+    # Pad array by 1 pixel to handle edges
+    padded = np.pad(dem_array.astype(np.float64), 1, mode='edge')
+    
+    # Horn's method: 3x3 weighted gradient
+    # dz/dx = ((c+2f+i) - (a+2d+g)) / (8 * cellsize)
+    # dz/dy = ((g+2h+i) - (a+2b+c)) / (8 * cellsize)
+    a = padded[:-2, :-2]  # top-left
+    b = padded[:-2, 1:-1]  # top-center
+    c = padded[:-2, 2:]  # top-right
+    d = padded[1:-1, :-2]  # mid-left
+    f = padded[1:-1, 2:]  # mid-right
+    g = padded[2:, :-2]  # bot-left
+    h = padded[2:, 1:-1]  # bot-center
+    i = padded[2:, 2:]  # bot-right
+    
+    dzdx = ((c + 2*f + i) - (a + 2*d + g)) / (8 * resolution_m)
+    dzdy = ((g + 2*h + i) - (a + 2*b + c)) / (8 * resolution_m)
+    
+    slope_rad = np.arctan(np.sqrt(dzdx**2 + dzdy**2))
+    slope_deg = np.degrees(slope_rad)
+    
+    return slope_deg
+
+
+def _compute_aspect_horn(dem_array, resolution_m):
+    """Compute aspect in degrees using Horn's method."""
+    import numpy as np
+    padded = np.pad(dem_array.astype(np.float64), 1, mode='edge')
+    
+    a = padded[:-2, :-2]; b = padded[:-2, 1:-1]; c = padded[:-2, 2:]
+    d = padded[1:-1, :-2]; f = padded[1:-1, 2:]
+    g = padded[2:, :-2]; h = padded[2:, 1:-1]; i = padded[2:, 2:]
+    
+    dzdx = ((c + 2*f + i) - (a + 2*d + g)) / (8 * resolution_m)
+    dzdy = ((g + 2*h + i) - (a + 2*b + c)) / (8 * resolution_m)
+    
+    aspect_rad = np.arctan2(dzdy, -dzdx)
+    aspect_deg = np.degrees(aspect_rad)
+    aspect_deg = np.where(aspect_deg < 0, 360 + aspect_deg, aspect_deg)  # 0-360
+    
+    return aspect_deg
+
+
+def _compute_hillshade(dem_array, resolution_m, azimuth=315, altitude=45):
+    """Compute hillshade (0-255) from DEM."""
+    import numpy as np
+    slope = _compute_slope_horn(dem_array, resolution_m)
+    aspect = _compute_aspect_horn(dem_array, resolution_m)
+    
+    az_rad = np.radians(azimuth)
+    alt_rad = np.radians(altitude)
+    slope_rad = np.radians(slope)
+    
+    hillshade = 255 * (
+        (np.cos(alt_rad) * np.cos(slope_rad)) +
+        (np.sin(alt_rad) * np.sin(slope_rad) * np.cos(az_rad - np.radians(aspect)))
+    )
+    hillshade = np.clip(hillshade, 0, 255)
+    return hillshade
+
+
+def _save_local_geotiff(data, template_path, output_path, dtype=None):
+    """Save numpy array as GeoTIFF using template file's CRS/transform."""
+    import rasterio
+    from rasterio.transform import Affine
+    with rasterio.open(template_path) as src:
+        profile = src.profile.copy()
+        if dtype:
+            profile.update(dtype=dtype, count=1)
+        else:
+            profile.update(dtype=data.dtype, count=1)
+        profile.update(nodata=-9999)
+    with rasterio.open(output_path, 'w', **profile) as dst:
+        dst.write(data.astype(profile['dtype']), 1)
+
+
+def dem_analysis_gee(lat, lon, buffer_km, analysis_type, output_path):
+    """Compute slope/aspect/hillshade/elevation.
+    
+    PRIORITAS 1: DEMNAS 8m (BIG Indonesia) — dihitung lokal dengan Horn's method
+    PRIORITAS 2: SRTM 30m (GEE) — fallback jika DEMNAS tidak tersedia/gagal
+    
+    Ref: Horn (1981), SRTM GL1 30m, DEMNAS 0.27 arcsec (~8.1m) BIG
+    """
+    import sys
+    import json as _json
+    import tempfile
+    
+    # === TAHAP 1: COBA DEMNAS 8m BIG ===
     demnas_path = None
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'datasources'))
         import demnas_engine
         
-        # Check availability
         info_json = demnas_engine.get_demnas_info(lat, lon, buffer_km)
-        import json
-        info = json.loads(info_json)
+        info = _json.loads(info_json)
         
         if info.get('tiles_count', 0) > 0:
-            print(f"\n[SYSTEM] DEMNAS 8m tersedia ({info['tiles_count']} tiles). Mengunduh dari BIG...")
-            # We download to a temporary merged file
+            print(f"\n[DEMNAS] {info['tiles_count']} tiles tersedia. Mengunduh DEMNAS 8m dari BIG...")
             demnas_path = os.path.join(tempfile.gettempdir(), f"demnas_merged_{lat}_{lon}.tif")
             demnas_engine.download_demnas(lat, lon, buffer_km, demnas_path)
             
-            if os.path.exists(demnas_path):
-                print(f"[SYSTEM] DEMNAS 8m berhasil diunduh. Resolusi lebih tinggi dari SRTM.")
+            if os.path.exists(demnas_path) and os.path.getsize(demnas_path) > 1024:
+                print(f"[DEMNAS] Berhasil diunduh. Melakukan analisis lokal (Horn's method)...")
+            else:
+                print(f"[DEMNAS] Download gagal atau file kosong. Fallback ke SRTM 30m.")
+                demnas_path = None
+        else:
+            print(f"[DEMNAS] Tidak ada tiles untuk area ini. Fallback ke SRTM 30m.")
     except Exception as e:
-        print(f"[WARNING] Gagal mengambil DEMNAS: {e}. Fallback ke SRTM 30m GEE.")
-
+        print(f"[DEMNAS] Gagal: {e}. Fallback ke SRTM 30m GEE.")
+        demnas_path = None
+    
+    # === JIKA DEMNAS BERHASIL: ANALISIS LOKAL ===
+    if demnas_path and os.path.exists(demnas_path) and os.path.getsize(demnas_path) > 1024:
+        try:
+            import rasterio
+            import numpy as np
+            
+            with rasterio.open(demnas_path) as src:
+                dem = src.read(1).astype(np.float32)
+                res_m = abs(src.res[0])  # resolution in meters (approx)
+                # Convert degree resolution to meters if needed
+                if src.crs and '4326' in str(src.crs):
+                    res_m = abs(src.res[0]) * 111000 * np.cos(np.radians(lat))
+                
+                # Handle nodata
+                dem = np.where(dem < -9000, np.nan, dem)
+                dem = np.where(dem > 9000, np.nan, dem)
+                
+                if np.all(np.isnan(dem)):
+                    raise Exception("DEMNAS data semua NaN")
+                
+                # Fill NaN with nearest valid for edge handling
+                from scipy.ndimage import distance_transform_edt
+                mask = np.isnan(dem)
+                if mask.any() and not mask.all():
+                    indices = distance_transform_edt(mask, return_distances=False, return_indices=True)
+                    dem = dem[tuple(indices)]
+                
+                print(f"[DEMNAS] DEM shape: {dem.shape}, resolution: {res_m:.1f}m")
+                print(f"[DEMNAS] Elevasi: min={np.nanmin(dem):.1f}m, max={np.nanmax(dem):.1f}m, mean={np.nanmean(dem):.1f}m")
+                
+                if analysis_type == 'slope':
+                    print("[DEMNAS] Menghitung slope (Horn's method)...")
+                    result_data = _compute_slope_horn(dem, res_m)
+                    unit = 'degrees'
+                    print(f"[DEMNAS] Slope: min={np.nanmin(result_data):.1f}°, max={np.nanmax(result_data):.1f}°, mean={np.nanmean(result_data):.1f}°")
+                elif analysis_type == 'aspect':
+                    print("[DEMNAS] Menghitung aspect (Horn's method)...")
+                    result_data = _compute_aspect_horn(dem, res_m)
+                    unit = 'degrees'
+                elif analysis_type == 'hillshade':
+                    print("[DEMNAS] Menghitung hillshade...")
+                    result_data = _compute_hillshade(dem, res_m)
+                    unit = '0-255'
+                elif analysis_type in ('elevation', 'dem', 'altitude'):
+                    result_data = dem
+                    unit = 'meters'
+                    print(f"[DEMNAS] Elevasi langsung dari DEMNAS 8m")
+                else:
+                    print(f"ERROR: analysis_type '{analysis_type}' tidak dikenal.")
+                    return
+                
+                # Save as GeoTIFF
+                _save_local_geotiff(result_data, demnas_path, output_path, dtype='float32')
+                
+                # Stats
+                mean_v = float(np.nanmean(result_data))
+                min_v = float(np.nanmin(result_data))
+                max_v = float(np.nanmax(result_data))
+                
+                print(f"SUCCESS: DEM {analysis_type} computed via DEMNAS 8m (local Horn's method).")
+                print(f"GeoTIFF: {output_path}")
+                print(f"Stats: mean={mean_v:.2f}, min={min_v:.2f}, max={max_v:.2f} ({unit})")
+                print(f"DEM: DEMNAS BIG 8m | CRS: {src.crs}")
+                return
+                
+        except Exception as e:
+            import traceback
+            print(f"[DEMNAS] Analisis lokal gagal: {e}")
+            print(traceback.format_exc()[:300])
+            print("[DEMNAS] Fallback ke SRTM 30m GEE.")
+    
+    # === FALLBACK: SRTM 30m VIA GEE ===
+    print("[SRTM] Menggunakan SRTM 30m via Google Earth Engine...")
+    import ee
+    ee.Initialize()
+    import requests
+    
     point = ee.Geometry.Point([lon, lat])
     roi = point.buffer(buffer_km * 1000)
-    
-    # If DEMNAS succeeded, we should theoretically run local rasterio calculation.
-    # However, to keep the GEE pipeline intact for now and avoid local GDAL slope computations,
-    # we will use GEE SRTM but log that DEMNAS is the recommended path for advanced local physics.
-    # NOTE: Uploading DEMNAS to GEE on the fly is impossible. 
-    # For now, we still use SRTM for GEE algorithms, but we have cached the DEMNAS locally for Rust physics!
     
     srtm = ee.Image('USGS/SRTMGL1_003')
 

@@ -95,8 +95,9 @@ PETA_REGISTRY = {
         "args": {"analysis_type": "elevation"},
         "analysis_type": "continuous",
         "label_indeks": "Elevasi (m dpl)",
-        "metode": "SRTM Digital Elevation Model 30m, Ekstraksi Elevasi Absolut",
+        "metode": "DEMNAS 8m BIG (prioritas) / SRTM 30m GEE (fallback), Ekstraksi Elevasi",
         "baku_mutu": {
+            "regulasi": "SNI 6502:2010 + PermenLH 16/2012",
             "satuan": "m dpl",
             "kelas": [
                 {"max": 50, "label": "Dataran Rendah"},
@@ -117,7 +118,7 @@ PETA_REGISTRY = {
         "args": {"analysis_type": "slope"},
         "analysis_type": "continuous",
         "label_indeks": "Lereng (°)",
-        "metode": "SRTM 30m, Horn's Method (Metode Turunan Permukaan)",
+        "metode": "DEMNAS 8m BIG (prioritas) / SRTM 30m GEE (fallback), Horn's Method",
         "baku_mutu": {
             "regulasi": "Permen PU No. 22/PRT/M/2007 (Kesesuaian Ruang)",
             "satuan": "°",
@@ -363,7 +364,7 @@ PETA_REGISTRY = {
         "tipe": "simulasi",
         "analysis_type": "continuous",
         "label_indeks": "Genangan (m)",
-        "metode": "Analisis Spasial Flat-Water (Bathtub Model) atas SRTM DEM",
+        "metode": "DEMNAS 8m BIG (prioritas) / SRTM 30m GEE (fallback), Bathtub Inundation Model",
         "narasi_deskripsi": "Memproyeksikan kerentanan inundasi (genangan) berdasarkan skenario kenaikan muka air tertinggi pada sistem hidrologi lokal.",
         "baku_mutu": {
             "regulasi": "Perka BNPB No. 2/2012 tentang Pedoman Umum Pengkajian Risiko Bencana",
