@@ -56,6 +56,15 @@ PETA_REGISTRY = {
         "analysis_type": "discrete",
         "metode": "Data Administratif RBI BIG Skala 1:50.000",
         "narasi_deskripsi": "Peta ini menunjukkan lokasi spesifik rencana usaha/kegiatan di dalam batas administrasi kabupaten/kota, sebagai syarat administrasi dan tata ruang.",
+        "baku_mutu": {
+            "regulasi": "UU 4/2011 tentang Informasi Geospasial + PP 21/2021 tentang Penyelenggaraan Tata Ruang",
+            "satuan": "Status Administrasi",
+            "kelas": [
+                {"max": 1, "label": "Lokasi Terverifikasi (BIG RBI 1:50K)", "mutu": "Resmi"},
+                {"max": 2, "label": "Lokasi Perlu Verifikasi Lapangan", "mutu": "Pendahuluan"},
+                {"max": 999, "label": "Lokasi Tidak Terdaftar", "mutu": "Tidak Resmi"}
+            ]
+        },
     },
     2: {
         "judul": "Peta Batas Wilayah Studi",
@@ -66,6 +75,16 @@ PETA_REGISTRY = {
         "analysis_type": "discrete",
         "metode": "Batas administrasi desa di sekitar lokasi proyek, buffer spatial.",
         "narasi_deskripsi": "Peta ini menentukan tapak proyek, batas ekologis, sosial, dan administratif sebagai ruang lingkup kajian AMDAL secara keseluruhan.",
+        "baku_mutu": {
+            "regulasi": "KepmenLHK 137/2024 tentang Panduan Teknis Penyusunan AMDAL",
+            "satuan": "Zona Studi",
+            "kelas": [
+                {"max": 1, "label": "Batas Tapak Proyek (direct impact zone)", "mutu": "Tapak"},
+                {"max": 2, "label": "Batas Ekologis (DAS, ekosistem)", "mutu": "Ekologis"},
+                {"max": 3, "label": "Batas Sosial (desa terdampak)", "mutu": "Sosial"},
+                {"max": 999, "label": "Batas Administratif (kabupaten/kota)", "mutu": "Administratif"}
+            ]
+        },
     },
     3: {
         "judul": "Peta Topografi & Kontur",
@@ -121,7 +140,17 @@ PETA_REGISTRY = {
         "analysis_type": "continuous",
         "label_indeks": "Indeks Mineral",
         "metode": "Analisis Multispektral Band Ratios (Sentinel-2)",
-        "narasi_deskripsi": "Peta ini mengidentifikasi karakteristik permukaan tanah dan potensi singkapan litologi yang mempengaruhi daya dukung tanah."
+        "narasi_deskripsi": "Peta ini mengidentifikasi karakteristik permukaan tanah dan potensi singkapan litologi yang mempengaruhi daya dukung tanah.",
+        "baku_mutu": {
+            "regulasi": "Klasifikasi Litologi BGRD/Surpsi (Geological Survey of Indonesia)",
+            "satuan": "Indeks",
+            "kelas": [
+                {"max": 0.3, "label": "Litologi Sedimen Kuwaterner (alluvial)", "mutu": "Daya dukung rendah"},
+                {"max": 0.6, "label": "Litologi Sedimen Tersier (pasir/batulempung)", "mutu": "Daya dukung sedang"},
+                {"max": 0.8, "label": "Litologi Vulkanik (tuf/batuan beku)", "mutu": "Daya dukung tinggi"},
+                {"max": 999, "label": "Litologi Metamorf/Intrusif", "mutu": "Daya dukung sangat tinggi"}
+            ]
+        },
     },
     6: {
         "judul": "Peta DAS & Hidrologi",
@@ -131,7 +160,17 @@ PETA_REGISTRY = {
         "tipe": "vektor",
         "analysis_type": "discrete",
         "metode": "Ekstraksi Network Sungai RBI",
-        "narasi_deskripsi": "Peta ini menunjukkan jaringan sungai, Daerah Aliran Sungai (DAS), dan badan air penerima (receiving water body) untuk rencana pembuangan efluen."
+        "narasi_deskripsi": "Peta ini menunjukkan jaringan sungai, Daerah Aliran Sungai (DAS), dan badan air penerima (receiving water body) untuk rencana pembuangan efluen.",
+        "baku_mutu": {
+            "regulasi": "UU 7/2004 tentang Sumber Daya Air + PP 38/2011 tentang Sungai",
+            "satuan": "Kelas Sungai",
+            "kelas": [
+                {"max": 1, "label": "Sungai Primer (lebar >100m) — sempadan 100m", "mutu": "Wajib sempadan lebar"},
+                {"max": 2, "label": "Sungai Sekunder (lebar 10-100m) — sempadan 50m", "mutu": "Sempadan 50m"},
+                {"max": 3, "label": "Sungai Tersier (lebar <10m) — sempadan 15m", "mutu": "Sempadan 15m"},
+                {"max": 999, "label": "Tidak ada sungai dalam buffer", "mutu": "N/A"}
+            ]
+        },
     },
     7: {
         "judul": "Peta Klimatologi (ERA5)",
@@ -141,7 +180,17 @@ PETA_REGISTRY = {
         "tipe": "titik",
         "analysis_type": "continuous",
         "metode": "ERA5-Land 5-tahun + Thornthwaite PET + Rational Method debit banjir",
-        "narasi_deskripsi": "Analisis iklim multi-tahun (5 tahun) dengan water balance Thornthwaite dan debit banjir rencana Rational Method untuk desain drainase."
+        "narasi_deskripsi": "Analisis iklim multi-tahun (5 tahun) dengan water balance Thornthwaite dan debit banjir rencana Rational Method untuk desain drainase.",
+        "baku_mutu": {
+            "regulasi": "WMO Standard + SNI 6455:2011 (Geoteknik) untuk debit banjir rencana",
+            "satuan": "Klasifikasi Iklim Oldeman",
+            "kelas": [
+                {"max": 1000, "label": "Iklim A (basah, >1000mm/thn) — surplus air", "mutu": "Basah"},
+                {"max": 2000, "label": "Iklim B (lembab, 1000-2000mm/thn)", "mutu": "Lembab"},
+                {"max": 3000, "label": "Iklim C (agak kering, 2000-3000mm/thn)", "mutu": "Agak Kering"},
+                {"max": 99999, "label": "Iklim D (kering, >3000mm/thn) — defisit", "mutu": "Kering"}
+            ]
+        },
     },
     8: {
         "judul": "Peta Penggunaan Lahan (LULC)",
@@ -158,7 +207,17 @@ PETA_REGISTRY = {
         },
         "label_indeks": "Kelas Tutupan Lahan",
         "metode": "Klasifikasi Supervised Random Forest (Sentinel-2 SR)",
-        "narasi_deskripsi": "Mengidentifikasi tutupan lahan eksisting untuk perhitungan koefisien runoff (C) dan ganti rugi pembebasan lahan (jika ada)."
+        "narasi_deskripsi": "Mengidentifikasi tutupan lahan eksisting untuk perhitungan koefisien runoff (C) dan ganti rugi pembebasan lahan (jika ada).",
+        "baku_mutu": {
+            "regulasi": "UU 41/1999 tentang Kehutanan + PermenLHK tentang Indikator Kerusakan Hutan",
+            "satuan": "Kelas",
+            "kelas": [
+                {"max": 1, "label": "Hutan Primer/Sekunder — kawasan lindung", "mutu": "Dilarang konversi"},
+                {"max": 2, "label": "Vegetasi Rendah/Perkebunan — APL", "mutu": "Bisa konversi bersyarat"},
+                {"max": 3, "label": "Badan Air — zona perlindungan", "mutu": "Sempadan wajib"},
+                {"max": 4, "label": "Terbangun/Lahan Terbuka — sudah terdisturb", "mutu": "Tidak ada konversi baru"}
+            ]
+        },
     },
     9: {
         "judul": "Peta Vegetasi (NDVI)",
@@ -190,7 +249,17 @@ PETA_REGISTRY = {
         "analysis_type": "continuous",
         "label_indeks": "Indeks Mangrove/Basah",
         "metode": "Sentinel-1 SAR C-Band Dual Pol (VV/VH) & Geomorphometric",
-        "narasi_deskripsi": "Identifikasi kawasan sensitif (gambut/mangrove) yang dilindungi oleh Keppres No. 32/1990 tentang Pengelolaan Kawasan Lindung."
+        "narasi_deskripsi": "Identifikasi kawasan sensitif (gambut/mangrove) yang dilindungi oleh Keppres No. 32/1990 tentang Pengelolaan Kawasan Lindung.",
+        "baku_mutu": {
+            "regulasi": "Keppres 32/1990 (Kawasan Lindung) + PP 57/2016 (Perlindungan Ekosistem Gambut)",
+            "satuan": "Status Kawasan",
+            "kelas": [
+                {"max": 0.3, "label": "Non-mangrove/non-gambut", "mutu": "Tidak dilindungi khusus"},
+                {"max": 0.7, "label": "Mangrove/Gambut tipis — kawasan lindung bersyarat", "mutu": "Konservasi bersyarat"},
+                {"max": 1.0, "label": "Mangrove lebat/Gambut tebal (>3m) — kawasan lindung mutlak", "mutu": "DILARANG konversi"},
+                {"max": 999, "label": "Kawasan lindung prioritas", "mutu": "Sanksi pidana (UU 32/2009)"}
+            ]
+        },
     },
     11: {
         "judul": "Peta Kualitas Air (TSS)",
@@ -295,7 +364,17 @@ PETA_REGISTRY = {
         "analysis_type": "continuous",
         "label_indeks": "Genangan (m)",
         "metode": "Analisis Spasial Flat-Water (Bathtub Model) atas SRTM DEM",
-        "narasi_deskripsi": "Memproyeksikan kerentanan inundasi (genangan) berdasarkan skenario kenaikan muka air tertinggi pada sistem hidrologi lokal."
+        "narasi_deskripsi": "Memproyeksikan kerentanan inundasi (genangan) berdasarkan skenario kenaikan muka air tertinggi pada sistem hidrologi lokal.",
+        "baku_mutu": {
+            "regulasi": "Perka BNPB No. 2/2012 tentang Pedoman Umum Pengkajian Risiko Bencana",
+            "satuan": "m",
+            "kelas": [
+                {"max": 0.5, "label": "Banjir Rendah (<0.5m) — aman untuk aktivitas", "mutu": "Rendah"},
+                {"max": 1.5, "label": "Banjir Sedang (0.5-1.5m) — waspaan", "mutu": "Sedang"},
+                {"max": 3.0, "label": "Banjir Tinggi (1.5-3.0m) — evakuasi", "mutu": "Tinggi"},
+                {"max": 999, "label": "Banjir Sangat Tinggi (>3.0m) — kritis", "mutu": "Sangat Tinggi"}
+            ]
+        },
     },
     16: {
         "judul": "Peta Risiko Longsor",
@@ -305,7 +384,17 @@ PETA_REGISTRY = {
         "tipe": "vektor",
         "analysis_type": "discrete",
         "metode": "Indeks Bahaya Tanah Longsor BNPB InaRISK",
-        "narasi_deskripsi": "Menampilkan zona rawan gerakan tanah menurut sumber resmi mitigasi bencana (BNPB) untuk panduan K3 konstruksi."
+        "narasi_deskripsi": "Menampilkan zona rawan gerakan tanah menurut sumber resmi mitigasi bencana (BNPB) untuk panduan K3 konstruksi.",
+        "baku_mutu": {
+            "regulasi": "Perka BNPB No. 2/2012 tentang Pedoman Umum Pengkajian Risiko Bencana",
+            "satuan": "Kelas Bahaya",
+            "kelas": [
+                {"max": 1, "label": "Rendah — aman untuk konstruksi", "mutu": "Rendah"},
+                {"max": 2, "label": "Sedang — perlu mitigasi", "mutu": "Sedang"},
+                {"max": 3, "label": "Tinggi — rekayasa intensif", "mutu": "Tinggi"},
+                {"max": 999, "label": "Sangat Tinggi — relokasi", "mutu": "Sangat Tinggi"}
+            ]
+        },
     },
     17: {
         "judul": "Peta Subsiden (InSAR)",
@@ -316,7 +405,17 @@ PETA_REGISTRY = {
         "analysis_type": "continuous",
         "label_indeks": "Pergeseran",
         "metode": "Interferometric Synthetic Aperture Radar (InSAR) Phase Change",
-        "narasi_deskripsi": "Identifikasi stabilitas tanah (land subsidence) untuk memvalidasi daya dukung bangunan berat jangka panjang."
+        "narasi_deskripsi": "Identifikasi stabilitas tanah (land subsidence) untuk memvalidasi daya dukung bangunan berat jangka panjang.",
+        "baku_mutu": {
+            "regulasi": "SNI 6455:2011 tentang Geoteknik + PBI 1983 (Peraturan Beton Indonesia)",
+            "satuan": "Koefisien Variasi",
+            "kelas": [
+                {"max": 0.1, "label": "Stabil (CV<0.1) — aman untuk bangunan berat", "mutu": "Stabil"},
+                {"max": 0.3, "label": "Agak Stabil (CV 0.1-0.3) — monitoring rutin", "mutu": "Agak Stabil"},
+                {"max": 0.5, "label": "Tidak Stabil (CV 0.3-0.5) — perlu rekayasa", "mutu": "Tidak Stabil"},
+                {"max": 999, "label": "Sangat Tidak Stabil (CV>0.5) — kritis", "mutu": "Kritis"}
+            ]
+        },
     },
     18: {
         "judul": "Peta Dampak Hipotetik (MCDA)",
@@ -327,7 +426,18 @@ PETA_REGISTRY = {
         "analysis_type": "continuous",
         "label_indeks": "Indeks Dampak",
         "metode": "Multi-Criteria Decision Analysis (AHP Weighting Overlay)",
-        "narasi_deskripsi": "Sintesis berbagai lapisan (layer) tematik untuk memetakan zona dengan magnitudo dampak besar hipotetik (DPH) tertinggi."
+        "narasi_deskripsi": "Sintesis berbagai lapisan (layer) tematik untuk memetakan zona dengan magnitudo dampak besar hipotetik (DPH) tertinggi.",
+        "baku_mutu": {
+            "regulasi": "Permen PU 22/PRT/M/2007 tentang Pedoman Tata Ruang + PP 22/2021 Pasal 14 (DPH)",
+            "satuan": "Indeks",
+            "kelas": [
+                {"max": 0.2, "label": "Dampak Rendah (Sangat Sesuai) — tapak ideal", "mutu": "Rendah"},
+                {"max": 0.4, "label": "Dampak Sedang (Sesuai Bersyarat)", "mutu": "Sedang"},
+                {"max": 0.6, "label": "Dampak Menengah (Marginal) — mitigasi terfokus", "mutu": "Menengah"},
+                {"max": 0.8, "label": "Dampak Tinggi (Tidak Sesuai) — mitigasi intensif", "mutu": "Tinggi"},
+                {"max": 999, "label": "Dampak Sangat Tinggi (Dilarang) — kawasan lindung", "mutu": "Kritis"}
+            ]
+        },
     },
     19: {
         "judul": "Peta Rencana Pengelolaan (RKL)",
@@ -337,7 +447,17 @@ PETA_REGISTRY = {
         "tipe": "vektor",
         "analysis_type": "discrete",
         "metode": "Spatial Buffering Zona Dampak",
-        "narasi_deskripsi": "Peta arahan spasial lokasi-lokasi pengelolaan lingkungan (contoh: lokasi WWTP, green belt, retention pond)."
+        "narasi_deskripsi": "Peta arahan spasial lokasi-lokasi pengelolaan lingkungan (contoh: lokasi WWTP, green belt, retention pond).",
+        "baku_mutu": {
+            "regulasi": "PermenLHK 5/2021 tentang Tata Laksana Dokumen Lingkungan + PP 22/2021 Pasal 14",
+            "satuan": "Zona",
+            "kelas": [
+                {"max": 1, "label": "Zona Tapak (0-500m) — pengelolaan langsung", "mutu": "Tapak"},
+                {"max": 2, "label": "Zona Buffer (500m-5km) — pengelolaan mitigasi", "mutu": "Buffer"},
+                {"max": 3, "label": "Zona Sempadan — perlindungan badan air", "mutu": "Sempadan"},
+                {"max": 999, "label": "Zona Damping Masyarakat — sosialisasi", "mutu": "Sosial"}
+            ]
+        },
     },
     20: {
         "judul": "Peta Titik Pemantauan (RPL)",
@@ -347,7 +467,17 @@ PETA_REGISTRY = {
         "tipe": "vektor",
         "analysis_type": "discrete",
         "metode": "Stratified Random Sampling Spasial",
-        "narasi_deskripsi": "Penentuan stasiun sampling pemantauan kualitas lingkungan periodik (air, udara, tanah) representatif dampak."
+        "narasi_deskripsi": "Penentuan stasiun sampling pemantauan kualitas lingkungan periodik (air, udara, tanah) representatif dampak.",
+        "baku_mutu": {
+            "regulasi": "PermenLHK 5/2021 + PP 22/2021 Pasal 14 (Rencana Pemantauan Lingkungan)",
+            "satuan": "Jenis Pemantauan",
+            "kelas": [
+                {"max": 1, "label": "Pemantauan Air (TSS, DO, BOD, pH) — 6 bulanan", "mutu": "Air"},
+                {"max": 2, "label": "Pemantauan Udara (PM10, NO2, SO2) — tahunan", "mutu": "Udara"},
+                {"max": 3, "label": "Pemantauan Kebisingan (dBA) — semesteran", "mutu": "Kebisingan"},
+                {"max": 999, "label": "Pemantauan Biota/Sosial — tahunan", "mutu": "Biota/Sosial"}
+            ]
+        },
     }
 }
 
