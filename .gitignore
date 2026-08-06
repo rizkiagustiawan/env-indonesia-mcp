@@ -19,6 +19,18 @@ venv/
 env/
 ENV/
 
+# Secrets & API keys
+.env
+
+# Output artifacts
+output_amdal/
+output_maps/
+downloads/
+*.tif
+*.png
+*.gif
+*.pdf
+
 # OS generated files
 .DS_Store
 .DS_Store?

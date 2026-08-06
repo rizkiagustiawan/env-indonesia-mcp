@@ -2908,6 +2908,10 @@ impl EnvIndonesiaServer {
             p.end_year,
             &p.sensor,
             &p.output_path,
+            "monthly",
+            10,
+            None,
+            None,
         )
     }
 
