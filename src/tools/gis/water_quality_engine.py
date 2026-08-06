@@ -3,7 +3,10 @@
 Algorithms: Nechad 2010 (TSS/Turbidity), Dogliotti 2015 (Turbidity),
 OC3 (Chlorophyll-a), Mishra 2012 (NDCI Chl-a)
 Uses Google Earth Engine for cloud processing.
-Ref: PP 22/2021 (Baku Mutu Air), KepMenLH 51/2004 (Baku Mutu Air Laut)
+Ref: 
+  - PP 22/2021 Lampiran VI (Baku Mutu Air Permukaan/Daratan)
+  - PP 22/2021 Lampiran VIII (Baku Mutu Air Laut - untuk kawasan pesisir)
+  - KepMenLH 51/2004 (Baku Mutu Air Laut - legacy, masih relevan untuk Chl-a)
 """
 
 import sys
@@ -26,15 +29,23 @@ except Exception:
 
 
 # === Indonesian Water Quality Standards ===
-# PP 22/2021 Baku Mutu Air (freshwater classes I-IV)
+# PP 22/2021 Baku Mutu Air Permukaan (freshwater classes I-IV) - Lampiran VI
 PP22_TSS_LIMITS = {
-    'Kelas I': 50,    # mg/L
-    'Kelas II': 50,
-    'Kelas III': 400,
-    'Kelas IV': 400,
+    'Kelas I': 50,    # mg/L - air minum
+    'Kelas II': 50,   # mg/L - sarana air
+    'Kelas III': 400, # mg/L - irigasi/peternakan
+    'Kelas IV': 400,  # mg/L - pertanian
 }
 
-# KepMenLH 51/2004 Baku Mutu Air Laut
+# PP 22/2021 Baku Mutu Air Laut (Lampiran VIII) - untuk kawasan pesisir
+PP22_TSS_LIMITS_SEAWATER = {
+    'Kelas I': 80,    # mg/L - biota laut
+    'Kelas II': 80,   # mg/L - wisata bahari
+    'Kelas III': 400,  # mg/L - pelabuhan
+    'Kelas IV': 400,  # mg/L - industrial
+}
+
+# KepMenLH 51/2004 Baku Mutu Air Laut (legacy, untuk Chlorophyll-a)
 KEPMENLH51_CHL = {
     'Biota Laut': 0.008,    # mg/L = 8 µg/L
     'Wisata Bahari': 0.015,  # mg/L = 15 µg/L
@@ -69,7 +80,7 @@ def _get_s2_composite(roi, start_date, end_date):
 
 def _save_geotiff(image, roi, output_path, scale=10):
     """Download GeoTIFF from GEE."""
-    tif_path = output_path.replace('.png', '.tif')
+    tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
     try:
         url = image.toFloat().getDownloadURL({
             'scale': scale, 'region': roi,
@@ -132,14 +143,25 @@ def estimate_tss(lat, lon, buffer_km, start_date, end_date, output_path):
     # S2 SR: DN * 0.0001 = surface reflectance ≈ pi * Rrs
     # rho_w = surface reflectance (already pi*Rrs in SR product)
     rho_w = composite.select('B4').multiply(0.0001)
+    
+    # Mask to valid water areas to prevent -inf values from land pixels
+    # MNDWI is computed inside _get_s2_composite and applied as mask, 
+    # but some edge pixels might still have high rho_w.
+    
+    # Cap rho_w strictly below C_T (0.1728) to prevent division by zero or negative denominator
+    # If rho_w >= 0.1728, the Nechad formula fails (produces negative/inf). 
+    # We cap it at 0.172 to keep denominator positive.
+    rho_w = rho_w.where(rho_w.gte(0.172), 0.172)
 
     # TSS = A_T * rho_w / (1 - rho_w / C_T)
     tss = rho_w.multiply(A_T).divide(
         ee.Image(1).subtract(rho_w.divide(C_T))
     ).rename('result')
 
-    # Clamp reasonable range
-    tss = tss.where(tss.lt(0), 0).where(tss.gt(5000), 5000)
+    # Clamp reasonable range and mask out any non-finite values (inf/nan)
+    # Using updateMask to ensure -inf and +inf pixels are masked (NaN) in GeoTIFF
+    tss = tss.where(tss.lt(0).Or(tss.gt(5000)), 0)
+    tss = tss.updateMask(tss.gte(0).And(tss.lte(5000)))  # Mask out inf/nan/negative
 
     # Stats
     mean_val, min_val, max_val = _get_stats(tss, roi)

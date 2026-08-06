@@ -194,8 +194,13 @@ def dem_analysis_gee(lat, lon, buffer_km, analysis_type, output_path):
         vis = {'min': 0, 'max': 255}
         palette = None
         unit = '0-255'
+    elif analysis_type in ('elevation', 'dem', 'altitude'):
+        result = srtm.clip(roi)
+        palette = ['006600', '002200', 'fff700', 'ff8c00', 'ff0000']
+        vis = {'min': 0, 'max': 1000, 'palette': palette}
+        unit = 'meters'
     else:
-        print(f"ERROR: analysis_type '{analysis_type}' tidak dikenal. Gunakan: slope/aspect/hillshade")
+        print(f"ERROR: analysis_type '{analysis_type}' tidak dikenal. Gunakan: slope/aspect/hillshade/elevation")
         return
 
     # Stats
@@ -210,7 +215,7 @@ def dem_analysis_gee(lat, lon, buffer_km, analysis_type, output_path):
         'scale': 30, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'
     })
     r = requests.get(url, timeout=60)
-    tif_path = output_path.replace('.png', '.tif')
+    tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
     with open(tif_path, 'wb') as f:
         f.write(r.content)
 
@@ -219,7 +224,8 @@ def dem_analysis_gee(lat, lon, buffer_km, analysis_type, output_path):
         vis['palette'] = palette
     thumb = result.getThumbURL({**vis, 'region': roi, 'dimensions': 800})
     img = requests.get(thumb, timeout=30).content
-    with open(output_path, 'wb') as f:
+    png_path = output_path.replace('.tif', '.png') if output_path.endswith('.tif') else output_path
+    with open(png_path, 'wb') as f:
         f.write(img)
 
     band_key = list(stats.keys())[0].rsplit('_', 1)[0] if stats else analysis_type
@@ -414,7 +420,7 @@ def ndvi_timeseries(lat, lon, buffer_km, start_year, end_year, output_path):
 
     # Kendall's tau for significance
     kendall = stack_with_time.select(['year', 'NDVI']).reduce(ee.Reducer.kendallsCorrelation())
-    tau = kendall.select('p_value').clip(roi)
+    tau = kendall.select('NDVI_p-value').clip(roi)
 
     # Mask significant trends (p < 0.05)
     sig_mask = tau.lt(0.05)

@@ -69,11 +69,10 @@ def render_flood_3d(dem_path, output_path, water_level_m, title="3D Flood Simula
         fig.text(0.02, 0.02,
                 f'Min Elevasi: {np.nanmin(dem):.0f}m | Max: {np.nanmax(dem):.0f}m | '
                 f'Water Level: {water_level_m}m\n'
-                # NOTE: This is a bathtub/static inundation model, NOT a hydraulic simulation.
-                f'ZeroClaw Environmental AI — Bathtub Inundation Visualization',
+                'ZeroClaw Environmental AI | Bathtub Inundation Model | BNPB InaRISK (Perka BNPB 2/2012)',
                 fontsize=9, style='italic')
 
-        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
 
         return f"SUCCESS: 3D Flood simulation disimpan di {output_path}. Area genangan: {flooded_area_pct:.1f}%, kedalaman maks: {max_depth:.1f}m"

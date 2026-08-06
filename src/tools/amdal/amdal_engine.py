@@ -153,8 +153,12 @@ def generate_ka_andal(project_name, location, project_type, rona_data, output_pa
     pdf.add_paragraph(
         "1. UU No. 32 Tahun 2009 tentang Perlindungan dan Pengelolaan Lingkungan Hidup\n"
         "2. PP No. 22 Tahun 2021 tentang Penyelenggaraan Perlindungan dan Pengelolaan LH\n"
-        "3. PermenLHK No. 5 Tahun 2021 tentang Tata Laksana Dokumen Lingkungan Hidup\n"
-        "4. PermenLHK No. 4 Tahun 2021 tentang Daftar Usaha/Kegiatan Wajib AMDAL/UKL-UPL"
+        "3. PP No. 38 Tahun 2024 tentang Kawasan Konservasi Perairan (jika relevan)\n"
+        "4. PermenLHK No. 5 Tahun 2021 tentang Tata Laksana Dokumen Lingkungan Hidup\n"
+        "5. PermenLHK No. 4 Tahun 2021 tentang Daftar Usaha/Kegiatan Wajib AMDAL/UKL-UPL\n"
+        "6. KepmenLHK No. 137 Tahun 2024 tentang Panduan Teknis Penyusunan AMDAL\n"
+        "7. PermenLHK No. 8 Tahun 2024 tentang Baku Mutu Emisi Sumber Tidak Bergerak\n"
+        "8. SNI 6502:2010 tentang Peta Tematik (PermenLH 16/2012)"
     )
 
     # BAB 2: Pelingkupan

@@ -111,9 +111,9 @@ def render_contour_2d(sources, wind_speed, wind_dir, stability, output_path,
     ax.legend(loc='upper right')
     ax.set_aspect('equal')
     
-    fig.text(0.02, 0.02, 'Model: Gaussian Plume (Briggs rural) | ZeroClaw Environmental AI | PP 22/2021', fontsize=8, style='italic')
+    fig.text(0.02, 0.02, 'Model: Gaussian Plume (Briggs rural) | ZeroClaw Environmental AI | PP 22/2021 Lampiran VII + PermenLHK 8/2024', fontsize=8, style='italic')
     
-    plt.savefig(output_path, dpi=200, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     
     max_c = np.max(C)
@@ -141,7 +141,7 @@ def render_3d_plume(sources, wind_speed, wind_dir, stability, output_path,
     ax.set_zlabel('log₁₀(C) µg/m³')
     ax.view_init(elev=30, azim=225)
     
-    plt.savefig(output_path, dpi=200, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     return f"SUCCESS: 3D plume disimpan di {output_path}"
 

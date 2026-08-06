@@ -283,6 +283,7 @@ dependencies = [
  "chrono",
  "geo",
  "geojson",
+ "lazy_static",
  "reqwest",
  "rmcp",
  "schemars",

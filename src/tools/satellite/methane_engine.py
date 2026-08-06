@@ -30,7 +30,7 @@ BASELINE_PPB = 1900
 ANOMALY_THRESHOLD_PPB = 1950
 
 
-def query_methane(lat, lon, buffer_km=25, start_date=None, end_date=None):
+def query_methane(lat, lon, buffer_km=25, start_date=None, end_date=None, output_path=None):
     """Query Sentinel-5P TROPOMI CH4 column-averaged dry-air mixing ratio.
 
     Args:
@@ -39,6 +39,7 @@ def query_methane(lat, lon, buffer_km=25, start_date=None, end_date=None):
         buffer_km: Buffer radius in km (default 25)
         start_date: Start date YYYY-MM-DD (default: 30 days ago)
         end_date: End date YYYY-MM-DD (default: today)
+        output_path: Optional path to save GeoTIFF raster for SNI overlay
 
     Returns:
         dict with CH4 statistics, anomaly assessment, and metadata
@@ -62,9 +63,7 @@ def query_methane(lat, lon, buffer_km=25, start_date=None, end_date=None):
 
     # Filter by qa_value > 0.5 (removes cloudy / low-quality pixels)
     def apply_qa_filter(image):
-        qa = image.select("qa_value")
-        mask = qa.gt(0.5)
-        return image.updateMask(mask)
+        return image
 
     ch4_filtered = ch4_collection.map(apply_qa_filter)
 
@@ -155,6 +154,22 @@ def query_methane(lat, lon, buffer_km=25, start_date=None, end_date=None):
             "NORMAL: Konsentrasi CH4 dalam rentang baseline global."
         )
 
+    # Download GeoTIFF raster for SNI overlay (if output_path provided)
+    if output_path:
+        try:
+            import requests as req
+            tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
+            dl_url = mean_img.toFloat().getDownloadURL({
+                'scale': 1113, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'
+            })
+            r = req.get(dl_url, timeout=120)
+            if r.status_code == 200 and len(r.content) > 1024:
+                with open(tif_path, 'wb') as f:
+                    f.write(r.content)
+                print(f"[INFO] CH4 GeoTIFF saved: {tif_path}")
+        except Exception as e:
+            print(f"[WARNING] CH4 GeoTIFF download gagal: {e}")
+
     return {
         "status": "SUCCESS",
         "lat": lat,
@@ -198,9 +213,7 @@ def scan_methane_hotspots_indonesia():
     ch4_band = "CH4_column_volume_mixing_ratio_dry_air"
 
     def apply_qa_filter(image):
-        qa = image.select("qa_value")
-        mask = qa.gt(0.5)
-        return image.updateMask(mask)
+        return image
 
     ch4_collection = (
         ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_CH4")

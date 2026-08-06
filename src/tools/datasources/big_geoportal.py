@@ -90,7 +90,7 @@ def query_admin_kabkota(lat, lon, buffer_km, output_path=None):
         tipe = "Kota" if p.get('TIPADM') == 2 else "Kabupaten"
         luas = p.get('LUASWH', 0) or 0
         print(f"  {p.get('NAMOBJ','?'):30} | {tipe:10} | Prov: {p.get('WADMPR','?'):20} | "
-              f"BPS: {p.get('KDPBPS','').strip()}.{p.get('KDBBPS','').strip()} | "
+              f"BPS: {(p.get('KDPBPS') or '').strip()}.{(p.get('KDBBPS') or '').strip()} | "
               f"Luas: {luas:,.0f} Ha")
 
     print(f"\nSumber: Badan Informasi Geospasial (BIG)")

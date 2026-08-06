@@ -164,21 +164,24 @@ def overlay_analysis(geojson1_str, geojson2_str, operation, output_path):
     print(f"Input 1: {len(gdf1)} features | Input 2: {len(gdf2)} features")
 
 
+import json
 def suitability_analysis(lat, lon, buffer_km, criteria_json, output_path):
-    """Weighted overlay suitability analysis using GEE raster layers
-    criteria_json: [{"image_id": "...", "band": "...", "weight": 0.3,
-                     "min": 0, "max": 45, "invert": false, "label": "Slope"}, ...]
-    """
     import ee
     ee.Initialize()
     import requests
+
+    if isinstance(criteria_json, str):
+        try:
+            criteria = json.loads(criteria_json)
+        except:
+            criteria = {}
+    else:
+        criteria = criteria_json
     import matplotlib
     matplotlib.use('Agg')
 
     point = ee.Geometry.Point([lon, lat])
     roi = point.buffer(buffer_km * 1000)
-    criteria = json.loads(criteria_json)
-
     if not criteria:
         print("ERROR: criteria list kosong")
         return
@@ -234,8 +237,8 @@ def suitability_analysis(lat, lon, buffer_km, criteria_json, output_path):
         geometry=roi, scale=30, maxPixels=1e9
     ).getInfo()
 
-    # GeoTIFF download
-    tif_path = output_path.replace('.png', '.tif')
+    # GeoTIFF download — write to output_path if .tif, else separate path
+    tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
     url = suitability.getDownloadURL({
         'scale': 30, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'
     })
@@ -243,14 +246,15 @@ def suitability_analysis(lat, lon, buffer_km, criteria_json, output_path):
     with open(tif_path, 'wb') as f:
         f.write(r.content)
 
-    # Thumbnail PNG
+    # Thumbnail PNG — separate path to avoid overwriting TIF
+    png_path = output_path if output_path.endswith('.png') else output_path.replace('.tif', '.png')
     thumb_url = suitability.getThumbURL({
         'region': roi, 'dimensions': 800,
         'min': 0, 'max': 1,
         'palette': ['red', 'orange', 'yellow', 'lightgreen', 'darkgreen']
     })
     img_data = requests.get(thumb_url, timeout=30).content
-    with open(output_path, 'wb') as f:
+    with open(png_path, 'wb') as f:
         f.write(img_data)
 
     # Output

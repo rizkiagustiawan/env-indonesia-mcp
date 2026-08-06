@@ -264,6 +264,22 @@ def subsidence_screening(lat, lon, buffer_km, start_date, end_date, output_path)
     # Coefficient of variation as instability indicator
     cv = std_vv.divide(mean_vv.abs()).rename('cv')
 
+    # Download GeoTIFF (for SNI overlay)
+    import requests as req
+    tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
+    try:
+        dl_url = cv.toFloat().getDownloadURL({
+            'scale': 30, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'
+        })
+        r = req.get(dl_url, timeout=60)
+        if r.status_code == 200 and len(r.content) > 1024:
+            with open(tif_path, 'wb') as f:
+                f.write(r.content)
+    except Exception as e:
+        print(f"[WARNING] GeoTIFF download gagal: {e}")
+
+    # PNG thumbnail for quick preview
+    png_path = output_path if output_path.endswith('.png') else output_path.replace('.tif', '.png')
     url = get_thumbnail(cv, roi, {
         'bands': ['cv'],
         'min': 0,
@@ -271,7 +287,7 @@ def subsidence_screening(lat, lon, buffer_km, start_date, end_date, output_path)
         'palette': ['blue', 'green', 'yellow', 'orange', 'red']
     })
 
-    ok, size = download_thumbnail(url, output_path)
+    ok, size = download_thumbnail(url, png_path)
     if ok:
         return (f"SUCCESS: Peta screening subsiden disimpan di {output_path} ({size:.1f} KB)\n"
                 f"Periode: {start_date} - {end_date}\n"
@@ -462,13 +478,29 @@ def mangrove_mapping(lat, lon, buffer_km, output_path):
     # Blend
     combined = base.blend(mangrove_vis.updateMask(mangrove_mask))
 
+    # Download GeoTIFF (for SNI overlay) — write to output_path if .tif, else separate
+    import requests as req
+    tif_path = output_path if output_path.endswith('.tif') else output_path.replace('.png', '.tif')
+    try:
+        dl_url = mangrove_mask.toFloat().getDownloadURL({
+            'scale': 30, 'region': roi, 'format': 'GEO_TIFF', 'crs': 'EPSG:4326'
+        })
+        r = req.get(dl_url, timeout=60)
+        if r.status_code == 200 and len(r.content) > 1024:
+            with open(tif_path, 'wb') as f:
+                f.write(r.content)
+    except Exception as e:
+        print(f"[WARNING] GeoTIFF download gagal: {e}")
+
+    # PNG thumbnail for quick preview
+    png_path = output_path if output_path.endswith('.png') else output_path.replace('.tif', '.png')
     url = combined.getThumbURL({
         'dimensions': 800,
         'region': roi,
         'format': 'png'
     })
 
-    ok, size = download_thumbnail(url, output_path)
+    ok, size = download_thumbnail(url, png_path)
     if ok:
         mangrove_area = mangrove_mask.multiply(ee.Image.pixelArea())
         stats = mangrove_area.reduceRegion(

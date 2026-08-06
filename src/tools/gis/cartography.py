@@ -113,6 +113,7 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
                      overlay_raster=None, analysis_type='continuous', cmap='viridis',
                      vmin=None, vmax=None, discrete_labels=None,
                      colorbar_label='Nilai', analysis_stats=None, conclusion_text=None):
+    import numpy as np
     try:
         data = json.loads(geojson_str)
         if data.get('type')=='FeatureCollection':
@@ -222,38 +223,48 @@ def generate_sni_map(geojson_str, output_path, title, realtime=False,
             try:
                 import rasterio
                 from rasterio.plot import show as rs
+                from rasterio.vrt import WarpedVRT
                 import numpy as np
                 with rasterio.open(overlay_raster) as src:
-                    if analysis_type == 'continuous':
-                        rs(src, ax=ax, zorder=2, cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.65)
-                        # Add contour lines for DEM
-                        dem = src.read(1)
-                        # Handle nodata
-                        dem = np.where(dem < -9000, np.nan, dem)
-                        
-                        # Generate extent in projected coordinates
-                        bounds = src.bounds
-                        x = np.linspace(bounds.left, bounds.right, dem.shape[1])
-                        y = np.linspace(bounds.bottom, bounds.top, dem.shape[0])
-                        X, Y = np.meshgrid(x, y)
-                        
-                        # Subsample to speed up contouring if raster is very large
-                        step = max(1, dem.shape[0] // 500)
-                        dem_sub = dem[::step, ::step]
-                        X_sub = X[::step, ::step]
-                        Y_sub = Y[::step, ::step]
-                        
-                        # Calculate contour levels (max 15 levels)
-                        min_val = np.nanmin(dem_sub)
-                        max_val = np.nanmax(dem_sub)
-                        if max_val > min_val:
-                            levels = np.linspace(min_val, max_val, 15)
-                            contours = ax.contour(X_sub, Y_sub, dem_sub, levels=levels, colors='black', linewidths=0.5, alpha=0.4, zorder=3)
-                            ax.clabel(contours, inline=True, fontsize=5, fmt='%1.0f m')
-                    else:
-                        rs(src, ax=ax, zorder=2, cmap=cmap if isinstance(cmap, str) else None, alpha=0.75)
+                    # Reproject on-the-fly to EPSG:3857 to match basemap extent
+                    with WarpedVRT(src, crs='EPSG:3857') as vrt:
+                        if analysis_type == 'continuous':
+                            vrt_data = vrt.read(1)
+                            # Handle nodata (-9999 / inf)
+                            vrt_data = np.where(vrt_data < -9000, np.nan, vrt_data)
+                            vrt_data = np.where(np.isinf(vrt_data), np.nan, vrt_data)
+                            
+                            extent = [vrt.bounds.left, vrt.bounds.right, vrt.bounds.bottom, vrt.bounds.top]
+                            ax.imshow(vrt_data, extent=extent, zorder=2, cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.65)
+                            
+                            # Add contour lines for DEM
+                            dem = vrt_data
+                            # Generate extent in projected coordinates
+                            bounds = vrt.bounds
+                            x = np.linspace(bounds.left, bounds.right, dem.shape[1])
+                            y = np.linspace(bounds.bottom, bounds.top, dem.shape[0])
+                            X, Y = np.meshgrid(x, y)
+                            
+                            # Subsample to speed up contouring if raster is very large
+                            step = max(1, dem.shape[0] // 500)
+                            dem_sub = dem[::step, ::step]
+                            X_sub = X[::step, ::step]
+                            Y_sub = Y[::step, ::step]
+                            
+                            # Calculate contour levels (max 15 levels)
+                            min_val = np.nanmin(dem_sub)
+                            max_val = np.nanmax(dem_sub)
+                            if max_val > min_val:
+                                levels = np.linspace(min_val, max_val, 15)
+                                contours = ax.contour(X_sub, Y_sub, dem_sub, levels=levels, colors='black', linewidths=0.5, alpha=0.4, zorder=3)
+                                ax.clabel(contours, inline=True, fontsize=5, fmt='%1.0f m')
+                        else:
+                            vrt_data = vrt.read(1)
+                            extent = [vrt.bounds.left, vrt.bounds.right, vrt.bounds.bottom, vrt.bounds.top]
+                            ax.imshow(vrt_data, extent=extent, zorder=2, cmap=cmap if isinstance(cmap, str) else None, alpha=0.75)
             except Exception as e:
-                print(f"[WARNING] Overlay raster gagal: {e}")
+                import traceback
+                print(f"[WARNING] Overlay raster gagal: {e}\n{traceback.format_exc()}")
 
         # Ambil batas administrasi dari BIG Geoportal (resmi)
         admin_file, admin_source = _fetch_big_admin(clat, clon, bk + 5)

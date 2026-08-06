@@ -34,7 +34,7 @@ def send_to_telegram(file_path, caption):
     data = {'chat_id': chat_id, 'caption': caption, 'parse_mode': 'HTML'}
     
     try:
-        resp = requests.post(url, data=data, files=files, timeout=60)
+        resp = requests.post(url, data=data, files=files, timeout=600)
         resp.raise_for_status()
         return "Terkirim ke Telegram!"
     except Exception as e:

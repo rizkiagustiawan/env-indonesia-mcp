@@ -156,7 +156,7 @@ def render_2d_contour(sources, output_path, title, grid_size, barriers=None):
     fig.text(0.02, 0.02, "Model: ISO 9613-2 Point Source | KepmenLH 48/1996 | ZeroClaw Environmental AI",
              fontsize=8, style="italic")
 
-    plt.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     max_l = np.max(L)
@@ -197,7 +197,7 @@ def render_3d_surface(sources, output_path, title, grid_size):
     ax.set_zlabel("dBA")
     ax.view_init(elev=35, azim=225)
 
-    plt.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     return f"SUCCESS: Peta kebisingan 3D disimpan di {output_path}"
