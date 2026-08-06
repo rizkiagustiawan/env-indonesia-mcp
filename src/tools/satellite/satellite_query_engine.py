@@ -80,29 +80,103 @@ def query_srtm(lat, lon):
         print(f"ERROR: {e}")
 
 def query_era5(lat, lon):
+    """Deep climate analysis: multi-year ERA5 + water balance + debit banjir rencana.
+    
+    Metode: Thornthwaite water balance + Rational Method untuk debit banjir rencana.
+    Ref: Thornthwaite (1948), Chow et al. (1988) Applied Hydrology.
+    """
     import ee
+    from datetime import datetime, timedelta
     ee.Initialize()
     pt = ee.Geometry.Point([lon, lat])
     
+    # Multi-year (5 tahun terakhir) untuk statistik iklim robust
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=365*5)).strftime("%Y-%m-%d")
+    
     era5 = ee.ImageCollection('ECMWF/ERA5_LAND/MONTHLY_AGGR') \
-        .filterBounds(pt).sort('system:time_start', False).first()
+        .filterBounds(pt).filterDate(start_date, end_date)
     
     try:
-        val = era5.reduceRegion(ee.Reducer.first(), pt, 11132).getInfo()
-        temp_k = val.get('temperature_2m', 0)
-        temp_c = temp_k - 273.15 if temp_k else "N/A"
-        precip = val.get('total_precipitation_sum', 0)
-        precip_mm = precip * 1000 if precip else "N/A"
+        count = era5.size().getInfo()
+        if count == 0:
+            print("ERROR: Tidak ada data ERA5 untuk periode ini.")
+            return
         
-        date = ee.Date(era5.get('system:time_start')).format('YYYY-MM').getInfo()
+        # Multi-year statistics
+        mean_temp_k = era5.select('temperature_2m').mean().reduceRegion(ee.Reducer.mean(), pt, 11132).getInfo()
+        max_temp_k = era5.select('temperature_2m').max().reduceRegion(ee.Reducer.max(), pt, 11132).getInfo()
+        min_temp_k = era5.select('temperature_2m').min().reduceRegion(ee.Reducer.min(), pt, 11132).getInfo()
         
-        print(f"SUCCESS: ERA5 Climate at {lat}, {lon}")
-        print(f"Dataset: ECMWF/ERA5_LAND/MONTHLY_AGGR (~11km)")
-        print(f"Month: {date}")
-        print(f"Temperature (2m): {temp_c:.1f}°C" if isinstance(temp_c, float) else f"Temperature: {temp_c}")
-        print(f"Total Precipitation: {precip_mm:.1f} mm" if isinstance(precip_mm, float) else f"Precipitation: {precip_mm}")
+        total_precip = era5.select('total_precipitation_sum').sum().reduceRegion(ee.Reducer.sum(), pt, 11132).getInfo()
+        mean_monthly_precip = era5.select('total_precipitation_sum').mean().reduceRegion(ee.Reducer.mean(), pt, 11132).getInfo()
+        max_monthly_precip = era5.select('total_precipitation_sum').max().reduceRegion(ee.Reducer.max(), pt, 11132).getInfo()
+        
+        # Extract values
+        temp_mean_c = mean_temp_k.get('temperature_2m', 300) - 273.15
+        temp_max_c = max_temp_k.get('temperature_2m', 310) - 273.15
+        temp_min_c = min_temp_k.get('temperature_2m', 290) - 273.15
+        precip_total_mm = total_precip.get('total_precipitation_sum', 0) * 1000  # m → mm
+        precip_mean_monthly = mean_monthly_precip.get('total_precipitation_sum', 0) * 1000
+        precip_max_monthly = max_monthly_precip.get('total_precipitation_sum', 0) * 1000
+        precip_annual = precip_total_mm / 5  # rata-rata tahunan
+        
+        # Thornthwaite PET (Potential Evapotranspiration)
+        # T > 0 and T < 26.5: PET = 16 * (10*T/I)^a
+        # I = sum of (T/5)^1.514 for 12 months (approx with annual mean)
+        I = (temp_mean_c / 5) ** 1.514 * 12
+        a = (0.675 * I**3 - 77.1 * I**2 + 17920 * I + 491390) / 1000000 if I > 0 else 0.5
+        pet_monthly = 16 * (10 * temp_mean_c / max(I, 0.01)) ** a if temp_mean_c > 0 else 0
+        pet_annual = pet_monthly * 12
+        
+        # Water balance: P - PET
+        water_balance = precip_annual - pet_annual
+        
+        # Debit banjir rencana (Rational Method: Q = 0.278 * C * I * A)
+        # C = runoff coefficient (0.3 for vegetated, 0.6 for mixed, 0.9 for urban)
+        # I = rainfall intensity (max monthly / 30 days → mm/hr approx)
+        # A = catchment area (buffer_km^2 * pi)
+        C_runoff = 0.5  # mixed land cover
+        I_intensity = (precip_max_monthly / 30 / 24) if precip_max_monthly > 0 else 5  # mm/hr
+        A_km2 = 3.14159 * (10 ** 2)  # 10km buffer
+        Q_banjir = 0.278 * C_runoff * I_intensity * A_km2  # m³/s
+        
+        # Get latest month for reference
+        latest = era5.sort('system:time_start', False).first()
+        latest_date = ee.Date(latest.get('system:time_start')).format('YYYY-MM').getInfo()
+        
+        print(f"SUCCESS: ERA5 Deep Climate Analysis at {lat}, {lon}")
+        print(f"Dataset: ECMWF/ERA5_LAND/MONTHLY_AGGR (~11km resolution)")
+        print(f"Periode: {start_date} to {end_date} ({count} monthly images, 5-year)")
+        print(f"Latest month: {latest_date}")
+        print(f"\n=== Statistik Suhu (5 tahun) ===")
+        print(f"  Mean : {temp_mean_c:.1f}°C")
+        print(f"  Max  : {temp_max_c:.1f}°C")
+        print(f"  Min  : {temp_min_c:.1f}°C")
+        print(f"  Range: {temp_max_c - temp_min_c:.1f}°C (amplitudo termal)")
+        print(f"\n=== Statistik Curah Hujan (5 tahun) ===")
+        print(f"  Total 5 tahun : {precip_total_mm:.0f} mm")
+        print(f"  Rata-rata tahunan: {precip_annual:.0f} mm/thn")
+        print(f"  Rata-rata bulanan: {precip_mean_monthly:.1f} mm/bln")
+        print(f"  Maks bulanan    : {precip_max_monthly:.1f} mm/bln")
+        print(f"\n=== Water Balance (Thornthwaite) ===")
+        print(f"  PET tahunan     : {pet_annual:.0f} mm/thn")
+        print(f"  Water balance   : {water_balance:.0f} mm/thn (P - PET)")
+        if water_balance > 0:
+            print(f"  Status: SURPLUS AIR (humid climate) — waspada banjir")
+        else:
+            print(f"  Status: DEFISIT AIR (dry climate) — waspda kekeringan")
+        print(f"\n=== Debit Banjir Rencana (Rational Method) ===")
+        print(f"  Koefisien runoff C: {C_runoff} (mixed land cover)")
+        print(f"  Intensitas hujan I: {I_intensity:.1f} mm/jam")
+        print(f"  Area catchment A : {A_km2:.1f} km²")
+        print(f"  Q banjir rencana : {Q_banjir:.1f} m³/s (Q = 0.278*C*I*A)")
+        print(f"\nMetode: Thornthwaite (1948) PET | Rational Method (Chow 1988)")
+        
     except Exception as e:
+        import traceback
         print(f"ERROR: {e}")
+        print(traceback.format_exc()[:200])
 
 def query_dw(lat, lon):
     import ee
