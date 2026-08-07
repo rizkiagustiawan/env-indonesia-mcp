@@ -1805,6 +1805,174 @@ pub struct ClimateProjParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PeatCo2Param {
+    #[schemars(description = "Burned area (hectares)")]
+    pub burned_area_ha: f64,
+    #[schemars(description = "Peat depth (meters). Indonesia: 0.5-12m typical")]
+    pub peat_depth_m: f64,
+    #[schemars(description = "Severity: 'low', 'moderate', or 'high'")]
+    pub severity: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct HeavyMetalParam {
+    #[schemars(description = "Lead (Pb) concentration mg/L")]
+    pub pb: f64,
+    #[schemars(description = "Cadmium (Cd) concentration mg/L")]
+    pub cd: f64,
+    #[schemars(description = "Mercury (Hg) concentration mg/L")]
+    pub hg: f64,
+    #[schemars(description = "Arsenic (As) concentration mg/L")]
+    pub as_: f64,
+    #[schemars(description = "Chromium (Cr) concentration mg/L")]
+    pub cr: f64,
+    #[schemars(description = "Body weight kg (default 70)")]
+    pub body_weight_kg: Option<f64>,
+    #[schemars(description = "Water intake L/day (default 2)")]
+    pub intake_l_per_day: Option<f64>,
+    #[schemars(description = "Exposure years (default 30)")]
+    pub exposure_years: Option<f64>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PollutionIndexParam {
+    #[schemars(description = "BOD concentration mg/L")]
+    pub bod: f64,
+    #[schemars(description = "COD concentration mg/L")]
+    pub cod: f64,
+    #[schemars(description = "Dissolved Oxygen mg/L")]
+    pub do_: f64,
+    #[schemars(description = "Total Suspended Solids mg/L")]
+    pub tss: f64,
+    #[schemars(description = "Total Coliform MPN/100mL (optional)")]
+    pub total_coliform: Option<f64>,
+    #[schemars(description = "Water class 1-4 (PP 22/2021). Default 2")]
+    pub class: Option<u8>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct AsgmMercuryParam {
+    #[schemars(description = "Hg concentration in water mg/L")]
+    pub hg_conc_water: f64,
+    #[schemars(description = "Hg concentration in sediment mg/kg")]
+    pub hg_conc_sediment: f64,
+    #[schemars(description = "Gold production kg/year")]
+    pub gold_production_kg_yr: f64,
+    #[schemars(description = "Population exposed")]
+    pub population_exposed: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ClimateVulnerabilityParam {
+    #[schemars(description = "Temperature change °C (from climate_projection)")]
+    pub temp_change_c: f64,
+    #[schemars(description = "Precipitation change %")]
+    pub precip_change_pct: f64,
+    #[schemars(description = "Extreme events per year")]
+    pub extreme_event_freq: u32,
+    #[schemars(description = "Elevation meters")]
+    pub elevation_m: f64,
+    #[schemars(description = "Population density per km²")]
+    pub population_density: f64,
+    #[schemars(description = "Poverty rate %")]
+    pub poverty_rate: f64,
+    #[schemars(description = "GDP per capita USD")]
+    pub gdp_per_capita_usd: f64,
+    #[schemars(description = "Literacy rate %")]
+    pub literacy_rate: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MineImpactParam {
+    #[schemars(description = "Mine type: nickel, coal, gold, tin")]
+    pub mine_type: String,
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Mine area hectares")]
+    pub area_ha: f64,
+    #[schemars(description = "Deforested area hectares")]
+    pub deforestation_ha: f64,
+    #[schemars(description = "Water pollution: good, light, moderate, heavy")]
+    pub water_pollution_level: String,
+    #[schemars(description = "Tailings present? true/false")]
+    pub has_tailings: bool,
+    #[schemars(description = "Acid Mine Drainage present? true/false")]
+    pub has_amd: bool,
+    #[schemars(description = "Social displacement (people)")]
+    pub social_displacement: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TidalFloodParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "SLR scenario: 'ssp245' or 'ssp585'")]
+    pub slr_scenario: Option<String>,
+    #[schemars(description = "Subsidence rate mm/yr (from InSAR)")]
+    pub subsidence_rate_mm_yr: f64,
+    #[schemars(description = "Projection year: 2050 or 2100")]
+    pub projection_year: Option<u32>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct LandslideParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Buffer km (default 10)")]
+    pub buffer_km: Option<f64>,
+    #[schemars(description = "24h rainfall mm")]
+    pub rainfall_mm: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct GpmImergParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Date YYYY-MM-DD")]
+    pub date: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CycloneParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PlasticLeakageParam {
+    #[schemars(description = "Population")]
+    pub population: u64,
+    #[schemars(description = "Waste generation kg/cap/day (Indonesia ~0.7)")]
+    pub waste_generation_kg_cap_day: f64,
+    #[schemars(description = "Plastic fraction % (default 10)")]
+    pub plastic_fraction_pct: f64,
+    #[schemars(description = "Mismanaged waste % (Indonesia ~50)")]
+    pub mismanaged_waste_pct: f64,
+    #[schemars(description = "Coastal population % (Indonesia ~60)")]
+    pub coastal_population_pct: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ViirsFishingParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Date YYYY-MM-DD")]
+    pub date: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct NdviParam {
     #[schemars(description = "Near-infrared band value (Sentinel-2 B8)")]
     pub nir: f64,
@@ -2007,7 +2175,106 @@ impl EnvIndonesiaServer {
             &HTTP, p.lat, p.lon,
             p.scenario.as_deref().unwrap_or("ssp585"),
             p.period.as_deref().unwrap_or("2050")
+         ).await
+     }
+
+    #[tool(description = "Peat Fire CO2 Emission — IPCC 2013 Wetlands Supplement. Input: burned area (ha), peat depth (m), severity. Peat fire = 10x more CO2 than mineral soil. Ref: Hooijer et al. 2012; Page et al. 2002.")]
+    fn peat_co2_emission(&self, Parameters(p): Parameters<PeatCo2Param>) -> String {
+        tools::calculators::peat_co2::calculate(p.burned_area_ha, p.peat_depth_m, &p.severity)
+    }
+
+    #[tool(description = "Heavy Metal Risk Assessment — HPI (Mohsen 1989) + US EPA RAGS health risk. Input: Pb, Cd, Hg, As, Cr concentrations. Baku mutu PP 22/2021. HQ + ILCR carcinogenic risk. Ref: Diansyah et al. 2025; Ramadhani et al. 2026.")]
+    fn heavy_metal_risk(&self, Parameters(p): Parameters<HeavyMetalParam>) -> String {
+        tools::calculators::heavy_metal_risk::assess(
+            p.pb, p.cd, p.hg, p.as_, p.cr,
+            p.body_weight_kg.unwrap_or(70.0),
+            p.intake_l_per_day.unwrap_or(2.0),
+            p.exposure_years.unwrap_or(30.0),
+        )
+    }
+
+    #[tool(description = "Water Pollution Index — KepMen LH 115/2003. Input: BOD, COD, DO, TSS, coliform, class (1-4). PI = sqrt(max(Ci/Lij) × avg(Ci/Lij)). Also STORET. Baku mutu PP 22/2021. Ref: Marselina et al. 2025; Hidayati et al. 2025.")]
+    fn water_pollution_index(&self, Parameters(p): Parameters<PollutionIndexParam>) -> String {
+        tools::water::pollution_index::calculate(
+            p.bod, p.cod, p.do_, p.tss, p.total_coliform, p.class.unwrap_or(2)
+        )
+    }
+
+    #[tool(description = "ASGM Mercury Assessment — Hg mass balance + health risk. Input: Hg in water/sediment, gold production, population. UNEP 2013 method. Baku mutu PP 22/2021. Minamata Convention. Ref: Agustiani et al. 2025; Desmaiani et al. 2026.")]
+    fn asgm_mercury_assessment(&self, Parameters(p): Parameters<AsgmMercuryParam>) -> String {
+        tools::calculators::asgm_mercury::assess(
+            p.hg_conc_water, p.hg_conc_sediment,
+            p.gold_production_kg_yr, p.population_exposed
+        )
+    }
+
+    #[tool(description = "Climate Vulnerability Index — IPCC AR5/AR6. V = Exposure × Sensitivity × (1-Adaptive Capacity). Input: climate change, elevation, population, poverty, GDP, literacy. Ref: Onat et al. 2025; Padaliya et al. 2025; Kumar et al. 2025.")]
+    fn climate_vulnerability_index(&self, Parameters(p): Parameters<ClimateVulnerabilityParam>) -> String {
+        tools::calculators::climate_vulnerability::calculate(
+            p.temp_change_c, p.precip_change_pct, p.extreme_event_freq,
+            p.elevation_m, p.population_density, p.poverty_rate,
+            p.gdp_per_capita_usd, p.literacy_rate
+        )
+    }
+
+    #[tool(description = "Mining Impact Assessment — Screening tool for nickel/coal/gold/tin. Leopold-style impact matrix + mine-specific profiles. Input: mine type, area, deforestation, water pollution, tailings, AMD, social. Ref: Pambudi 2025; Rosada 2025; Nasution 2024; Manurung 2025.")]
+    fn mine_impact_assessment(&self, Parameters(p): Parameters<MineImpactParam>) -> String {
+        tools::calculators::mine_impact::assess(
+            &p.mine_type, p.lat, p.lon, p.area_ha, p.deforestation_ha,
+            &p.water_pollution_level, p.has_tailings, p.has_amd, p.social_displacement
+        )
+    }
+
+    #[tool(description = "Tidal Flood Compound — SLR + Subsidence + Tide (bathtub model). IPCC AR6. Open-Meteo Marine tide + Copernicus DEM 30m. Compound flood = max(SLR + tide - ground_elev + subsidence, 0). Ref: Shan et al. 2025 (Nature); Momin et al. 2026; Chrysanti et al. 2024.")]
+    async fn tidal_flood_compound(&self, Parameters(p): Parameters<TidalFloodParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::advanced_physics::tidal_flood::assess(
+            &HTTP, p.lat, p.lon,
+            p.slr_scenario.as_deref().unwrap_or("ssp585"),
+            p.subsidence_rate_mm_yr,
+            p.projection_year.unwrap_or(2050)
         ).await
+    }
+
+    #[tool(description = "Landslide Susceptibility — Frequency Ratio (FR) method. DEM slope + curvature + rainfall threshold. AUC 0.80-0.90 globally. Ref: Tirsyayu 2025 (Sulsel); Gnagne 2025 (Ivory Coast); Akhil 2025 (Wayanad AUC=0.896); Akbar 2025 (Japan).")]
+    async fn landslide_susceptibility(&self, Parameters(p): Parameters<LandslideParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::gis::landslide::assess(
+            &HTTP, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), p.rainfall_mm
+        ).await
+    }
+
+    #[tool(description = "GPM IMERG Rainfall — 30-min precipitation (0.1°, ~10km). ⚠️ Tropical bias -41% (Watters 2025 NASA GPM). Valid for monthly/seasonal, NOT hourly flood. Ref: Setiyowati 2025; Lufira 2026 (bias correction).")]
+    async fn gpm_imerg_rainfall(&self, Parameters(p): Parameters<GpmImergParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::satellite::gpm_imerg::query(&HTTP, p.lat, p.lon, &p.date).await
+    }
+
+    #[tool(description = "Tropical Cyclone Track — ECMWF trajectory forecast (type=tf). Track error 100-350km at 24h. GRIB2 data. CC-BY-4.0. Indonesia rarely affected (NTT/Maluku). BMKG authoritative. Ref: Yang et al. 2025/2026; DeMaria et al. 2025.")]
+    async fn tropical_cyclone_track(&self, Parameters(p): Parameters<CycloneParam>) -> String {
+        tools::data::cyclone::search(&HTTP, p.lat, p.lon).await
+    }
+
+    #[tool(description = "Plastic Leakage Estimate — Jambeck et al. 2015 (Science). Population × waste × plastic × mismanaged → tons/year to sea. Indonesia #2 globally. Target 70% reduction by 2025. Ref: Nursyahputra 2026; Anuar 2025; Adnan 2025.")]
+    fn plastic_leakage_estimate(&self, Parameters(p): Parameters<PlasticLeakageParam>) -> String {
+        tools::ocean::plastic_leakage::estimate(
+            p.population, p.waste_generation_kg_cap_day,
+            p.plastic_fraction_pct, p.mismanaged_waste_pct, p.coastal_population_pct
+        )
+    }
+
+    #[tool(description = "VIIRS Fishing Detection — Night light fishing boat detection. VIIRS DNB ~750m. VBD algorithm (Elvidge). Overlay MPA → illegal fishing. Cloud blocks detection. Ref: Elvidge et al. 2024 (SE Asia); Wang et al. 2025; Li et al. 2024.")]
+    async fn viirs_fishing_detection(&self, Parameters(p): Parameters<ViirsFishingParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::satellite::viirs_fishing::search(&HTTP, p.lat, p.lon, &p.date).await
     }
 
     #[tool(description = "Air pollution AQI PM2.5 NO2 O3 SO2 CO (Open-Meteo CAMS)")]

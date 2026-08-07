@@ -51,6 +51,11 @@ pub mod waste_to_energy;
 pub mod wastewater;
 pub mod water_balance;
 pub mod water_footprint;
+pub mod peat_co2;
+pub mod heavy_metal_risk;
+pub mod asgm_mercury;
+pub mod climate_vulnerability;
+pub mod mine_impact;
 
 #[cfg(test)]
 mod tests;

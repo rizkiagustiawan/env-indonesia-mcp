@@ -1,6 +1,7 @@
 pub mod coral;
 pub mod mpa;
 pub mod coral_dhw;
+pub mod plastic_leakage;
 
 /// Haversine distance (km) between two lat/lon points
 pub fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {

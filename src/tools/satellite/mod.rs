@@ -20,3 +20,5 @@ pub mod foundation_models;
 pub mod stac;
 pub mod flood_sar;
 pub mod karhutla;
+pub mod gpm_imerg;
+pub mod viirs_fishing;

@@ -11,3 +11,4 @@ pub mod openweather;
 pub mod satu_data;
 pub mod waqi;
 pub mod climate_projection;
+pub mod cyclone;
