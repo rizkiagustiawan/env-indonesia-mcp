@@ -1693,6 +1693,46 @@ pub struct SatelliteSearchParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StacSearchParam {
+    #[schemars(description = "STAC API: 'mpc' (Microsoft Planetary Computer, 135 collections) or 'earth-search' (Element 84, 9 collections)")]
+    pub api: Option<String>,
+    #[schemars(description = "Collection ID, e.g. sentinel-2-l2a, landsat-c2-l2, sentinel-1-grd, sentinel-5p-l2-netcdf, modis-13A1-061, gpm-imerg-hhr, esa-worldcover, planet-nicfi-visual, cop-dem-glo-30")]
+    pub collection: String,
+    #[schemars(description = "Bounding box: south,west,north,east. Default: Indonesia (-11.5,95.0,6.0,141.0)")]
+    pub bbox: Option<String>,
+    #[schemars(description = "Datetime range ISO8601: '2025-01-01T00:00:00Z/2026-12-31T23:59:59Z'. Default: 2024-2026")]
+    pub datetime: Option<String>,
+    #[schemars(description = "Max results (default 10, max 100)")]
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StacCollectionParam {
+    #[schemars(description = "STAC API: 'mpc' or 'earth-search'. Default: mpc")]
+    pub api: Option<String>,
+    #[schemars(description = "Collection ID to describe, e.g. sentinel-2-l2a, sentinel-5p-l2-netcdf, planet-nicfi-visual")]
+    pub collection: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StacListParam {
+    #[schemars(description = "STAC API: 'mpc' (135 collections) or 'earth-search' (9 collections). Default: mpc")]
+    pub api: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StacAssetParam {
+    #[schemars(description = "STAC API: 'mpc' or 'earth-search'. Default: mpc")]
+    pub api: Option<String>,
+    #[schemars(description = "Collection ID, e.g. sentinel-2-l2a")]
+    pub collection: String,
+    #[schemars(description = "Item/Scene ID from stac_search results")]
+    pub item_id: String,
+    #[schemars(description = "Asset key: data, visual, thumbnail, rendered_preview, tif, image, etc.")]
+    pub asset_key: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct LatLonParam {
     #[schemars(description = "Latitude (Indonesia: -11.5 to 6.0)")]
     pub lat: Option<f64>,
@@ -1859,6 +1899,31 @@ impl EnvIndonesiaServer {
     async fn copernicus_search(&self, Parameters(p): Parameters<SatelliteSearchParam>) -> String {
         tools::satellite::copernicus::search(&HTTP, &p.collection, p.limit.unwrap_or(5), p.bbox)
             .await
+    }
+
+    #[tool(description = "STAC Search — Microsoft Planetary Computer (135 collections, NO API key) or Element 84 Earth Search (9 collections). Free satellite data: Sentinel-1/2/3/5P, Landsat, MODIS, GPM IMERG, ESA WorldCover, Planet NICFI 4.77m, DEM. Covers Indonesia. Direct HTTPS download URLs included.")]
+    async fn stac_search(&self, Parameters(p): Parameters<StacSearchParam>) -> String {
+        let api = p.api.as_deref().unwrap_or("mpc");
+        let limit = p.limit.unwrap_or(10).min(100);
+        tools::satellite::stac::search(&HTTP, api, &p.collection, &p.bbox, &p.datetime, limit).await
+    }
+
+    #[tool(description = "STAC List Collections — list all available satellite collections. MPC: 135 collections (Sentinel, Landsat, MODIS, GPM, ERA5, ESA WorldCover, Planet NICFI, DEM, etc). Earth Search: 9 collections. No API key required.")]
+    async fn stac_collections(&self, Parameters(p): Parameters<StacListParam>) -> String {
+        let api = p.api.as_deref().unwrap_or("mpc");
+        tools::satellite::stac::list_collections(&HTTP, api).await
+    }
+
+    #[tool(description = "STAC Describe Collection — get details: spatial/temporal extent, assets, license, providers, resolution. Input: collection ID (e.g. sentinel-2-l2a, sentinel-5p-l2-netcdf, planet-nicfi-visual, gpm-imerg-hhr, esa-worldcover)")]
+    async fn stac_describe(&self, Parameters(p): Parameters<StacCollectionParam>) -> String {
+        let api = p.api.as_deref().unwrap_or("mpc");
+        tools::satellite::stac::describe_collection(&HTTP, api, &p.collection).await
+    }
+
+    #[tool(description = "STAC Get Asset URL — get direct download URL for a satellite scene asset. No API key. MPC assets are signed HTTPS URLs (valid 1 hour). Use after stac_search to download specific bands/images.")]
+    async fn stac_asset_url(&self, Parameters(p): Parameters<StacAssetParam>) -> String {
+        let api = p.api.as_deref().unwrap_or("mpc");
+        tools::satellite::stac::get_asset_url(&HTTP, api, &p.collection, &p.item_id, &p.asset_key).await
     }
 
     #[tool(description = "Air pollution AQI PM2.5 NO2 O3 SO2 CO (Open-Meteo CAMS)")]

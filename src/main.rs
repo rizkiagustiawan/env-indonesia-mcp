@@ -105,6 +105,62 @@ async fn main() -> Result<()> {
                     let res = tools::calculators::land_subsidence::calculate(p.clay_thickness_m, p.delta_stress_kpa, p.cc, p.e0, p.sigma0_kpa);
                     println!("{}", res);
                 },
+                "stac_search" => {
+                    let p: server::StacSearchParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::stac::search(
+                        &client,
+                        p.api.as_deref().unwrap_or("mpc"),
+                        &p.collection,
+                        &p.bbox,
+                        &p.datetime,
+                        p.limit.unwrap_or(10).min(100),
+                    ).await;
+                    println!("{}", res);
+                },
+                "stac_collections" => {
+                    let p: server::StacListParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::stac::list_collections(
+                        &client,
+                        p.api.as_deref().unwrap_or("mpc"),
+                    ).await;
+                    println!("{}", res);
+                },
+                "stac_describe" => {
+                    let p: server::StacCollectionParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::stac::describe_collection(
+                        &client,
+                        p.api.as_deref().unwrap_or("mpc"),
+                        &p.collection,
+                    ).await;
+                    println!("{}", res);
+                },
+                "stac_asset_url" => {
+                    let p: server::StacAssetParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::stac::get_asset_url(
+                        &client,
+                        p.api.as_deref().unwrap_or("mpc"),
+                        &p.collection,
+                        &p.item_id,
+                        &p.asset_key,
+                    ).await;
+                    println!("{}", res);
+                },
                 _ => println!("Tool '{}' not yet wired in CLI test mode. Use MCP stdio.", tool_name),
             }
             return Ok(());

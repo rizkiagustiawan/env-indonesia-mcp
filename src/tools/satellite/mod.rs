@@ -17,3 +17,4 @@ pub mod planetary_computer;
 pub mod hotspot_scanner;
 pub mod peatland;
 pub mod foundation_models;
+pub mod stac;
