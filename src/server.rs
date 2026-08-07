@@ -1972,6 +1972,150 @@ pub struct ViirsFishingParam {
     pub date: String,
 }
 
+// ═══ GOD TIER v3: 9 Advanced Modeling Tools ═══
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct EnhancedLeopoldParam {
+    #[schemars(description = "JSON: [[\"kegiatan\",\"komponen\",magnitude(-10..10),importance(1..10)],...]")]
+    pub impacts_json: String,
+    #[schemars(description = "JSON: [[\"criterion\",weight],...] (e.g. [[\"Ekologi\",0.4],[\"Sosial\",0.25],...])")]
+    pub criteria_weights_json: String,
+    #[schemars(description = "JSON: [[\"Alt A\",[score1,score2,...]],...] for TOPSIS ranking")]
+    pub alternatives_json: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct LcaEnhancedParam {
+    #[schemars(description = "JSON: [[\"material\",mass_kg],...] (e.g. [[\"semen\",500],[\"baja\",100]])")]
+    pub materials_json: String,
+    #[schemars(description = "Transport in kg·km (e.g. 50000 for 500kg × 100km)")]
+    pub transport_kg_km: f64,
+    #[schemars(description = "Energy consumption in kWh (Indonesia grid)")]
+    pub energy_kwh: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct EmpParam {
+    #[schemars(description = "JSON: [[\"dampak\",\"komponen\",significance],...] (from Leopold)")]
+    pub impacts_json: String,
+    #[schemars(description = "Project type (e.g. tambang, jalan, PLTU)")]
+    pub project_type: String,
+    #[schemars(description = "Location name")]
+    pub location: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct Iso14001GapParam {
+    #[schemars(description = "JSON: [[\"clause_id\",\"sub_req\",level(1-5),\"evidence\"],...]. Level: 1=not implemented, 3=partial, 5=fully. Empty = template.")]
+    pub compliance_json: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TrigrsParam {
+    #[schemars(description = "Rainfall intensity mm/hr")]
+    pub rainfall_mm_hr: f64,
+    #[schemars(description = "Duration hours")]
+    pub duration_hr: f64,
+    #[schemars(description = "Saturated hydraulic conductivity m/s (e.g. 1e-6 for clay, 1e-4 for sand)")]
+    pub ks_m_s: f64,
+    #[schemars(description = "Diffusivity m²/s (e.g. 1e-5)")]
+    pub d2_m: f64,
+    #[schemars(description = "Effective cohesion kPa (e.g. 5-20)")]
+    pub cohesion_kpa: f64,
+    #[schemars(description = "Friction angle degrees (e.g. 25-35)")]
+    pub friction_angle_deg: f64,
+    #[schemars(description = "Slope angle degrees")]
+    pub slope_deg: f64,
+    #[schemars(description = "Soil depth meters")]
+    pub depth_m: f64,
+    #[schemars(description = "Porosity (0-1, e.g. 0.3-0.5)")]
+    pub porosity: f64,
+    #[schemars(description = "Saturated unit weight kN/m³ (e.g. 18-20)")]
+    pub unit_weight_kn_m3: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ModflowParam {
+    #[schemars(description = "Number of layers")]
+    pub grid_nlay: u32,
+    #[schemars(description = "Number of rows")]
+    pub grid_nrow: u32,
+    #[schemars(description = "Number of columns")]
+    pub grid_ncol: u32,
+    #[schemars(description = "Cell size meters")]
+    pub cell_size_m: f64,
+    #[schemars(description = "Horizontal hydraulic conductivity m/s")]
+    pub hk_m_s: f64,
+    #[schemars(description = "Vertical hydraulic conductivity m/s")]
+    pub vk_m_s: f64,
+    #[schemars(description = "Specific yield (0.05-0.3)")]
+    pub sy: f64,
+    #[schemars(description = "Specific storage 1/m (e.g. 1e-5)")]
+    pub ss_per_m: f64,
+    #[schemars(description = "Pumping rate m³/day")]
+    pub pumping_m3_day: f64,
+    #[schemars(description = "Pumping well X (column)")]
+    pub pumping_x: u32,
+    #[schemars(description = "Pumping well Y (row)")]
+    pub pumping_y: u32,
+    #[schemars(description = "Pumping well layer")]
+    pub pumping_layer: u32,
+    #[schemars(description = "Recharge mm/year")]
+    pub recharge_mm_yr: f64,
+    #[schemars(description = "Constant head boundary m")]
+    pub chb_head_m: f64,
+    #[schemars(description = "Simulation type: 'steady' or 'transient'")]
+    pub sim_type: String,
+    #[schemars(description = "Duration days (for transient)")]
+    pub duration_days: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MintpyInsarParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Start date YYYY-MM-DD")]
+    pub date_start: String,
+    #[schemars(description = "End date YYYY-MM-DD")]
+    pub date_end: String,
+    #[schemars(description = "BBox size km (default 10)")]
+    pub bbox_km: Option<f64>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct EnkfParam {
+    #[schemars(description = "JSON: [[x1,x2,...],...] ensemble of state vectors")]
+    pub model_states_json: String,
+    #[schemars(description = "JSON: [y1, y2, ...] observation vector")]
+    pub observations_json: String,
+    #[schemars(description = "Ensemble size (default 50)")]
+    pub ensemble_size: Option<u32>,
+    #[schemars(description = "Observation noise std dev")]
+    pub noise_std: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FireSpreadParam {
+    #[schemars(description = "Anderson fuel model 1-13 (1=short grass, 4=chaparral, 10=timber)")]
+    pub fuel_model: u8,
+    #[schemars(description = "Wind speed m/s")]
+    pub wind_speed_ms: f64,
+    #[schemars(description = "Wind direction degrees (0=N, 90=E)")]
+    pub wind_dir_deg: f64,
+    #[schemars(description = "Slope degrees")]
+    pub slope_deg: f64,
+    #[schemars(description = "Fuel moisture % (5=dry, 30=wet)")]
+    pub moisture_pct: f64,
+    #[schemars(description = "Ignition latitude")]
+    pub ignition_lat: f64,
+    #[schemars(description = "Ignition longitude")]
+    pub ignition_lon: f64,
+    #[schemars(description = "Duration hours")]
+    pub duration_hr: f64,
+}
+
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct NdviParam {
     #[schemars(description = "Near-infrared band value (Sentinel-2 B8)")]
@@ -4606,7 +4750,7 @@ impl EnvIndonesiaServer {
     #[tool(
         description = "NDVI Time Series Trend Analysis. Ref: Saifulloh et al. 2025. Annual composites + linear regression slope per pixel."
     )]
-    fn ndvi_timeseries(&self, Parameters(p): Parameters<NdviTimeseriesParam>) -> String {
+     fn ndvi_timeseries(&self, Parameters(p): Parameters<NdviTimeseriesParam>) -> String {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
             return format!("ERROR [E101]: {}", e);
         }
@@ -4617,6 +4761,82 @@ impl EnvIndonesiaServer {
             p.start_year as i32,
             p.end_year as i32,
             &p.output_path,
+        )
+    }
+
+    // ═══ GOD TIER v3: 9 Advanced Modeling Tools ═══
+
+    #[tool(description = "Enhanced Leopold Matrix (AHP + TOPSIS). Leopold M×I + AHP pairwise weights (CR<0.1) + TOPSIS alternative ranking. Ref: Leopold 1971; Saaty 1980; Zhang 2026; Nasiri 2026. Input: impacts_json, criteria_weights_json, alternatives_json.")]
+    fn enhanced_leopold_matrix(&self, Parameters(p): Parameters<EnhancedLeopoldParam>) -> String {
+        tools::calculators::enhanced_leopold::assess(
+            &p.impacts_json, &p.criteria_weights_json, &p.alternatives_json
+        )
+    }
+
+    #[tool(description = "Enhanced LCA (Multi-Category). ISO 14040/14044. GWP (IPCC AR6) + AP + EP + ODP + Water + Energy. 27 material DB + regression fallback. Transport + grid energy. Ref: Luan 2026; Arumugam 2026; Guleria 2026.")]
+    fn lca_enhanced(&self, Parameters(p): Parameters<LcaEnhancedParam>) -> String {
+        tools::calculators::lca_enhanced::calculate(
+            &p.materials_json, p.transport_kg_km, p.energy_kwh
+        )
+    }
+
+    #[tool(description = "Environmental Management Plan (RKL-RPL + KPI). PermenLHK 5/2021. Auto-generate RKL mitigation + RPL monitoring + KPI scoring + ISO 14001 linkage (Clause 8.1/9.1). Ref: Anggreini 2026; Rani 2026.")]
+    fn environmental_management_plan(&self, Parameters(p): Parameters<EmpParam>) -> String {
+        tools::amdal::emp_generator::generate(
+            &p.impacts_json, &p.project_type, &p.location
+        )
+    }
+
+    #[tool(description = "ISO 14001:2015 Gap Analysis + PROPER Prediction. Clause 4-10 (HLS/PDCA) + 5-point compliance + PROPER rating (HITAM→EMAS). Ref: Falakh 2026; Febrian 2026; Altarazi 2026. PermenLHK P.1/2021.")]
+    fn iso14001_gap_analysis(&self, Parameters(p): Parameters<Iso14001GapParam>) -> String {
+        tools::compliance::iso14001_gap::assess(&p.compliance_json)
+    }
+
+    #[tool(description = "TRIGRS Hybrid Landslide (Physics + ML). 1D infiltration FD (Richards) + Mohr-Coulomb FS + logistic ML probability. Ref: Baum 2008 (USGS); Sugianti 2026 (TRIGRSMap Indonesia); Peng 2026 (hybrid); Jiao 2026.")]
+    fn trigrs_landslide_hybrid(&self, Parameters(p): Parameters<TrigrsParam>) -> String {
+        tools::advanced_physics::trigrs::assess(
+            p.rainfall_mm_hr, p.duration_hr, p.ks_m_s, p.d2_m,
+            p.cohesion_kpa, p.friction_angle_deg, p.slope_deg, p.depth_m,
+            p.porosity, p.unit_weight_kn_m3
+        )
+    }
+
+    #[tool(description = "MODFLOW 6 3D Groundwater (FloPy bridge). Steady/transient head + drawdown. Falls back to Theis analytical if flopy missing. Ref: USGS MODFLOW 6; Dharma 2026 (Seulawah Agam Aceh). Install: pip install flopy numpy.")]
+    fn modflow_groundwater_3d(&self, Parameters(p): Parameters<ModflowParam>) -> String {
+        tools::water::modflow_3d::assess(
+            p.grid_nlay, p.grid_nrow, p.grid_ncol, p.cell_size_m,
+            p.hk_m_s, p.vk_m_s, p.sy, p.ss_per_m,
+            p.pumping_m3_day, p.pumping_x, p.pumping_y, p.pumping_layer,
+            p.recharge_mm_yr, p.chb_head_m, &p.sim_type, p.duration_days
+        )
+    }
+
+    #[tool(description = "MintPy InSAR SBAS Displacement. Sentinel-1 time series → mm/yr subsidence/uplift. Ref: Yunjun 2019; Widiarso 2026 (Semarang); Umarhadi 2026 (peatland); Pratama 2026 (Jatiluhur). Install: conda install mintpy isce2.")]
+    fn mintpy_insar(&self, Parameters(p): Parameters<MintpyInsarParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::satellite::mintpy_insar::assess(
+            p.lat, p.lon, &p.date_start, &p.date_end, p.bbox_km.unwrap_or(10.0)
+        )
+    }
+
+    #[tool(description = "EnKF Data Assimilation. Ensemble Kalman Filter for IoT sensor fusion. Forecast → Update → Uncertainty reduction. Ref: Evensen 1994; Sun 2026 (ADAPT); Sahar 2026; Zhao 2026. Input: model_states_json, observations_json, noise_std.")]
+    fn enkf_data_assimilation(&self, Parameters(p): Parameters<EnkfParam>) -> String {
+        tools::advanced_physics::enkf::assimilate(
+            &p.model_states_json, &p.observations_json,
+            p.ensemble_size.unwrap_or(50), p.noise_std
+        )
+    }
+
+    #[tool(description = "Fire Spread (Rothermel + Cellular Automata + Monte Carlo). Anderson 13 fuel models. CA 2D grid propagation + 50-member ensemble uncertainty. Ref: Rothermel 1972; Karakonstantis 2026; Sindhuja 2026. For karhutla Indonesia.")]
+    fn fire_spread_ca(&self, Parameters(p): Parameters<FireSpreadParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.ignition_lat, p.ignition_lon) {
+            return format!("ERROR [E101]: {}", e);
+        }
+        tools::advanced_physics::fire_spread::assess(
+            p.fuel_model, p.wind_speed_ms, p.wind_dir_deg, p.slope_deg,
+            p.moisture_pct, p.ignition_lat, p.ignition_lon, p.duration_hr
         )
     }
 }

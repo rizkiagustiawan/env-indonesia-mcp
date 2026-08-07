@@ -56,6 +56,8 @@ pub mod heavy_metal_risk;
 pub mod asgm_mercury;
 pub mod climate_vulnerability;
 pub mod mine_impact;
+pub mod enhanced_leopold;
+pub mod lca_enhanced;
 
 #[cfg(test)]
 mod tests;

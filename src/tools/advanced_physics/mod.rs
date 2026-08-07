@@ -6,3 +6,6 @@ pub mod swe_solver;
 pub mod uhi_radiative;
 pub mod validator_v3;
 pub mod tidal_flood;
+pub mod trigrs;
+pub mod enkf;
+pub mod fire_spread;
