@@ -161,6 +161,50 @@ async fn main() -> Result<()> {
                     ).await;
                     println!("{}", res);
                 },
+                "flood_sar_mapping" => {
+                    let p: server::FloodSarParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::flood_sar::search_flood_scenes(
+                        &client, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), &p.flood_date
+                    ).await;
+                    println!("{}", res);
+                },
+                "karhutla_assessment" => {
+                    let p: server::KarhutlaParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::karhutla::assess_karhutla(
+                        &client, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), &p.fire_date
+                    ).await;
+                    println!("{}", res);
+                },
+                "coral_dhw_alert" => {
+                    let p: server::CoralAlertParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::ocean::coral_dhw::query_dhw(&client, p.lat, p.lon).await;
+                    println!("{}", res);
+                },
+                "climate_projection" => {
+                    let p: server::ClimateProjParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::data::climate_projection::search_climate_projection(
+                        &client, p.lat, p.lon,
+                        p.scenario.as_deref().unwrap_or("ssp585"),
+                        p.period.as_deref().unwrap_or("2050")
+                    ).await;
+                    println!("{}", res);
+                },
                 _ => println!("Tool '{}' not yet wired in CLI test mode. Use MCP stdio.", tool_name),
             }
             return Ok(());

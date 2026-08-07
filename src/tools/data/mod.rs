@@ -10,3 +10,4 @@ pub mod open_meteo;
 pub mod openweather;
 pub mod satu_data;
 pub mod waqi;
+pub mod climate_projection;

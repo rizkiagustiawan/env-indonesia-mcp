@@ -1761,6 +1761,50 @@ pub struct SectorParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FloodSarParam {
+    #[schemars(description = "Latitude (Indonesia: -11.5 to 6.0)")]
+    pub lat: f64,
+    #[schemars(description = "Longitude (Indonesia: 95.0 to 141.5)")]
+    pub lon: f64,
+    #[schemars(description = "Buffer radius in km (default: 10)")]
+    pub buffer_km: Option<f64>,
+    #[schemars(description = "Flood event date (YYYY-MM-DD). When the flooding occurred.")]
+    pub flood_date: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct KarhutlaParam {
+    #[schemars(description = "Latitude (Indonesia: -11.5 to 6.0)")]
+    pub lat: f64,
+    #[schemars(description = "Longitude (Indonesia: 95.0 to 141.5)")]
+    pub lon: f64,
+    #[schemars(description = "Buffer radius in km (default: 10)")]
+    pub buffer_km: Option<f64>,
+    #[schemars(description = "Fire event date (YYYY-MM-DD). When the fire occurred.")]
+    pub fire_date: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CoralAlertParam {
+    #[schemars(description = "Latitude of reef site (Indonesia: -11.5 to 6.0)")]
+    pub lat: f64,
+    #[schemars(description = "Longitude of reef site (Indonesia: 95.0 to 141.5)")]
+    pub lon: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ClimateProjParam {
+    #[schemars(description = "Latitude (Indonesia: -11.5 to 6.0)")]
+    pub lat: f64,
+    #[schemars(description = "Longitude (Indonesia: 95.0 to 141.5)")]
+    pub lon: f64,
+    #[schemars(description = "Scenario: 'ssp245' (moderate ~3°C) or 'ssp585' (worst ~4.5°C). Default: ssp585")]
+    pub scenario: Option<String>,
+    #[schemars(description = "Period: '2030', '2050', or '2080'. Default: 2050")]
+    pub period: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct NdviParam {
     #[schemars(description = "Near-infrared band value (Sentinel-2 B8)")]
     pub nir: f64,
@@ -1924,6 +1968,46 @@ impl EnvIndonesiaServer {
     async fn stac_asset_url(&self, Parameters(p): Parameters<StacAssetParam>) -> String {
         let api = p.api.as_deref().unwrap_or("mpc");
         tools::satellite::stac::get_asset_url(&HTTP, api, &p.collection, &p.item_id, &p.asset_key).await
+    }
+
+    #[tool(description = "Flood SAR Mapping — Sentinel-1 VV change detection. Cloud-penetrating radar, 10m, 6-day revisit. Searches pre and post flood scenes, provides VV band download URLs + flood analysis protocol. Ref: Twele et al. 2016; Cian et al. 2018. Bypasses cloud cover limitation.")]
+    async fn flood_sar_mapping(&self, Parameters(p): Parameters<FloodSarParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
+        }
+        tools::satellite::flood_sar::search_flood_scenes(
+            &HTTP, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), &p.flood_date
+        ).await
+    }
+
+    #[tool(description = "Karhutla Assessment — Sentinel-2 dNBR burned area severity + peat fire ID. Searches pre/post fire S2 scenes (NIR B08 + SWIR2 B12). Severity: Key & Benson 2006 (USGS). Peat proxy: DEMNAS elev<50m + slope<2° + FIRMS sustained FRP. Ref: Hooijer et al. 2012; Page et al. 2002.")]
+    async fn karhutla_assessment(&self, Parameters(p): Parameters<KarhutlaParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
+        }
+        tools::satellite::karhutla::assess_karhutla(
+            &HTTP, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), &p.fire_date
+        ).await
+    }
+
+    #[tool(description = "Coral Bleaching Alert — NOAA Coral Reef Watch DHW (Degree Heating Weeks) real-time query. 5km resolution, 12-week cumulative heat stress. DHW>4=bleaching, >8=mortality. 2024=fourth global mass bleaching. Indonesia=Coral Triangle (76% world species). Ref: Goreau & Hayes 2024; Lachs et al. 2024; Festo et al. 2026.")]
+    async fn coral_dhw_alert(&self, Parameters(p): Parameters<CoralAlertParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
+        }
+        tools::ocean::coral_dhw::query_dhw(&HTTP, p.lat, p.lon).await
+    }
+
+    #[tool(description = "Climate Projection — NEX-GDDP-CMIP6 NASA downscaled (25km, bias-corrected). Scenarios: SSP2-4.5 (moderate ~3°C) or SSP5-8.5 (worst ~4.5°C). Period: 2030/2050/2080. Variables: tasmax, tasmin, pr. For AMDAL climate chapter, infrastructure planning, adaptation. Ref: Thrasher et al. 2022; Eyring et al. 2016.")]
+    async fn climate_projection(&self, Parameters(p): Parameters<ClimateProjParam>) -> String {
+        if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
+            return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
+        }
+        tools::data::climate_projection::search_climate_projection(
+            &HTTP, p.lat, p.lon,
+            p.scenario.as_deref().unwrap_or("ssp585"),
+            p.period.as_deref().unwrap_or("2050")
+        ).await
     }
 
     #[tool(description = "Air pollution AQI PM2.5 NO2 O3 SO2 CO (Open-Meteo CAMS)")]

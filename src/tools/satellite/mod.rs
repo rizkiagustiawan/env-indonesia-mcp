@@ -18,3 +18,5 @@ pub mod hotspot_scanner;
 pub mod peatland;
 pub mod foundation_models;
 pub mod stac;
+pub mod flood_sar;
+pub mod karhutla;
