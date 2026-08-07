@@ -14,9 +14,9 @@ pub fn generate(
     out.push_str("ISO 14001 link: Clause 8.1 (Operational Control), Clause 9.1 (Monitoring)\n");
     out.push_str("2026 SOTA: Anggreini 2026; Rani 2026\n\n");
 
-    let impacts: Vec<(String, String, f64)> = match serde_json::from_str(impacts_json) {
+    let impacts: Vec<(String, String, f64, f64)> = match serde_json::from_str(impacts_json) {
         Ok(v) => v,
-        Err(e) => return format!("ERROR [E102]: impacts_json parse: {}. Format: [[\"dampak\",\"komponen\",significance],...]", e),
+        Err(e) => return format!("ERROR [E102]: impacts_json parse: {}. Format: [[\"dampak\",\"komponen\",magnitude,importance],...]", e),
     };
 
     if impacts.is_empty() {
@@ -25,9 +25,9 @@ pub fn generate(
 
     out.push_str(&format!("Proyek: {} | Lokasi: {}\n\n", project_type, location));
 
-    // Filter significant impacts (significance >= 30)
-    let significant: Vec<&(String, String, f64)> = impacts.iter()
-        .filter(|(_, _, sig)| sig.abs() >= 30.0)
+    // Filter significant impacts (|magnitude × importance| >= 30)
+    let significant: Vec<&(String, String, f64, f64)> = impacts.iter()
+        .filter(|(_, _, mag, imp)| (mag * imp).abs() >= 30.0)
         .collect();
 
     if significant.is_empty() {
@@ -45,9 +45,10 @@ pub fn generate(
     out.push('\n');
 
     let mut rkl_count = 0;
-    for (i, (dampak, komponen, sig)) in significant.iter().enumerate() {
-        let mitigasi = suggest_mitigation(dampak, komponen, *sig, project_type);
-        let target = suggest_target(dampak, komponen, *sig);
+    for (i, (dampak, komponen, mag, imp)) in significant.iter().enumerate() {
+        let sig = mag * imp;
+        let mitigasi = suggest_mitigation(dampak, komponen, sig, project_type);
+        let target = suggest_target(dampak, komponen, sig);
         let indikator = suggest_indicator(dampak, komponen);
         let waktu = if sig.abs() >= 50.0 { "Pra-konstruksi" } else { "Konstruksi" };
 
@@ -69,7 +70,7 @@ pub fn generate(
     out.push_str(&"-".repeat(95));
     out.push('\n');
 
-    for (i, (dampak, komponen, _)) in significant.iter().enumerate() {
+    for (i, (dampak, komponen, _, _)) in significant.iter().enumerate() {
         let (param, frekuensi, metode, baku_mutu) = suggest_monitoring(dampak, komponen);
         out.push_str(&format!("{:<4} {:<22} {:<25} {:<12} {:<15} {:<15}\n",
             i + 1,
