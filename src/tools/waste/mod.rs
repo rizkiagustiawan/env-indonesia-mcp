@@ -4,3 +4,4 @@ pub mod landfill_stability;
 pub mod leachate;
 pub mod tclp;
 pub mod waste_compatibility;
+pub mod sve_design;

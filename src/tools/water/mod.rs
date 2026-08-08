@@ -13,3 +13,8 @@ pub mod trickling_filter;
 pub mod uasb_design;
 pub mod pollution_index;
 pub mod modflow_3d;
+pub mod pump_treat;
+pub mod prb_design;
+pub mod ro_design;
+pub mod gac_design;
+pub mod ion_exchange;

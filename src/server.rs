@@ -2118,6 +2118,202 @@ pub struct FireSpreadParam {
     pub duration_hr: f64,
 }
 
+// ═══ ENVIRONMENTAL ENGINEERING DESIGN TOOLS (11) ═══
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PumpTreatParam {
+    #[schemars(description = "Horizontal hydraulic conductivity m/s")]
+    pub hk_m_s: f64,
+    #[schemars(description = "Aquifer thickness m")]
+    pub aquifer_thickness_m: f64,
+    #[schemars(description = "Hydraulic gradient (dh/dx, dimensionless)")]
+    pub hydraulic_gradient: f64,
+    #[schemars(description = "Pumping rate m³/day")]
+    pub pumping_rate_m3_day: f64,
+    #[schemars(description = "Porosity (0.2-0.4 typical)")]
+    pub porosity: f64,
+    #[schemars(description = "Contaminant name")]
+    pub contaminant: String,
+    #[schemars(description = "Initial concentration µg/L")]
+    pub initial_conc_ug_l: f64,
+    #[schemars(description = "Target cleanup concentration µg/L")]
+    pub target_conc_ug_l: f64,
+    #[schemars(description = "Cleanup time target years")]
+    pub cleanup_time_years: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PrbDesignParam {
+    #[schemars(description = "Contaminant (tce, pce, cr6, as, etc.)")]
+    pub contaminant: String,
+    #[schemars(description = "Inflow concentration µg/L")]
+    pub c_inflow_ug_l: f64,
+    #[schemars(description = "Target outlet concentration µg/L")]
+    pub c_target_ug_l: f64,
+    #[schemars(description = "First-order degradation rate hr⁻¹ (0 = auto from contaminant)")]
+    pub k_first_order_hr: f64,
+    #[schemars(description = "Groundwater seepage velocity m/day")]
+    pub gw_velocity_m_day: f64,
+    #[schemars(description = "Barrier porosity")]
+    pub porosity: f64,
+    #[schemars(description = "Barrier width m (perpendicular to flow)")]
+    pub barrier_width_m: f64,
+    #[schemars(description = "Barrier depth m")]
+    pub barrier_depth_m: f64,
+    #[schemars(description = "ZVI bulk density kg/m³ (typical 2500)")]
+    pub bulk_density_kg_m3: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SveDesignParam {
+    #[schemars(description = "Air permeability m² (1e-14 to 1e-11 typical)")]
+    pub k_air_m2: f64,
+    #[schemars(description = "Well screen length m")]
+    pub screen_length_m: f64,
+    #[schemars(description = "Applied vacuum kPa (below atmospheric)")]
+    pub vacuum_pressure_kpa: f64,
+    #[schemars(description = "Contaminant name")]
+    pub contaminant: String,
+    #[schemars(description = "NAPL mass in soil kg")]
+    pub napl_mass_kg: f64,
+    #[schemars(description = "Soil porosity")]
+    pub soil_porosity: f64,
+    #[schemars(description = "Soil temperature °C")]
+    pub soil_temp_c: f64,
+    #[schemars(description = "Cleanup time target days")]
+    pub cleanup_time_target_days: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BioremediationParam {
+    #[schemars(description = "Contaminant (benzene, toluene, tce, pah, diesel, etc.)")]
+    pub contaminant: String,
+    #[schemars(description = "Initial concentration mg/L")]
+    pub initial_conc_mg_l: f64,
+    #[schemars(description = "Target concentration mg/L")]
+    pub target_conc_mg_l: f64,
+    #[schemars(description = "First-order decay rate day⁻¹ (0 = auto from contaminant)")]
+    pub k_first_order_day: f64,
+    #[schemars(description = "Soil volume m³")]
+    pub soil_volume_m3: f64,
+    #[schemars(description = "Porosity")]
+    pub porosity: f64,
+    #[schemars(description = "Soil bulk density kg/m³")]
+    pub bulk_density_kg_m3: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CycloneSeparatorParam {
+    #[schemars(description = "Gas flow m³/s")]
+    pub gas_flow_m3_s: f64,
+    #[schemars(description = "Particle density kg/m³")]
+    pub particle_density_kg_m3: f64,
+    #[schemars(description = "Gas viscosity Pa·s (air at 20°C = 1.81e-5)")]
+    pub gas_viscosity_pa_s: f64,
+    #[schemars(description = "Cyclone diameter m")]
+    pub cyclone_diameter_m: f64,
+    #[schemars(description = "Target efficiency %")]
+    pub target_efficiency_pct: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BaghouseParam {
+    #[schemars(description = "Gas flow m³/s")]
+    pub gas_flow_m3_s: f64,
+    #[schemars(description = "Dust concentration g/m³")]
+    pub dust_conc_g_m3: f64,
+    #[schemars(description = "Target pressure drop Pa (1000-2500 typical)")]
+    pub target_pressure_drop_pa: f64,
+    #[schemars(description = "Bag diameter m (0.1-0.3 typical)")]
+    pub bag_diameter_m: f64,
+    #[schemars(description = "Bag length m (3-10 typical)")]
+    pub bag_length_m: f64,
+    #[schemars(description = "Fabric type: woven, polyester, felt, ptfe, fiberglass")]
+    pub fabric_type: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ScrubberParam {
+    #[schemars(description = "Gas flow m³/s")]
+    pub gas_flow_m3_s: f64,
+    #[schemars(description = "Particle density kg/m³")]
+    pub particle_density_kg_m3: f64,
+    #[schemars(description = "Target efficiency %")]
+    pub target_efficiency_pct: f64,
+    #[schemars(description = "Throat velocity m/s (40-100 typical)")]
+    pub throat_velocity_ms: f64,
+    #[schemars(description = "L/G ratio L/m³ (0.5-10 typical)")]
+    pub lg_ratio_l_m3: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct EspParam {
+    #[schemars(description = "Gas flow m³/s")]
+    pub gas_flow_m3_s: f64,
+    #[schemars(description = "Particle density kg/m³")]
+    pub particle_density_kg_m3: f64,
+    #[schemars(description = "Target efficiency %")]
+    pub target_efficiency_pct: f64,
+    #[schemars(description = "Field strength kV/cm (3-8 typical)")]
+    pub field_strength_kv_cm: f64,
+    #[schemars(description = "Particle diameter µm")]
+    pub particle_diameter_um: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct RoDesignParam {
+    #[schemars(description = "Feed salinity mg/L (as NaCl)")]
+    pub feed_salinity_mg_l: f64,
+    #[schemars(description = "Target permeate quality mg/L")]
+    pub target_permeate_mg_l: f64,
+    #[schemars(description = "Feed pressure bar (40-80 typical)")]
+    pub feed_pressure_bar: f64,
+    #[schemars(description = "Membrane water permeability LMH/bar (1-5 typical)")]
+    pub membrane_water_perm_l_m2_h_bar: f64,
+    #[schemars(description = "Membrane salt permeability LMH (0.01-0.5 typical)")]
+    pub membrane_salt_perm_l_m2_h: f64,
+    #[schemars(description = "Feed flow m³/day")]
+    pub feed_flow_m3_day: f64,
+    #[schemars(description = "Temperature °C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct GacDesignParam {
+    #[schemars(description = "Contaminant name")]
+    pub contaminant: String,
+    #[schemars(description = "Influent concentration mg/L")]
+    pub c_influent_mg_l: f64,
+    #[schemars(description = "Target effluent mg/L")]
+    pub c_target_mg_l: f64,
+    #[schemars(description = "Flow m³/day")]
+    pub flow_m3_day: f64,
+    #[schemars(description = "Freundlich K (mg/g)(L/mg)^(1/n)")]
+    pub freundlich_k: f64,
+    #[schemars(description = "Freundlich 1/n (0.1-0.7 typical)")]
+    pub freundlich_1_over_n: f64,
+    #[schemars(description = "Empty bed contact time minutes (5-30 typical)")]
+    pub ebct_min: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct IonExchangeParam {
+    #[schemars(description = "Target ion (ca2+, mg2+, na+, no3-, cl-, so42-, fe3+, cr6+)")]
+    pub target_ion: String,
+    #[schemars(description = "Influent concentration mg/L")]
+    pub c_influent_mg_l: f64,
+    #[schemars(description = "Resin exchange capacity eq/L (0.5-2.0 typical)")]
+    pub exchange_capacity_eq_l: f64,
+    #[schemars(description = "Flow m³/day")]
+    pub flow_m3_day: f64,
+    #[schemars(description = "Bed volume m³")]
+    pub bed_volume_m3: f64,
+    #[schemars(description = "Selectivity coefficient K (1-100)")]
+    pub selectivity_coeff: f64,
+    #[schemars(description = "Regenerant: nacl, hcl, naoh")]
+    pub regenerant_type: String,
+}
+
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct NdviParam {
     #[schemars(description = "Near-infrared band value (Sentinel-2 B8)")]
@@ -4840,6 +5036,100 @@ impl EnvIndonesiaServer {
         tools::advanced_physics::fire_spread::assess(
             p.fuel_model, p.wind_speed_ms, p.wind_dir_deg, p.slope_deg,
             p.moisture_pct, p.ignition_lat, p.ignition_lon, p.duration_hr
+        )
+    }
+
+    // ═══ ENVIRONMENTAL ENGINEERING DESIGN TOOLS (11) ═══
+
+    #[tool(description = "Pump-and-Treat Remediation Design. Capture zone, drawdown (Theis), pore volume, cleanup time, mass removal. Ref: Suthersan 2016; Sharma & Reddy 2004; US EPA 1989.")]
+    fn pump_and_treat_design(&self, Parameters(p): Parameters<PumpTreatParam>) -> String {
+        tools::water::pump_treat::design(
+            p.hk_m_s, p.aquifer_thickness_m, p.hydraulic_gradient,
+            p.pumping_rate_m3_day, p.porosity, &p.contaminant,
+            p.initial_conc_ug_l, p.target_conc_ug_l, p.cleanup_time_years
+        )
+    }
+
+    #[tool(description = "Permeable Reactive Barrier (PRB) Design. ZVI thickness, residence time, outlet concentration, mass, longevity. Auto k for TCE/PCE/Cr6/As. Ref: Tratnyek 2003; Seyyedalipour 2026.")]
+    fn permeable_reactive_barrier(&self, Parameters(p): Parameters<PrbDesignParam>) -> String {
+        tools::water::prb_design::design(
+            &p.contaminant, p.c_inflow_ug_l, p.c_target_ug_l,
+            p.k_first_order_hr, p.gw_velocity_m_day, p.porosity,
+            p.barrier_width_m, p.barrier_depth_m, p.bulk_density_kg_m3
+        )
+    }
+
+    #[tool(description = "Soil Vapor Extraction (SVE) Design. Airflow rate (radial), radius of influence, vapor concentration (Raoult), cleanup time. Ref: Staudinger 1997; Lowe 1999; Shi 2022.")]
+    fn soil_vapor_extraction(&self, Parameters(p): Parameters<SveDesignParam>) -> String {
+        tools::waste::sve_design::design(
+            p.k_air_m2, p.screen_length_m, p.vacuum_pressure_kpa,
+            &p.contaminant, p.napl_mass_kg, p.soil_porosity, p.soil_temp_c,
+            p.cleanup_time_target_days
+        )
+    }
+
+    #[tool(description = "Bioremediation Design. Monod/first-order kinetics, cleanup time, O₂ demand, nutrient demand (C:N:P=100:10:1). Auto k for BTEX/PAH/TCE. Ref: Chen 1992; Suarez & Rifai 1999.")]
+    fn bioremediation_design(&self, Parameters(p): Parameters<BioremediationParam>) -> String {
+        tools::calculators::bioremediation::design(
+            &p.contaminant, p.initial_conc_mg_l, p.target_conc_mg_l,
+            p.k_first_order_day, p.soil_volume_m3, p.porosity, p.bulk_density_kg_m3
+        )
+    }
+
+    #[tool(description = "Cyclone Separator Design. Stairmand dimensions, cut diameter (d50), Lapple efficiency, Shepherd-Lapple pressure drop, Stokes number. Ref: Aylı 2025; Vallero 2019.")]
+    fn cyclone_separator_design(&self, Parameters(p): Parameters<CycloneSeparatorParam>) -> String {
+        tools::airquality::cyclone::design(
+            p.gas_flow_m3_s, p.particle_density_kg_m3, p.gas_viscosity_pa_s,
+            p.cyclone_diameter_m, p.target_efficiency_pct
+        )
+    }
+
+    #[tool(description = "Baghouse Filter Design. Filtration velocity (air-to-cloth), bag count, cleaning cycle, pressure drop, compartments. Fabric: woven/polyester/felt/PTFE/fiberglass. Ref: Vallero 2019.")]
+    fn baghouse_filter_design(&self, Parameters(p): Parameters<BaghouseParam>) -> String {
+        tools::airquality::baghouse::design(
+            p.gas_flow_m3_s, p.dust_conc_g_m3, p.target_pressure_drop_pa,
+            p.bag_diameter_m, p.bag_length_m, &p.fabric_type
+        )
+    }
+
+    #[tool(description = "Wet Scrubber (Venturi) Design. Nukiyama-Tanasawa droplet size, Calvert efficiency, pressure drop, water/power consumption. Ref: Vallero 2019; Calvert 1972.")]
+    fn wet_scrubber_design(&self, Parameters(p): Parameters<ScrubberParam>) -> String {
+        tools::airquality::scrubber::design(
+            p.gas_flow_m3_s, p.particle_density_kg_m3, p.target_efficiency_pct,
+            p.throat_velocity_ms, p.lg_ratio_l_m3
+        )
+    }
+
+    #[tool(description = "Electrostatic Precipitator (ESP) Design. Deutsch-Anderson migration velocity, plate area (Deutsch eq), SCA, fields, corona power. Ref: Vallero 2019; White 1963.")]
+    fn electrostatic_precipitator(&self, Parameters(p): Parameters<EspParam>) -> String {
+        tools::airquality::esp::design(
+            p.gas_flow_m3_s, p.particle_density_kg_m3, p.target_efficiency_pct,
+            p.field_strength_kv_cm, p.particle_diameter_um
+        )
+    }
+
+    #[tool(description = "Reverse Osmosis (RO) Design. van't Hoff osmotic pressure, water flux (A×(ΔP-Δπ)), salt rejection, recovery, membrane area, energy. Ref: Crittenden 2012 (MWH); Biesheuvel 2023.")]
+    fn reverse_osmosis_design(&self, Parameters(p): Parameters<RoDesignParam>) -> String {
+        tools::water::ro_design::design(
+            p.feed_salinity_mg_l, p.target_permeate_mg_l, p.feed_pressure_bar,
+            p.membrane_water_perm_l_m2_h_bar, p.membrane_salt_perm_l_m2_h,
+            p.feed_flow_m3_day, p.temp_c
+        )
+    }
+
+    #[tool(description = "Activated Carbon (GAC) Design. Freundlich isotherm, bed volume, bed life (Bohart-Adams), carbon usage rate, bed geometry. Ref: Crittenden 2012 (MWH).")]
+    fn activated_carbon_design(&self, Parameters(p): Parameters<GacDesignParam>) -> String {
+        tools::water::gac_design::design(
+            &p.contaminant, p.c_influent_mg_l, p.c_target_mg_l, p.flow_m3_day,
+            p.freundlich_k, p.freundlich_1_over_n, p.ebct_min
+        )
+    }
+
+    #[tool(description = "Ion Exchange Design. Exchange capacity, throughput (BV), regeneration cycle, regenerant consumption, leakage. Ions: Ca/Mg/Na/NO3/Cl/SO4/Fe/Cr. Ref: Crittenden 2012 (MWH).")]
+    fn ion_exchange_design(&self, Parameters(p): Parameters<IonExchangeParam>) -> String {
+        tools::water::ion_exchange::design(
+            &p.target_ion, p.c_influent_mg_l, p.exchange_capacity_eq_l,
+            p.flow_m3_day, p.bed_volume_m3, p.selectivity_coeff, &p.regenerant_type
         )
     }
 }
