@@ -2248,16 +2248,20 @@ pub struct ScrubberParam {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct EspParam {
-    #[schemars(description = "Gas flow m³/s")]
+    #[schemars(description = "Gas flow m3/s")]
     pub gas_flow_m3_s: f64,
-    #[schemars(description = "Particle density kg/m³")]
+    #[schemars(description = "Particle density kg/m3")]
     pub particle_density_kg_m3: f64,
     #[schemars(description = "Target efficiency %")]
     pub target_efficiency_pct: f64,
     #[schemars(description = "Field strength kV/cm (3-8 typical)")]
     pub field_strength_kv_cm: f64,
-    #[schemars(description = "Particle diameter µm")]
+    #[schemars(description = "Particle diameter um (mass median diameter)")]
     pub particle_diameter_um: f64,
+    #[schemars(description = "Particle type: 'dielectric' or 'conductive' (affects migration velocity 2x)")]
+    pub particle_type: String,
+    #[schemars(description = "Particle resistivity ohm·cm (1e7=low, 1e10=high back-corona, 1e11=severe)")]
+    pub resistivity_ohm_cm: f64,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -5100,11 +5104,12 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "Electrostatic Precipitator (ESP) Design. Deutsch-Anderson migration velocity, plate area (Deutsch eq), SCA, fields, corona power. Ref: Vallero 2019; White 1963.")]
+    #[tool(description = "Electrostatic Precipitator (ESP) Design. Deutsch-Anderson migration (conductive vs dielectric), back-corona resistivity check, size-integrated efficiency. Ref: Vallero 2019; White 1963.")]
     fn electrostatic_precipitator(&self, Parameters(p): Parameters<EspParam>) -> String {
         tools::airquality::esp::design(
             p.gas_flow_m3_s, p.particle_density_kg_m3, p.target_efficiency_pct,
-            p.field_strength_kv_cm, p.particle_diameter_um
+            p.field_strength_kv_cm, p.particle_diameter_um,
+            &p.particle_type, p.resistivity_ohm_cm
         )
     }
 

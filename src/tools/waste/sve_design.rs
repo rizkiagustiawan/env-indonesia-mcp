@@ -66,27 +66,36 @@ pub fn design(
     out.push_str(&format!("  At t = 30 days: R_i = {:.1} m\n\n",
         (q_air_m3_s * 30.0 * 86400.0 / (std::f64::consts::PI * soil_porosity * screen_length_m).max(1e-6)).sqrt()));
 
-    // ═══ Vapor Concentration (Raoult's Law) ═══
-    out.push_str("── Vapor Concentration (Raoult's Law) ──\n\n");
+    // ═══ Vapor Concentration (Raoult's Law + Antoine Equation) ═══
+    out.push_str("-- Vapor Concentration (Raoult + Antoine) --\n\n");
 
-    // C_vapor = x_i × P_sat × MW / (R × T)
-    let (mw, p_sat_kpa, _name) = match contaminant.to_lowercase().as_str() {
-        "benzene" => (78.11, 10.0, "Benzene"),
-        "toluene" => (92.14, 3.8, "Toluene"),
-        "xylene" | "o-xylene" => (106.17, 1.1, "Xylene"),
-        "tce" | "trichloroethylene" => (131.39, 9.6, "TCE"),
-        "pce" | "perchloroethylene" => (165.83, 2.5, "PCE"),
-        "gasoline" | "btx" => (100.0, 7.0, "Gasoline (avg)"),
-        _ => (100.0, 5.0, "Unknown (assumed)"),
+    // Antoine equation: log10(P_sat_mmHg) = A - B/(C + T)
+    // P_sat depends on temperature! (hardcoded values were wrong at non-20C)
+    let (mw, ant_a, ant_b, ant_c, name) = match contaminant.to_lowercase().as_str() {
+        "benzene" => (78.11, 6.90565, 1211.033, 220.79, "Benzene"),
+        "toluene" => (92.14, 6.95464, 1344.800, 219.482, "Toluene"),
+        "xylene" | "o-xylene" => (106.17, 6.99052, 1453.430, 215.307, "Xylene"),
+        "tce" | "trichloroethylene" => (131.39, 6.5183, 1018.6, 192.7, "TCE"),
+        "pce" | "perchloroethylene" => (165.83, 6.98807, 1386.2, 207.4, "PCE"),
+        "gasoline" | "btx" => (100.0, 6.90000, 1200.0, 220.0, "Gasoline (avg)"),
+        _ => (100.0, 6.90000, 1200.0, 220.0, "Unknown (assumed)"),
     };
+
+    // Compute P_sat from Antoine at given temperature
+    let log_p = ant_a - ant_b / (ant_c + soil_temp_c);
+    let p_sat_mmhg = 10.0_f64.powf(log_p);
+    let p_sat_kpa = p_sat_mmhg * 0.133322; // mmHg to kPa
+    let p_sat_at_20c = 10.0_f64.powf(ant_a - ant_b / (ant_c + 20.0)) * 0.133322;
 
     let temp_k = soil_temp_c + 273.15;
     let r_gas = 8.314; // J/(mol·K)
     let x_i = 1.0; // assume pure NAPL
-    let c_vapor_mg_m3 = x_i * p_sat_kpa * 1000.0 * mw / (r_gas * temp_k) * 1000.0; // mg/m³
+    let c_vapor_mg_m3 = x_i * p_sat_kpa * 1000.0 * mw / (r_gas * temp_k) * 1000.0; // mg/m3
 
-    out.push_str(&format!("  Contaminant: {} (MW={:.0}, P_sat={:.1} kPa)\n", contaminant, mw, p_sat_kpa));
-    out.push_str(&format!("  Vapor concentration: {:.0} mg/m³ ({:.1} g/m³)\n\n", c_vapor_mg_m3, c_vapor_mg_m3 / 1000.0));
+    out.push_str(&format!("  Contaminant: {} (MW={:.0})\n", name, mw));
+    out.push_str(&format!("  Antoine: A={:.4}, B={:.2}, C={:.2}\n", ant_a, ant_b, ant_c));
+    out.push_str(&format!("  P_sat at {:.0}C: {:.2} kPa (at 20C: {:.2} kPa)\n", soil_temp_c, p_sat_kpa, p_sat_at_20c));
+    out.push_str(&format!("  >> Vapor concentration: {:.0} mg/m3 ({:.1} g/m3)\n\n", c_vapor_mg_m3, c_vapor_mg_m3 / 1000.0));
 
     // ═══ Mass Removal Rate ═══
     out.push_str("── Mass Removal Rate ──\n\n");

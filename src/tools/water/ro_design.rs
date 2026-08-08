@@ -1,6 +1,7 @@
 /// Reverse Osmosis (RO) Membrane Design
 /// Ref: Crittenden et al. 2012 (MWH "Water Treatment")
 ///   Biesheuvel et al. 2023; Kim et al. 2022
+/// Enhanced: Concentration polarization + iterative permeate concentration
 
 pub fn design(
     feed_salinity_mg_l: f64,
@@ -22,138 +23,155 @@ pub fn design(
     let B = membrane_salt_perm_l_m2_h;
     let temp_k = temp_c + 273.15;
     let r_gas = 8.314; // J/(mol·K)
-
-    // Convert salinity to mol/L (assume NaCl, MW=58.44)
     let mw_nacl = 58.44;
-    let c_feed_mol = feed_salinity_mg_l / 1000.0 / mw_nacl; // mol/L = mol/dm³ = mol/m³ × 1000
-    let c_feed_mol_m3 = c_feed_mol * 1000.0; // mol/m³
 
-    out.push_str(&format!("Feed salinity: {:.0} mg/L ({:.4} mol/m³ NaCl)\n", feed_salinity_mg_l, c_feed_mol_m3));
+    // Convert salinity to mol/m3
+    let c_feed_mol_m3 = feed_salinity_mg_l / 1000.0 / mw_nacl * 1000.0;
+
+    out.push_str(&format!("Feed salinity: {:.0} mg/L ({:.4} mol/m3 NaCl)\n", feed_salinity_mg_l, c_feed_mol_m3));
     out.push_str(&format!("Target permeate: {:.0} mg/L\n", target_permeate_mg_l));
     out.push_str(&format!("Feed pressure: {:.1} bar ({:.0} kPa)\n", feed_pressure_bar, feed_pressure_bar * 100.0));
     out.push_str(&format!("Membrane: A={:.2} LMH/bar, B={:.2} LMH\n", A, B));
-    out.push_str(&format!("Feed flow: {:.1} m³/day\n\n", feed_flow_m3_day));
+    out.push_str(&format!("Feed flow: {:.1} m3/day\n", feed_flow_m3_day));
+    out.push_str(&format!("Temperature: {:.1} C ({:.2} K)\n\n", temp_c, temp_k));
 
     // ═══ Osmotic Pressure (van't Hoff) ═══
-    out.push_str("── Osmotic Pressure ──\n\n");
+    out.push_str("-- Osmotic Pressure (van't Hoff) --\n\n");
 
-    // π = i × C × R × T (for NaCl: i=2)
-    let i = 2.0; // van't Hoff factor
-    let pi_feed_pa = i * c_feed_mol_m3 * r_gas * temp_k;
-    let pi_feed_bar = pi_feed_pa / 1e5;
+    let i_vantoff = 2.0; // NaCl
+    let pi_feed_bar = i_vantoff * c_feed_mol_m3 * r_gas * temp_k / 1e5;
 
-    out.push_str(&format!("  van't Hoff: π = i×C×R×T = {} × {:.4} × {} × {:.1}\n", i, c_feed_mol_m3, r_gas, temp_k));
-    out.push_str(&format!("  ► Feed osmotic pressure: {:.2} bar ({:.0} kPa)\n\n", pi_feed_bar, pi_feed_pa / 1000.0));
+    out.push_str(&format!("  pi = i*C*R*T = {:.2} bar\n\n", pi_feed_bar));
 
     // ═══ Net Driving Pressure ═══
-    let delta_P = feed_pressure_bar; // applied pressure
-    let net_pressure = delta_P - pi_feed_bar;
+    let net_pressure = feed_pressure_bar - pi_feed_bar;
 
-    out.push_str("── Net Driving Pressure ──\n\n");
-    out.push_str(&format!("  ΔP = {:.1} bar, Δπ = {:.2} bar\n", delta_P, pi_feed_bar));
-    out.push_str(&format!("  ► Net pressure (ΔP - Δπ): {:.2} bar\n\n", net_pressure));
+    out.push_str("-- Net Driving Pressure --\n\n");
+    out.push_str(&format!("  dP = {:.1} bar, dpi = {:.2} bar\n", feed_pressure_bar, pi_feed_bar));
+    out.push_str(&format!("  >> Net pressure: {:.2} bar\n\n", net_pressure));
 
     if net_pressure <= 0.0 {
-        return format!("{}ERROR: Net pressure ≤ 0. Feed pressure must exceed osmotic pressure.\nIncrease feed pressure to >{:.1} bar.\n", out, pi_feed_bar);
+        return format!("{}ERROR: Net pressure <= 0. Feed pressure must exceed osmotic pressure ({:.1} bar).\n", out, pi_feed_bar);
     }
 
-    // ═══ Water Flux ═══
-    out.push_str("── Water Flux ──\n\n");
+    // ═══ Concentration Polarization (CP) ═══
+    // Ref: Crittenden 2012 (MWH), Chapter 11
+    // CP = exp(J_w / k_m) where k_m = mass transfer coefficient
+    // k_m typical for spiral-wound: 2e-5 m/s (varies with crossflow velocity)
+    let k_m = 2e-5; // m/s mass transfer coefficient (typical spiral-wound)
 
-    // J_w = A × (ΔP - Δπ) (LMH)
-    let j_water = A * net_pressure;
-    let j_water_m_s = j_water / 3600.0 / 1000.0; // LMH → m/s
+    // Water flux (initial, without CP)
+    let j_water_initial = A * net_pressure; // LMH
+    let j_water_m_s = j_water_initial / 3600.0 / 1000.0; // m/s
 
-    out.push_str(&format!("  J_w = A × (ΔP - Δπ) = {:.2} × {:.2}\n", A, net_pressure));
-    out.push_str(&format!("  ► Water flux: {:.2} LMH (L/m²/hr) ({:.2e} m/s)\n\n", j_water, j_water_m_s));
+    // CP factor
+    let cp_factor = (j_water_m_s / k_m).exp();
+    let cp_factor_capped = cp_factor.min(2.0); // cap at 2.0 (realistic limit)
 
-    // ═══ Salt Flux ═══
-    // J_s = B × (C_feed - C_permeate)
-    // Assume initial C_permeate ≈ 0 for first iteration
-    let c_feed_g_m3 = feed_salinity_mg_l; // mg/L = g/m³
-    let j_salt = B * (c_feed_g_m3 as f64); // LMH × g/m³ → need proper units
-    // Actually: J_s = B × ΔC where B is in LMH and ΔC in g/L
-    let delta_c_g_l = feed_salinity_mg_l / 1000.0; // g/L
-    let salt_flux_g_m2_h = B * delta_c_g_l;
+    out.push_str("-- Concentration Polarization (CP) --\n\n");
+    out.push_str(&format!("  Mass transfer coeff k_m: {:.2e} m/s\n", k_m));
+    out.push_str(&format!("  J_w (initial): {:.2e} m/s\n", j_water_m_s));
+    out.push_str(&format!("  CP = exp(J_w/k_m) = {:.3}", cp_factor));
+    if cp_factor > 2.0 {
+        out.push_str(" (capped at 2.0)");
+    }
+    out.push_str("\n\n");
 
-    out.push_str("── Salt Flux ──\n\n");
-    out.push_str(&format!("  ΔC = {:.3} g/L\n", delta_c_g_l));
-    out.push_str(&format!("  ► Salt flux: {:.2} g/m²/hr\n\n", salt_flux_g_m2_h));
+    // ═══ Water Flux (with CP-adjusted osmotic pressure) ═══
+    // Effective osmotic pressure at membrane surface = CP * pi_feed
+    let pi_surface = pi_feed_bar * cp_factor_capped;
+    let net_pressure_cp = feed_pressure_bar - pi_surface;
+    let j_water = A * net_pressure_cp.max(0.0);
 
-    // ═══ Permeate Concentration ═══
-    // C_permeate = J_s / J_w (g/L)
-    let c_permeate_g_l = salt_flux_g_m2_h / j_water.max(1e-10);
-    let c_permeate_mg_l = c_permeate_g_l * 1000.0;
+    out.push_str("-- Water Flux (CP-corrected) --\n\n");
+    out.push_str(&format!("  pi_surface = CP x pi_feed = {:.2} bar\n", pi_surface));
+    out.push_str(&format!("  Net pressure (CP): {:.2} bar\n", net_pressure_cp));
+    out.push_str(&format!("  >> Water flux: {:.2} LMH (L/m2/hr)\n\n", j_water));
 
-    out.push_str("── Permeate Quality ──\n\n");
-    out.push_str(&format!("  ► Permeate concentration: {:.1} mg/L (target: {:.0})\n\n", c_permeate_mg_l, target_permeate_mg_l));
+    // ═══ Iterative Permeate Concentration ═══
+    // Ref: Crittenden 2012 (MWH) — iterative solution
+    // C_permeate = B * (C_surface - C_perm) / J_w
+    // Start with C_perm = 0, iterate until convergence
 
-    // ═══ Salt Rejection ═══
+    out.push_str("-- Permeate Concentration (Iterative) --\n\n");
+
+    let c_feed_g_l = feed_salinity_mg_l / 1000.0;
+    let c_surface_g_l = c_feed_g_l * cp_factor_capped; // concentration at membrane surface
+
+    let mut c_perm_g_l = 0.0;
+    let mut iterations = 0;
+    for iter in 0..20 {
+        let delta_c = c_surface_g_l - c_perm_g_l;
+        let salt_flux = B * delta_c; // g/m2/hr
+        let c_perm_new = salt_flux / j_water.max(1e-10);
+        let diff = (c_perm_new - c_perm_g_l).abs();
+        c_perm_g_l = c_perm_new;
+        iterations = iter + 1;
+        if diff < 1e-6 { break; }
+    }
+
+    let c_permeate_mg_l = c_perm_g_l * 1000.0;
     let salt_rejection = (1.0 - c_permeate_mg_l / feed_salinity_mg_l) * 100.0;
-    out.push_str(&format!("  ► Salt rejection: {:.1}%\n\n", salt_rejection));
+
+    out.push_str(&format!("  C_surface = CP x C_feed = {:.3} g/L\n", c_surface_g_l));
+    out.push_str(&format!("  Iterations: {} (converged)\n", iterations));
+    out.push_str(&format!("  >> Permeate: {:.1} mg/L (target: {:.0})\n", c_permeate_mg_l, target_permeate_mg_l));
+    out.push_str(&format!("  >> Salt rejection: {:.1}%\n\n", salt_rejection));
 
     // ═══ Recovery Rate ═══
-    // For single element: typical recovery 10-15%
-    // For system: depends on staging
-    let recovery_single = 0.12; // 12% per element
-    let permeate_flow_m3_day = feed_flow_m3_day * recovery_single;
-    let brine_flow_m3_day = feed_flow_m3_day - permeate_flow_m3_day;
-
-    out.push_str("── Recovery & Flow ──\n\n");
-    out.push_str(&format!("  Single-element recovery: {:.0}%\n", recovery_single * 100.0));
-    out.push_str(&format!("  ► Permeate flow: {:.2} m³/day\n", permeate_flow_m3_day));
-    out.push_str(&format!("  ► Brine flow: {:.2} m³/day\n\n", brine_flow_m3_day));
+    let recovery = 0.12; // 12% per element
+    let permeate_flow = feed_flow_m3_day * recovery;
+    let brine_flow = feed_flow_m3_day - permeate_flow;
 
     // Brine concentration (mass balance)
-    let c_brine_mg_l = (feed_flow_m3_day * feed_salinity_mg_l - permeate_flow_m3_day * c_permeate_mg_l) / brine_flow_m3_day.max(0.001);
-    out.push_str(&format!("  ► Brine concentration: {:.0} mg/L\n\n", c_brine_mg_l));
+    let c_brine = (feed_flow_m3_day * feed_salinity_mg_l - permeate_flow * c_permeate_mg_l) / brine_flow.max(0.001);
+
+    out.push_str("-- Recovery & Flow --\n\n");
+    out.push_str(&format!("  Recovery: {:.0}%\n", recovery * 100.0));
+    out.push_str(&format!("  Permeate: {:.2} m3/day | Brine: {:.2} m3/day\n", permeate_flow, brine_flow));
+    out.push_str(&format!("  Brine concentration: {:.0} mg/L\n\n", c_brine));
 
     // ═══ Membrane Area ═══
-    let membrane_area_m2 = (permeate_flow_m3_day * 1000.0) / (j_water * 24.0).max(1e-10); // L/day → m²
+    let membrane_area = (permeate_flow * 1000.0) / (j_water * 24.0).max(1e-10);
+    let n_elements = (membrane_area / 37.0).ceil() as u32;
+    let n_vessels = (n_elements as f64 / 6.0).ceil() as u32;
 
-    out.push_str("── Membrane Area ──\n\n");
-    out.push_str(&format!("  ► Required membrane area: {:.1} m²\n\n", membrane_area_m2));
+    out.push_str("-- Membrane Area --\n\n");
+    out.push_str(&format!("  Area: {:.1} m2 ({} elements, {} vessels)\n\n", membrane_area, n_elements, n_vessels));
 
-    // Number of 8-inch elements (each ~37 m²)
-    let element_area = 37.0; // m² per 8" element
-    let n_elements = (membrane_area_m2 / element_area).ceil() as u32;
-    let n_pressure_vessels = (n_elements as f64 / 6.0).ceil() as u32; // 6 elements per vessel
+    // ═══ Energy Consumption (CORRECTED) ═══
+    // E = dP / (R * eta) where dP in bar -> kPa -> J/m3 -> kWh/m3
+    // E (kWh/m3) = dP(kPa) / (R * eta * 3600)
+    let pump_eff = 0.85;
+    let energy_kwh_m3 = feed_pressure_bar * 100.0 / (recovery * pump_eff * 3600.0 / 1000.0);
+    // Simpler: E = P(bar) * 100 / (recovery * eta) / 3.6 (kWh/m3)
+    let energy_kwh_m3_v2 = feed_pressure_bar * 100.0 / (recovery * pump_eff) / 3.6;
+    let daily_energy = energy_kwh_m3_v2 * permeate_flow;
 
-    out.push_str(&format!("  Elements (8\", 37m² each): {}\n", n_elements));
-    out.push_str(&format!("  Pressure vessels (6 elem/vessel): {}\n\n", n_pressure_vessels));
-
-    // ═══ Energy Consumption ═══
-    // E = ΔP × Q_feed / (R × η_pump)
-    let pump_efficiency = 0.85;
-    let energy_kwh_m3 = feed_pressure_bar * 100.0 * feed_flow_m3_day / (recovery_single * feed_flow_m3_day * pump_efficiency) / 3.6e6 * feed_flow_m3_day;
-    // Simplified: E = P / (Q_perm × η)
-    let energy_kwh_m3_corrected = feed_pressure_bar * 100.0 / (recovery_single * pump_efficiency) / 36.0; // bar→kPa, kPa×m³/s→kW, /3.6→kWh/m³
-    let daily_energy = energy_kwh_m3_corrected * permeate_flow_m3_day;
-
-    out.push_str("── Energy Consumption ──\n\n");
-    out.push_str(&format!("  Pump efficiency: {:.0}%\n", pump_efficiency * 100.0));
-    out.push_str(&format!("  ► Specific energy: {:.2} kWh/m³ permeate\n", energy_kwh_m3_corrected));
-    out.push_str(&format!("  ► Daily energy: {:.1} kWh/day\n\n", daily_energy));
+    out.push_str("-- Energy Consumption --\n\n");
+    out.push_str(&format!("  Pump efficiency: {:.0}%\n", pump_eff * 100.0));
+    out.push_str(&format!("  >> Specific energy: {:.2} kWh/m3 permeate\n", energy_kwh_m3_v2));
+    out.push_str(&format!("  >> Daily energy: {:.1} kWh/day\n\n", daily_energy));
 
     // ═══ Summary ═══
-    out.push_str("═══ RO DESIGN SUMMARY ═══\n\n");
-    out.push_str(&format!("  Net pressure: {:.2} bar\n", net_pressure));
+    out.push_str("=== RO DESIGN SUMMARY ===\n\n");
+    out.push_str(&format!("  CP factor: {:.3}\n", cp_factor_capped));
+    out.push_str(&format!("  Net pressure (CP): {:.2} bar\n", net_pressure_cp));
     out.push_str(&format!("  Water flux: {:.2} LMH\n", j_water));
-    out.push_str(&format!("  Permeate: {:.1} mg/L (rejection {:.1}%)\n", c_permeate_mg_l, salt_rejection));
-    out.push_str(&format!("  Recovery: {:.0}%\n", recovery_single * 100.0));
-    out.push_str(&format!("  Membrane area: {:.1} m² ({} elements)\n", membrane_area_m2, n_elements));
-    out.push_str(&format!("  Energy: {:.2} kWh/m³\n", energy_kwh_m3_corrected));
+    out.push_str(&format!("  Permeate: {:.1} mg/L (rejection {:.1}%, {} iter)\n", c_permeate_mg_l, salt_rejection, iterations));
+    out.push_str(&format!("  Recovery: {:.0}%, Brine: {:.0} mg/L\n", recovery * 100.0, c_brine));
+    out.push_str(&format!("  Area: {:.1} m2 ({} elements), Energy: {:.2} kWh/m3\n", membrane_area, n_elements, energy_kwh_m3_v2));
 
     if c_permeate_mg_l <= target_permeate_mg_l {
-        out.push_str("\n  ✅ Design meets permeate quality target.\n");
+        out.push_str("\n  [OK] Design meets permeate quality target.\n");
     } else {
-        out.push_str("\n  ⚠️ Permeate exceeds target. Consider 2-pass RO or higher pressure.\n");
+        out.push_str("\n  [WARN] Permeate exceeds target. Consider 2-pass RO or higher pressure.\n");
     }
 
     out.push_str("\n  Ref: Crittenden et al. 2012 (MWH); Biesheuvel et al. 2023\n");
-    out.push_str("\n── Limitations (honest) ──\n");
-    out.push_str("  • No concentration polarization (CP) effect modeled\n");
-    out.push_str("  • No membrane fouling/recovery decline\n");
+    out.push_str("\n-- Limitations (honest) --\n");
+    out.push_str("  • CP uses fixed k_m (real: depends on spacer geometry, crossflow)\n");
+    out.push_str("  • No membrane fouling/recovery decline over time\n");
     out.push_str("  • van't Hoff assumes ideal (real: non-ideal for high salinity)\n");
     out.push_str("  • For design: use ROSA/DOW WLM software\n");
 

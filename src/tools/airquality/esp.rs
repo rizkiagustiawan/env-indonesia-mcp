@@ -1,5 +1,6 @@
 /// Electrostatic Precipitator (ESP) Design
-/// Ref: Vallero 2019 "Air Pollution Calculations"; Deutsch-Anderson equation
+/// Ref: Vallero 2019 "Air Pollution Calculations"; Deutsch-Anderson equation; White 1963
+/// Enhanced: Conductive vs dielectric particles + resistivity (back corona) + size distribution
 
 pub fn design(
     gas_flow_m3_s: f64,
@@ -7,176 +8,179 @@ pub fn design(
     target_efficiency_pct: f64,
     field_strength_kv_cm: f64,
     particle_diameter_um: f64,
+    particle_type: &str,         // "dielectric" or "conductive"
+    resistivity_ohm_cm: f64,     // particle resistivity (ohm·cm)
 ) -> String {
     let mut out = String::from("=== Electrostatic Precipitator (ESP) Design ===\n");
-    out.push_str("Ref: Vallero 2019; Deutsch-Anderson equation; White 1963\n\n");
+    out.push_str("Ref: Vallero 2019; Deutsch-Anderson; White 1963\n\n");
 
     if gas_flow_m3_s <= 0.0 || field_strength_kv_cm <= 0.0 {
         return "ERROR [E102]: gas flow and field strength must be > 0.".into();
     }
 
     let mu_g = 1.81e-5; // Pa·s
-    let eps0 = 8.854e-12; // permittivity of free space (F/m)
-    let E_v_m = field_strength_kv_cm * 1e5; // V/m (1 kV/cm = 1e5 V/m)
-    let d_p = particle_diameter_um * 1e-6; // particle diameter in m
+    let eps0 = 8.854e-12; // F/m
+    let E_v_m = field_strength_kv_cm * 1e5; // V/m
+    let d_p = particle_diameter_um * 1e-6; // m
 
-    out.push_str(&format!(
-        "Gas flow: {:.2} m3/s ({:.0} m3/hr)\n",
-        gas_flow_m3_s,
-        gas_flow_m3_s * 3600.0
-    ));
-    out.push_str(&format!(
-        "Particle diameter: {:.2} µm\n",
-        particle_diameter_um
-    ));
-    out.push_str(&format!(
-        "Field strength: {:.1} kV/cm ({:.2e} V/m)\n\n",
-        field_strength_kv_cm, E_v_m
-    ));
+    out.push_str(&format!("Gas flow: {:.2} m3/s ({:.0} m3/hr)\n", gas_flow_m3_s, gas_flow_m3_s * 3600.0));
+    out.push_str(&format!("Particle: {:.2} um, density {:.0} kg/m3\n", particle_diameter_um, particle_density_kg_m3));
+    out.push_str(&format!("Particle type: {}\n", particle_type));
+    out.push_str(&format!("Resistivity: {:.2e} ohm·cm\n", resistivity_ohm_cm));
+    out.push_str(&format!("Field strength: {:.1} kV/cm ({:.2e} V/m)\n\n", field_strength_kv_cm, E_v_m));
 
-    // === Migration Velocity (Deutsch-Anderson) ===
+    // ═══ Migration Velocity (particle-type dependent) ═══
     out.push_str("-- Migration Velocity --\n\n");
 
-    // w = (2 * eps0 * E2 * d_p) / (12 * mu) — for dielectric particles
-    // For conductive particles: w = eps0 * E2 * d_p / (6 * mu)
-    let w_migration = 2.0 * eps0 * E_v_m * E_v_m * d_p / (12.0 * mu_g);
-    let w_migration_cm_s = w_migration * 100.0;
+    // Dielectric: w = 2*eps0*E^2*d / (12*mu)
+    // Conductive: w = eps0*E^2*d / (6*mu)  (2x faster — field distortion)
+    let (w_migration, type_factor) = if particle_type.to_lowercase().contains("conduc") {
+        let w = eps0 * E_v_m * E_v_m * d_p / (6.0 * mu_g);
+        (w, 2.0) // 2x factor vs dielectric
+    } else {
+        let w = 2.0 * eps0 * E_v_m * E_v_m * d_p / (12.0 * mu_g);
+        (w, 1.0) // standard dielectric
+    };
+    let w_cm_s = w_migration * 100.0;
 
-    out.push_str(&format!("  Deutsch-Anderson: w = 2eps0E2d / 12mu\n"));
-    out.push_str(&format!(
-        "  >Migration velocity: {:.4} m/s ({:.3} cm/s)\n\n",
-        w_migration, w_migration_cm_s
-    ));
+    out.push_str(&format!("  Deutsch-Anderson ({}): factor = {}x\n", particle_type, type_factor));
+    out.push_str(if particle_type.to_lowercase().contains("conduc") {
+        "  Conductive: w = eps0*E^2*d / (6*mu) [field distortion, 2x faster]\n"
+    } else {
+        "  Dielectric: w = 2*eps0*E^2*d / (12*mu) [standard]\n"
+    });
+    out.push_str(&format!("  >> Migration velocity: {:.4} m/s ({:.3} cm/s)\n\n", w_migration, w_cm_s));
 
-    // Typical migration velocities for reference
-    out.push_str("  Reference migration velocities (typical):\n");
-    out.push_str("    Fly ash: 0.08-0.15 m/s\n");
-    out.push_str("    Cement dust: 0.06-0.12 m/s\n");
-    out.push_str("    Sulfuric acid mist: 0.20-0.30 m/s\n\n");
+    // ═══ Back Corona Check (resistivity) ═══
+    out.push_str("-- Resistivity / Back Corona Check --\n\n");
 
-    // === Required Plate Area (Deutsch Equation) ===
+    // Resistivity ranges (White 1963):
+    // < 1e7 ohm·cm: low — normal operation
+    // 1e7 - 1e10: moderate — some effect
+    // > 1e10: high — BACK CORONA risk (reduces efficiency 30-50%)
+    // > 1e11: very high — severe back corona, pulse energization needed
+
+    let (corona_status, efficiency_derate) = if resistivity_ohm_cm < 1e7 {
+        ("[OK] Low resistivity — normal operation", 1.0)
+    } else if resistivity_ohm_cm < 1e10 {
+        ("[OK] Moderate resistivity — minor effect", 0.9)
+    } else if resistivity_ohm_cm < 1e11 {
+        ("[WARN] High resistivity — back corona risk, derate 50%", 0.5)
+    } else {
+        ("[CRITICAL] Very high resistivity — severe back corona. Use pulse energization or conditioning.", 0.3)
+    };
+
+    out.push_str(&format!("  Resistivity: {:.2e} ohm·cm\n", resistivity_ohm_cm));
+    out.push_str(&format!("  {}\n", corona_status));
+    out.push_str(&format!("  Efficiency derate factor: {:.2}\n\n", efficiency_derate));
+
+    // ═══ Required Plate Area (Deutsch with derate) ═══
     out.push_str("-- Required Plate Area (Deutsch Equation) --\n\n");
 
-    // eta = 1 - exp(-w * A / Q)
-    // A = -Q * ln(1-eta) / w
     let eta = target_efficiency_pct / 100.0;
-    let a_required = -gas_flow_m3_s * (1.0 - eta).ln() / w_migration.max(1e-15);
+    let w_effective = w_migration * efficiency_derate;
+    let a_required = -gas_flow_m3_s * (1.0 - eta).ln() / w_effective.max(1e-15);
 
-    out.push_str(&format!(
-        "  Target efficiency: {:.1}% (eta={:.3})\n",
-        target_efficiency_pct, eta
-    ));
-    out.push_str(&format!("  ln(1-eta) = {:.4}\n", (1.0 - eta).ln()));
-    out.push_str(&format!("  >Required plate area: {:.0} m2\n\n", a_required));
+    out.push_str(&format!("  Target efficiency: {:.1}%\n", target_efficiency_pct));
+    out.push_str(&format!("  w_effective = w x derate = {:.4} x {:.2} = {:.4} m/s\n", w_migration, efficiency_derate, w_effective));
+    out.push_str(&format!("  >> Required plate area: {:.0} m2\n\n", a_required));
 
-    // === Specific Collection Area (SCA) ===
+    // ═══ SCA ═══
     let sca = a_required / gas_flow_m3_s;
     out.push_str("-- Specific Collection Area (SCA) --\n\n");
-    out.push_str(&format!("  >SCA = A/Q = {:.1} m2 per m3/s\n", sca));
+    out.push_str(&format!("  >> SCA = A/Q = {:.1} m2/(m3/s)\n", sca));
 
     if sca < 100.0 {
-        out.push_str("  ! Low SCA (<100). May not meet target. Increase plate area.\n\n");
+        out.push_str("  [WARN] Low SCA. May not meet target.\n\n");
     } else if sca > 500.0 {
-        out.push_str(
-            "  ! Very high SCA (>500). Consider multi-field ESP or check migration velocity.\n\n",
-        );
+        out.push_str("  [WARN] Very high SCA. Check migration velocity or resistivity.\n\n");
     } else {
-        out.push_str("  OK SCA in typical range (100-500 m2 per m3/s)\n\n");
+        out.push_str("  [OK] SCA in typical range (100-500)\n\n");
     }
 
-    // === Physical Dimensions ===
+    // ═══ Physical Dimensions ═══
     out.push_str("-- Physical Dimensions --\n\n");
 
-    // Assume: plate height = 10m, plate spacing = 0.3m, gas velocity = 1.5 m/s
     let plate_height = 10.0;
     let plate_spacing = 0.3;
     let gas_velocity = 1.5;
 
-    let total_plate_length = a_required / (2.0 * plate_height); // both sides of plates
+    let total_plate_length = a_required / (2.0 * plate_height);
     let n_passages = (gas_flow_m3_s / (gas_velocity * plate_height * plate_spacing)).ceil() as u32;
     let n_plates = n_passages + 1;
-    let field_length = total_plate_length / n_passages as f64;
+    let field_length = (total_plate_length / n_passages as f64).max(1.0);
 
-    out.push_str(&format!("  Plate height: {:.0} m\n", plate_height));
-    out.push_str(&format!("  Plate spacing: {:.2} m\n", plate_spacing));
-    out.push_str(&format!("  Gas velocity: {:.1} m/s\n", gas_velocity));
-    out.push_str(&format!("  >Number of passages: {}\n", n_passages));
-    out.push_str(&format!("  >Number of plates: {}\n", n_plates));
-    out.push_str(&format!(
-        "  >Field length: {:.1} m\n\n",
-        field_length.max(1.0)
-    ));
+    out.push_str(&format!("  Plates: {} ({} passages, {:.1}m field length)\n", n_plates, n_passages, field_length));
 
-    // === Number of Fields (Series) ===
-    let n_fields = if target_efficiency_pct > 99.5 {
-        4
-    } else if target_efficiency_pct > 99.0 {
-        3
-    } else if target_efficiency_pct > 95.0 {
-        2
-    } else {
-        1
-    };
+    // Number of fields
+    let n_fields = if target_efficiency_pct > 99.5 { 4 }
+        else if target_efficiency_pct > 99.0 { 3 }
+        else if target_efficiency_pct > 95.0 { 2 }
+        else { 1 };
 
-    out.push_str(&format!(
-        "  >Recommended fields (in series): {}\n",
-        n_fields
-    ));
-    out.push_str(&format!(
-        "  Total ESP length: {:.1} m\n\n",
-        field_length.max(1.0) * n_fields as f64
-    ));
+    out.push_str(&format!("  Fields (series): {} (total {:.1}m)\n\n", n_fields, field_length * n_fields as f64));
 
-    // === Corona Power ===
+    // ═══ Corona Power ═══
     out.push_str("-- Corona Power --\n\n");
 
-    // P_corona = V * I, typical corona current density = 0.1-0.5 mA/m2
     let corona_current_density = 0.3e-3; // A/m2
     let corona_current = corona_current_density * a_required;
     let corona_voltage = field_strength_kv_cm * 1000.0 * plate_spacing * 100.0; // kV
     let corona_power_kw = corona_voltage * corona_current / 1000.0;
 
-    out.push_str(&format!("  Corona current density: 0.3 mA/m2\n"));
-    out.push_str(&format!(
-        "  Total corona current: {:.2} A\n",
-        corona_current
-    ));
-    out.push_str(&format!("  Voltage: {:.0} kV\n", corona_voltage));
-    out.push_str(&format!("  >Corona power: {:.1} kW\n\n", corona_power_kw));
+    out.push_str(&format!("  >> Corona power: {:.1} kW ({:.1} kW per 1000 m3/s)\n\n", corona_power_kw, corona_power_kw / (gas_flow_m3_s / 1000.0).max(0.001)));
 
-    // Specific corona power (kW per 1000 m3/s)
-    let specific_power = corona_power_kw / (gas_flow_m3_s / 1000.0).max(0.001);
-    out.push_str(&format!(
-        "  Specific power: {:.1} kW/(1000 m3/s)\n\n",
-        specific_power
-    ));
+    // ═══ Integrated Efficiency with Size Distribution ═══
+    out.push_str("-- Size-Integrated Efficiency --\n\n");
 
-    // === Summary ===
+    // Assume log-normal distribution: MMD = particle_diameter_um, GSD = 2.0
+    let mmd = particle_diameter_um;
+    let gsd: f64 = 2.0;
+
+    // Compute efficiency at multiple sizes and integrate
+    let sizes = [0.5, 1.0, 2.0, 5.0, 10.0, 20.0];
+    let mut weighted_eff = 0.0;
+    let mut total_weight = 0.0;
+
+    out.push_str(&format!("{:>8} {:>10} {:>10} {:>10}\n", "d (um)", "w (cm/s)", "eta (%)", "weight"));
+    out.push_str(&"-".repeat(42));
+    out.push('\n');
+
+    for &d in &sizes {
+        let d_m = d * 1e-6;
+        let w_d = if particle_type.to_lowercase().contains("conduc") {
+            eps0 * E_v_m * E_v_m * d_m / (6.0 * mu_g) * efficiency_derate
+        } else {
+            2.0 * eps0 * E_v_m * E_v_m * d_m / (12.0 * mu_g) * efficiency_derate
+        };
+        let eta_d = 1.0 - (-w_d * a_required / gas_flow_m3_s).exp();
+        // Log-normal weight (simplified — mass fraction at each size)
+        let ln_d = d.ln();
+        let ln_mmd = mmd.ln();
+        let sigma = gsd.ln();
+        let weight = (-(ln_d - ln_mmd).powi(2) / (2.0 * sigma * sigma)).exp() / (sigma * (2.0 * std::f64::consts::PI).sqrt());
+        weighted_eff += eta_d * weight;
+        total_weight += weight;
+        out.push_str(&format!("{:>8.1} {:>10.4} {:>10.1} {:>10.4}\n", d, w_d * 100.0, eta_d * 100.0, weight));
+    }
+
+    let integrated_eff = (weighted_eff / total_weight.max(1e-10)) * 100.0;
+    out.push_str(&format!("\n  >> Size-integrated efficiency: {:.1}%\n\n", integrated_eff));
+
+    // ═══ Summary ═══
     out.push_str("=== ESP DESIGN SUMMARY ===\n\n");
-    out.push_str(&format!(
-        "  Migration velocity: {:.3} cm/s\n",
-        w_migration_cm_s
-    ));
-    out.push_str(&format!("  Plate area: {:.0} m2\n", a_required));
-    out.push_str(&format!("  SCA: {:.1} m2 per m3/s\n", sca));
-    out.push_str(&format!(
-        "  Plates: {} ({} fields, {:.1}m each)\n",
-        n_plates,
-        n_fields,
-        field_length.max(1.0)
-    ));
-    out.push_str(&format!("  Corona power: {:.1} kW\n", corona_power_kw));
-
-    // Verify efficiency
-    let achieved_eff = (1.0 - (-w_migration * a_required / gas_flow_m3_s).exp()) * 100.0;
-    out.push_str(&format!("  Achieved efficiency: {:.2}%\n", achieved_eff));
+    out.push_str(&format!("  Particle: {} ({}), resistivity: {:.2e} ohm·cm\n", particle_type, particle_diameter_um, resistivity_ohm_cm));
+    out.push_str(&format!("  Migration velocity: {:.4} cm/s (derated: {:.4})\n", w_cm_s, w_effective * 100.0));
+    out.push_str(&format!("  Plate area: {:.0} m2, SCA: {:.1}\n", a_required, sca));
+    out.push_str(&format!("  Plates: {} ({} fields), Corona: {:.1} kW\n", n_plates, n_fields, corona_power_kw));
+    out.push_str(&format!("  Integrated efficiency: {:.1}% (target: {:.1}%)\n", integrated_eff, target_efficiency_pct));
 
     out.push_str("\n  Ref: Vallero 2019; Deutsch 1922; White 1963\n");
     out.push_str("\n-- Limitations (honest) --\n");
-    out.push_str("  • Migration velocity depends on particle resistivity (back corona effect)\n");
-    out.push_str("  • Deutsch equation assumes uniform field, no re-entrainment\n");
-    out.push_str("  • No temperature/pressure correction\n");
-    out.push_str("  • For high-resistivity dust: pulse energization or conditioning needed\n");
+    out.push_str("  • Migration velocity simplified (real: depends on particle shape, charge)\n");
+    out.push_str("  • Back corona derate is empirical (real: complex field interaction)\n");
+    out.push_str("  • Size distribution assumes log-normal (real: may be bimodal)\n");
+    out.push_str("  • For design: pilot ESP test + EPA Method 5 sizing\n");
 
     out
 }

@@ -51,14 +51,23 @@ pub fn design(
         out.push_str("  🟢 Acceptable ΔP (1-5 kPa typical for venturi)\n\n");
     }
 
-    // ═══ Collection Efficiency (Calvert) ═══
-    out.push_str("── Collection Efficiency (Calvert Impaction) ──\n\n");
+    // ═══ Collection Efficiency (Calvert 1972) ═══
+    out.push_str("-- Collection Efficiency (Calvert 1972) --\n\n");
 
-    // Impaction parameter: Ψ = ρ_p × d_p² × v_rel / (9 × μ × d_droplet)
-    // η = 1 - exp(-A × Ψ^B)
-    // For venturi: η ≈ 1 - exp(-6 × Ψ × L/G / 1000)
+    // Calvert impaction model (Calvert 1972):
+    // eta = 1 - exp(-A * Stk^B * (L/G)^C)
+    // A, B, C are empirical constants fitted from venturi scrubber data
+    // For typical venturi: A = 1.0, B = 1.0, C = 0.5
+    // The impaction parameter (Stk) is dimensionless
+    
+    let v_rel = v_throat * 0.85; // relative velocity droplet-particle
+    let calvert_A = 1.0; // empirical from Calvent 1972
+    let calvert_C = 0.5; // L/G exponent
 
-    out.push_str(&format!("{:>10} {:>12} {:>10} {:>10}\n", "d (µm)", "Ψ (impaction)", "η (%)", "Status"));
+    out.push_str(&format!("  Calvert A={:.1}, C={:.1} (L/G exponent)\n", calvert_A, calvert_C));
+    out.push_str(&format!("  v_rel: {:.1} m/s (0.85 x v_throat)\n\n", v_rel));
+
+    out.push_str(&format!("{:>10} {:>12} {:>10} {:>10}\n", "d (um)", "Stk", "eta (%)", "Status"));
     out.push_str(&"-".repeat(45));
     out.push('\n');
 
@@ -67,19 +76,20 @@ pub fn design(
 
     for d in &particle_sizes {
         let d_m = d * 1e-6;
-        // Relative velocity ≈ v_throat (simplified)
-        let v_rel = v_throat * 0.8;
-        let psi = particle_density_kg_m3 * d_m * d_m * v_rel / (9.0 * mu_g * d_droplet_m).max(1e-15);
-        // Calvent: η = 1 - exp(-6 × Ψ × L/G / 1000)
-        let eff = (1.0 - (-6.0 * psi * lg / 1000.0).exp()) * 100.0;
-        let status = if eff >= target_efficiency_pct { "✅" } else { "⚠️" };
-        out.push_str(&format!("{:>10.2} {:>12.4} {:>10.1} {:>10}\n", d, psi, eff, status));
+        // Stokes number: Stk = rho_p * d_p^2 * v_rel / (9 * mu * d_d)
+        let stk = particle_density_kg_m3 * d_m * d_m * v_rel / (9.0 * mu_g * d_droplet_m).max(1e-15);
+        // Calvert: eta = 1 - exp(-A * Stk * (L/G)^C)
+        let exponent = -calvert_A * stk * lg.powf(calvert_C);
+        let eff = (1.0 - exponent.exp()) * 100.0;
+        let status = if eff >= target_efficiency_pct { "[OK]" } else { "[WARN]" };
+        out.push_str(&format!("{:>10.2} {:>12.6} {:>10.1} {:>10}\n", d, stk, eff, status));
         if (*d - 2.0).abs() < 0.01 { eff_2um = eff; }
     }
 
-    // Overall efficiency (mass-weighted, assume typical distribution centered at 5µm)
-    let overall_eff = (1.0 - (-6.0 * (particle_density_kg_m3 * (5e-6_f64).powi(2) * v_throat * 0.8 / (9.0 * mu_g * d_droplet_m)) * lg / 1000.0).exp()) * 100.0;
-    out.push_str(&format!("\n  ► Overall efficiency (at 5µm): {:.1}%\n\n", overall_eff));
+    // Overall efficiency at 5um (typical mass median diameter)
+    let stk_5 = particle_density_kg_m3 * (5e-6_f64).powi(2) * v_rel / (9.0 * mu_g * d_droplet_m);
+    let overall_eff = (1.0 - (-calvert_A * stk_5 * lg.powf(calvert_C)).exp()) * 100.0;
+    out.push_str(&format!("\n  >> Overall efficiency (at 5um): {:.1}%\n\n", overall_eff));
 
     // ═══ Water Consumption ═══
     let water_flow_l_s = gas_flow_m3_s * lg;
