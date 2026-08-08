@@ -59,51 +59,132 @@ pub fn assimilate(
         out.push_str(&format!("    ... ({} more)\n", n_state - 10));
     }
 
-    // ═══ Phase 2: Update — Kalman gain ═══
-    out.push_str("\n── Phase 2: Update (analysis) ──\n\n");
+    // ═══ Phase 2: Update — Multivariate Kalman gain ═══
+    // Ref: Mandel 2009 (arXiv:0901.3725); Evensen 2003
+    // Full formula:
+    //   C = A·A^T / (N-1)   (n×n covariance from ensemble anomaly)
+    //   S = H·C·H^T + R     (m×m innovation covariance)
+    //   K = C·H^T·S^{-1}    (n×m Kalman gain)
+    //   X_p = X + K·(D - H·X) (posterior ensemble)
+    out.push_str("\n── Phase 2: Update (Multivariate EnKF Analysis) ──\n\n");
+    out.push_str("Ref: Mandel 2009; Evensen 2003 — full matrix K = C·H^T·(H·C·H^T+R)^{-1}\n\n");
 
-    // H = observation operator (assume identity if n_obs == n_state, else linear projection)
-    // P_f H^T = cross-covariance between state and observations
-    // For simplicity: H projects state to observation space
+    // Build ensemble anomaly matrix A (n_state × n_ens)
+    // A[k] = x_k - mean
+    let anomaly: Vec<Vec<f64>> = model_states.iter()
+        .map(|s| s.iter().enumerate()
+            .map(|(i, x)| x - prior_mean[i])
+            .collect())
+        .collect();
 
-    let mut updated_states: Vec<Vec<f64>> = Vec::new();
+    // Compute full covariance C = A·A^T / (N-1)  (n_state × n_state)
+    let mut cov = vec![vec![0.0; n_state]; n_state];
+    for i in 0..n_state {
+        for j in 0..n_state {
+            let mut sum = 0.0;
+            for k in 0..n_ens {
+                sum += anomaly[k][i] * anomaly[k][j];
+            }
+            cov[i][j] = sum / (n_ens - 1).max(1) as f64;
+        }
+    }
 
-    // Observation perturbations
+    // H = identity (m×n, first m state vars = observations)
+    // S = H·C·H^T + R = C[0:m, 0:m] + R  (m×m)
+    let m = n_obs.min(n_state);
+    let mut s_matrix = vec![vec![0.0; m]; m];
+    for i in 0..m {
+        for j in 0..m {
+            s_matrix[i][j] = cov[i][j];
+        }
+        s_matrix[i][i] += noise_std * noise_std; // R diagonal
+    }
+
+    // Display covariance matrix (if small)
+    if n_state <= 5 {
+        out.push_str("  Prior Covariance Matrix C (n×n):\n  ");
+        for i in 0..n_state {
+            for j in 0..n_state {
+                out.push_str(&format!("{:>8.4} ", cov[i][j]));
+            }
+            out.push_str("\n  ");
+        }
+        out.push('\n');
+    }
+
+    // S^{-1} via Gauss-Jordan elimination
+    let s_inv = match matrix_inverse(&s_matrix, m) {
+        Some(inv) => inv,
+        None => {
+            out.push_str("  ⚠️ S matrix singular — using diagonal approximation\n");
+            // Fallback: diagonal only
+            let mut inv = vec![vec![0.0; m]; m];
+            for i in 0..m {
+                inv[i][i] = 1.0 / s_matrix[i][i].max(1e-10);
+            }
+            inv
+        }
+    };
+
+    // K = C·H^T·S^{-1}  (n×m)
+    // C·H^T = C[0:n, 0:m] (since H=identity[0:m, 0:n])
+    // Then multiply by S^{-1} (m×m)
+    let mut k_gain = vec![vec![0.0; m]; n_state];
+    for i in 0..n_state {
+        for j in 0..m {
+            // (C·H^T)[i][j] = C[i][j] (for H=identity)
+            let mut sum = 0.0;
+            for l in 0..m {
+                sum += cov[i][l] * s_inv[l][j];
+            }
+            k_gain[i][j] = sum;
+        }
+    }
+
+    // Display K matrix (first 3 rows)
+    out.push_str("  Kalman Gain Matrix K (n×m):\n");
+    let k_rows = n_state.min(5);
+    for i in 0..k_rows {
+        out.push_str(&format!("  K[{}] = [", i));
+        for j in 0..m {
+            out.push_str(&format!("{:>8.4} ", k_gain[i][j]));
+        }
+        out.push_str("]\n");
+    }
+    if n_state > 5 { out.push_str(&format!("  ... ({} more rows)\n", n_state - 5)); }
+    out.push('\n');
+
+    // Observation perturbations (D = d + N(0,R) per ensemble)
     let obs_pert: Vec<Vec<f64>> = (0..n_ens).map(|_| {
         (0..n_obs).map(|_| {
-            // Box-Muller for Gaussian noise
             let u1 = 1e-10 + rand_f64();
             let u2 = rand_f64();
             noise_std * (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
         }).collect()
     }).collect();
 
+    // Posterior: X_p = X + K·(D - H·X)
+    // For each ensemble member: x_a = x_f + K·(d_pert - H·x_f)
+    let mut updated_states: Vec<Vec<f64>> = Vec::new();
     let mut innovation_sum = 0.0f64;
-    let mut total_k_gain = 0.0f64;
 
     for e in 0..n_ens {
         let mut state = model_states[e % n_ens].clone();
 
-        // Project state to obs space (H = identity for matching indices)
-        for (j, y_obs) in observations.iter().enumerate() {
-            if j >= n_state { break; }
+        // Innovation: d = y_pert - H·x = (y_obs + pert) - x[0:m]
+        let mut innovation = vec![0.0; m];
+        for j in 0..m {
+            innovation[j] = (observations[j] + obs_pert[e][j]) - state[j];
+            innovation_sum += innovation[j].abs();
+        }
 
-            let y_pred = state[j]; // H = identity
-            let y_pert = obs_pert[e][j];
-            let y = y_obs + y_pert;
-
-            // Innovation (d = y - Hx)
-            let innovation = y - y_pred;
-            innovation_sum += innovation.abs();
-
-            // Kalman gain (simplified: K = P_f / (P_f + R))
-            let pf = prior_var[j];
-            let r = noise_std * noise_std;
-            let k = pf / (pf + r).max(1e-10);
-            if j == 0 { total_k_gain = k; }
-
-            // Analysis: x_a = x_f + K * d
-            state[j] = y_pred + k * innovation;
+        // x_a = x_f + K·d  (matrix-vector multiply)
+        for i in 0..n_state {
+            let mut correction = 0.0;
+            for j in 0..m {
+                correction += k_gain[i][j] * innovation[j];
+            }
+            state[i] += correction;
         }
 
         updated_states.push(state);
@@ -131,7 +212,7 @@ pub fn assimilate(
             i, posterior_mean[i], posterior_std[i], pct));
     }
 
-    out.push_str(&format!("\n  Kalman gain (K): {:.4}", total_k_gain));
+    out.push_str(&format!("\n  Kalman gain K[0,0]: {:.4} (diagonal)", k_gain[0][0]));
     out.push_str(&format!("  (high K = trust obs; low K = trust model)\n"));
     out.push_str(&format!("  Mean innovation |y - Hx|: {:.4}\n\n", mean_innovation));
 
@@ -160,7 +241,7 @@ pub fn assimilate(
     out.push_str("\n═══ EnKF SUMMARY ═══\n\n");
     out.push_str(&format!("  Ensemble: {}\n", n_ens));
     out.push_str(&format!("  States: {}  Obs: {}\n", n_state, n_obs));
-    out.push_str(&format!("  Kalman gain: {:.4}\n", total_k_gain));
+    out.push_str(&format!("  Kalman gain K[0,0]: {:.4}\n", k_gain[0][0]));
     out.push_str(&format!("  Innovation: {:.4}\n", mean_innovation));
     out.push_str(&format!("  σ reduction: {:.1}%\n", reduction));
 
@@ -191,4 +272,66 @@ fn rand_f64() -> f64 {
     x ^= x << 17;
     SEED.store(x, Ordering::Relaxed);
     (x % 1000000) as f64 / 1000000.0
+}
+
+/// Matrix inverse via Gauss-Jordan elimination
+/// Pure Rust, no external dependency
+/// Ref: Golub & Van Loan 1989 (Matrix Computations)
+fn matrix_inverse(matrix: &[Vec<f64>], n: usize) -> Option<Vec<Vec<f64>>> {
+    // Build augmented [A | I]
+    let mut aug = vec![vec![0.0; 2 * n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            aug[i][j] = matrix[i][j];
+        }
+        aug[i][n + i] = 1.0;
+    }
+
+    // Forward elimination with partial pivoting
+    for col in 0..n {
+        // Find pivot
+        let mut max_row = col;
+        let mut max_val = aug[col][col].abs();
+        for row in (col + 1)..n {
+            if aug[row][col].abs() > max_val {
+                max_val = aug[row][col].abs();
+                max_row = row;
+            }
+        }
+
+        if max_val < 1e-12 {
+            return None; // singular
+        }
+
+        // Swap rows
+        if max_row != col {
+            aug.swap(col, max_row);
+        }
+
+        // Scale pivot row
+        let pivot = aug[col][col];
+        for j in 0..(2 * n) {
+            aug[col][j] /= pivot;
+        }
+
+        // Eliminate column in other rows
+        for row in 0..n {
+            if row == col { continue; }
+            let factor = aug[row][col];
+            if factor.abs() < 1e-15 { continue; }
+            for j in 0..(2 * n) {
+                aug[row][j] -= factor * aug[col][j];
+            }
+        }
+    }
+
+    // Extract inverse from augmented [I | A^{-1}]
+    let mut inv = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            inv[i][j] = aug[i][n + j];
+        }
+    }
+
+    Some(inv)
 }

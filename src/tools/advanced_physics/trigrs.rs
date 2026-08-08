@@ -51,33 +51,51 @@ pub fn assess(
 
     // Simple FD: ∂h/∂t = D * ∂²h/∂z² + ∂K/∂z
     // Linearized: K constant ≈ Ks, D ≈ D2
-    let alpha = d2_m * dt / (dz * dz);
-    if alpha > 0.5 {
-        out.push_str(&format!("  ⚠️ Numerical stability: α={:.3} > 0.5. Reducing dt.\n", alpha));
-    }
+    // CFL stability: α = D₂·dt/dz² ≤ 0.5 (Forward Euler)
+    // Ref: Zi et al. 2016 — "If CFL not satisfied, time step is reduced"
+    //   Timsina 2024 — Forward Euler FD for Richards landslide
+    let alpha_outer = d2_m * dt / (dz * dz);
+    
+    // Adaptive subcycling: if α > 0.5, split into n_sub sub-timesteps
+    let (n_sub, dt_sub, alpha_sub) = if alpha_outer > 0.5 {
+        let ns = (alpha_outer / 0.5).ceil() as usize;
+        let dts = dt / ns as f64;
+        let asub = d2_m * dts / (dz * dz);
+        out.push_str(&format!("  ⚠️ CFL: α_outer={:.3} > 0.5 → subcycling n_sub={}, dt_sub={:.1}s, α_sub={:.3}\n",
+            alpha_outer, ns, dts, asub));
+        (ns, dts, asub)
+    } else {
+        (1, dt, alpha_outer)
+    };
 
     let mut max_pressure = 0.0f64;
     let mut pressure_time: Vec<f64> = Vec::new();
 
-    for step in 0..n_steps.min(360) { // cap at 360 steps (6h) for performance
-        let mut h_new = h.clone();
+    // Outer loop: track at every dt (e.g. every 60s)
+    // Inner loop: run FD at dt_sub for n_sub iterations per outer step
+    let outer_steps = n_steps.min(360);
+    for step in 0..outer_steps {
+        for _sub in 0..n_sub {
+            let mut h_new = h.clone();
 
-        // Top boundary: rainfall infiltration
-        let infiltration = rain_rate_m_s.min(ks_m_s);
-        h_new[0] = h[0] + infiltration * dt / (porosity * dz);
+            // Top boundary: rainfall infiltration (Green-Ampt simplified)
+            // f = Ks · (ψ + z_f) / z_f, but simplified: min(rain, Ks)
+            let infiltration = rain_rate_m_s.min(ks_m_s);
+            h_new[0] = h[0] + infiltration * dt_sub / (porosity * dz);
 
-        // Interior nodes
-        for i in 1..n_nodes - 1 {
-            h_new[i] = h[i] + alpha * (h[i + 1] - 2.0 * h[i] + h[i - 1])
-                + (ks_m_s * dt / (porosity * dz)) * (h[i + 1] - h[i]) / dz;
+            // Interior nodes: Forward Euler FD
+            for i in 1..n_nodes - 1 {
+                h_new[i] = h[i] + alpha_sub * (h[i + 1] - 2.0 * h[i] + h[i - 1])
+                    + (ks_m_s * dt_sub / (porosity * dz)) * (h[i + 1] - h[i]) / dz;
+            }
+
+            // Bottom boundary: no-flow
+            h_new[n_nodes - 1] = h_new[n_nodes - 2];
+
+            h = h_new;
         }
 
-        // Bottom boundary: no-flow
-        h_new[n_nodes - 1] = h_new[n_nodes - 2];
-
-        h = h_new;
-
-        // Track pressure at mid-depth (critical failure plane)
+        // Track pressure at mid-depth (critical failure plane) — every outer step
         let mid_idx = n_nodes / 2;
         if h[mid_idx] > max_pressure {
             max_pressure = h[mid_idx];

@@ -1,17 +1,145 @@
 /// Enhanced Leopold Matrix with AHP + TOPSIS
 /// Ref: Leopold et al. (1971) USGS Circular 645
 /// AHP: Saaty (1980) — pairwise comparison → eigenvalue weights, CR < 0.1
+///   Power iteration: Shiraishi & Obata 2025; Wang et al. 2021; Baladraf 2026
 /// TOPSIS: Hwang & Yoon (1981) — distance to ideal positive/negative
 /// 2026 SOTA: Zhang et al. 2026 (Springer), Nasiri Khiavi et al. 2026 (Springer)
 /// Indonesia: PP 22/2021, UU 32/2009, PermenLHK 5/2021
+
+/// RI table (Random Index) from Saaty — for Consistency Ratio computation
+fn ri_table(n: usize) -> f64 {
+    match n {
+        1 => 0.0, 2 => 0.0, 3 => 0.58, 4 => 0.90, 5 => 1.12,
+        6 => 1.24, 7 => 1.32, 8 => 1.41, 9 => 1.45, 10 => 1.49,
+        _ => 1.51,
+    }
+}
+
+/// Power iteration to compute principal eigenvalue and eigenvector of pairwise matrix
+/// Ref: Shiraishi & Obata 2025; Ishizaka & Lusti 2006; Saaty 2003
+/// Returns (lambda_max, weights_vec)
+fn power_iteration(matrix: &[Vec<f64>], n: usize) -> (f64, Vec<f64>) {
+    // Initialize v = [1/n, 1/n, ..., 1/n]
+    let mut v = vec![1.0 / n as f64; n];
+
+    let max_iter = 100;
+    let tolerance = 1e-8;
+
+    for _iter in 0..max_iter {
+        // v_new = A · v
+        let mut v_new = vec![0.0; n];
+        for i in 0..n {
+            for j in 0..n {
+                v_new[i] += matrix[i][j] * v[j];
+            }
+        }
+
+        // Normalize (L1 norm → sum = 1)
+        let sum: f64 = v_new.iter().sum();
+        if sum > 1e-30 {
+            for x in v_new.iter_mut() { *x /= sum; }
+        }
+
+        // Check convergence
+        let diff: f64 = v_new.iter().zip(v.iter())
+            .map(|(a, b)| (a - b).abs()).sum();
+        v = v_new;
+
+        if diff < tolerance {
+            break;
+        }
+    }
+
+    // Compute lambda_max via Rayleigh quotient: λ = (A·v)·v / (v·v)
+    // But for normalized eigenvector (sum=1), simpler: λ_max = Σᵢ (A·v)ᵢ
+    let mut av = vec![0.0; n];
+    for i in 0..n {
+        for j in 0..n {
+            av[i] += matrix[i][j] * v[j];
+        }
+    }
+    // lambda_max = sum of (A·v)_i (since v sums to 1, this gives the eigenvalue)
+    let lambda_max: f64 = av.iter().sum();
+
+    (lambda_max, v)
+}
+
+/// Compute AHP weights and consistency from pairwise comparison matrix
+/// Returns (weights, lambda_max, CI, CR, iterations)
+fn ahp_from_pairwise(pairwise: &[Vec<f64>]) -> Option<(Vec<f64>, f64, f64, f64, usize)> {
+    let n = pairwise.len();
+    if n < 2 { return None; }
+    for row in pairwise { if row.len() != n { return None; } }
+
+    // Validate: diagonal = 1, reciprocal property A[i][j] = 1/A[j][i]
+    for i in 0..n {
+        if (pairwise[i][i] - 1.0).abs() > 0.01 { return None; }
+        for j in (i+1)..n {
+            let expected = 1.0 / pairwise[j][i];
+            if (pairwise[i][j] - expected).abs() > 0.1 * expected.max(1.0) {
+                // Not perfectly reciprocal — warn but continue
+            }
+        }
+    }
+
+    // Count iterations manually (re-run power iteration with counter)
+    let mut v = vec![1.0 / n as f64; n];
+    let mut iterations = 0;
+    let tolerance = 1e-8;
+
+    for iter in 0..100 {
+        let mut v_new = vec![0.0; n];
+        for i in 0..n {
+            for j in 0..n {
+                v_new[i] += pairwise[i][j] * v[j];
+            }
+        }
+        let sum: f64 = v_new.iter().sum();
+        if sum > 1e-30 {
+            for x in v_new.iter_mut() { *x /= sum; }
+        }
+        let diff: f64 = v_new.iter().zip(v.iter())
+            .map(|(a, b)| (a - b).abs()).sum();
+        v = v_new;
+        iterations = iter + 1;
+        if diff < tolerance { break; }
+    }
+
+    // lambda_max
+    let mut av = vec![0.0; n];
+    for i in 0..n {
+        for j in 0..n {
+            av[i] += pairwise[i][j] * v[j];
+        }
+    }
+    let lambda_max: f64 = av.iter().sum();
+
+    // CI = (λ_max - n) / (n - 1)
+    let ci = if n > 1 { (lambda_max - n as f64) / (n as f64 - 1.0) } else { 0.0 };
+    // CR = CI / RI
+    let ri = ri_table(n);
+    let cr = if ri > 0.0 { ci / ri } else { 0.0 };
+
+    Some((v, lambda_max, ci, cr, iterations))
+}
 
 pub fn assess(
     impacts_json: &str,
     criteria_weights_json: &str,
     alternatives_json: &str,
 ) -> String {
+    assess_full(impacts_json, criteria_weights_json, alternatives_json, "")
+}
+
+pub fn assess_full(
+    impacts_json: &str,
+    criteria_weights_json: &str,
+    alternatives_json: &str,
+    pairwise_matrix_json: &str,
+) -> String {
     let mut out = String::from("=== Enhanced Leopold Matrix (AHP + TOPSIS) ===\n");
     out.push_str("Ref: Leopold 1971 + Saaty 1980 (AHP) + Hwang & Yoon 1981 (TOPSIS)\n");
+    out.push_str("AHP eigenvalue: Power iteration (Shiraishi 2025; Wang 2021; Baladraf 2026)\n");
     out.push_str("2026 SOTA: Zhang et al. 2026; Nasiri Khiavi et al. 2026\n");
     out.push_str("Regulasi: PP 22/2021, UU 32/2009, PermenLHK 5/2021\n\n");
 
@@ -58,47 +186,83 @@ pub fn assess(
     out.push_str(&format!("\nRingkasan Leopold:\n  Positif: +{:.1} | Negatif: {:.1} | Net: {:.1}\n  Signifikan (|M×I|≥30): {}\n\n", total_pos, total_neg, net, count_sig));
 
     // Phase 2: AHP Weighting
-    let criteria_weights: Vec<(String, f64)> = match serde_json::from_str(criteria_weights_json) {
-        Ok(v) => v,
-        Err(_) => {
-            out.push_str("─ PHASE 2: AHP (default weights — no custom criteria) ─\n\n");
-            vec![
-                ("Ekologi".into(), 0.40),
-                ("Sosial".into(), 0.25),
-                ("Ekonomi".into(), 0.20),
-                ("Kesehatan".into(), 0.15),
-            ]
+    // Try pairwise matrix first (true eigenvalue method)
+    let (normalized, cr, lambda_max, ci, ri_val, used_pairwise, iterations) = if !pairwise_matrix_json.is_empty() {
+        let pairwise: Vec<Vec<f64>> = match serde_json::from_str(pairwise_matrix_json) {
+            Ok(v) => v,
+            Err(e) => {
+                out.push_str(&format!("⚠️ pairwise_matrix_json parse error: {}\n", e));
+                Vec::new()
+            }
+        };
+
+        if pairwise.len() >= 2 {
+            // Get criteria names from criteria_weights_json (if provided)
+            let criteria_names: Vec<String> = match serde_json::from_str::<Vec<(String, f64)>>(criteria_weights_json) {
+                Ok(v) => v.iter().map(|(n, _)| n.clone()).collect(),
+                Err(_) => (0..pairwise.len()).map(|i| format!("C{}", i+1)).collect(),
+            };
+
+            if let Some((weights, lm, ci_val, cr_val, iters)) = ahp_from_pairwise(&pairwise) {
+                let norm: Vec<(String, f64)> = weights.iter().enumerate()
+                    .map(|(i, w)| (criteria_names.get(i).cloned().unwrap_or_else(|| format!("C{}", i+1)), *w))
+                    .collect();
+
+                // Display pairwise matrix
+                out.push_str("─ PHASE 2: AHP — Pairwise Comparison Matrix (True Eigenvalue) ─\n\n");
+                out.push_str("Pairwise Matrix (Saaty 1-9 scale):\n");
+                out.push_str(&format!("  {:>8}", ""));
+                for name in &criteria_names {
+                    out.push_str(&format!(" {:>8}", &name[..name.len().min(7)]));
+                }
+                out.push('\n');
+                for (i, row) in pairwise.iter().enumerate() {
+                    let label: String = criteria_names.get(i).map(|s| s.chars().take(7).collect()).unwrap_or_default();
+                    out.push_str(&format!("  {:>8}", label));
+                    for val in row {
+                        out.push_str(&format!(" {:>8.2}", val));
+                    }
+                    out.push('\n');
+                }
+                out.push('\n');
+
+                out.push_str(&format!("Power Iteration: {} iterations to converge (tol=1e-8)\n", iters));
+                out.push_str(&format!("  λ_max (principal eigenvalue): {:.4}\n", lm));
+                out.push_str(&format!("  CI (Consistency Index): {:.4}\n", ci_val));
+                out.push_str(&format!("  RI (Random Index, n={}): {:.2}\n", pairwise.len(), ri_table(pairwise.len())));
+                out.push_str(&format!("  CR (Consistency Ratio): {:.4}", cr_val));
+                if cr_val < 0.1 {
+                    out.push_str(" ✅ (Acceptable, CR < 0.1)\n\n");
+                } else {
+                    out.push_str(" ⚠️ (CR ≥ 0.1 — pairwise comparison INCONSISTENT, needs revision)\n\n");
+                }
+
+                (norm, cr_val, lm, ci_val, ri_table(pairwise.len()), true, iters)
+            } else {
+                out.push_str("⚠️ Pairwise matrix invalid (non-square or diagonal ≠ 1). Using weights fallback.\n\n");
+                process_weights_fallback(criteria_weights_json, &mut out)
+            }
+        } else {
+            process_weights_fallback(criteria_weights_json, &mut out)
         }
-    };
-
-    out.push_str("─ PHASE 2: AHP Criteria Weights ─\n\n");
-
-    let weight_sum: f64 = criteria_weights.iter().map(|(_, w)| w).sum();
-    let normalized: Vec<(String, f64)> = if weight_sum > 0.0 {
-        criteria_weights.iter().map(|(n, w)| (n.clone(), w / weight_sum)).collect()
     } else {
-        criteria_weights
+        // No pairwise matrix — use weights directly (CR = N/A)
+        process_weights_fallback(criteria_weights_json, &mut out)
     };
+
+    // Display weights
+    if !used_pairwise {
+        out.push_str("─ PHASE 2: AHP Criteria Weights (direct, no pairwise matrix) ─\n\n");
+    }
 
     for (name, w) in &normalized {
         let stars = "█".repeat((w * 20.0).round() as usize);
         out.push_str(&format!("  {:<12} {:>6.1}%  {}\n", name, w * 100.0, stars));
     }
 
-    // AHP Consistency check (simplified CR estimation)
-    let n = normalized.len();
-    let cr = if n > 2 {
-        let lambda_max = n as f64 + 0.01; // approximation
-        let ci = (lambda_max - n as f64) / (n as f64 - 1.0).max(1.0);
-        let ri = match n { 3 => 0.58, 4 => 0.90, 5 => 1.12, 6 => 1.24, _ => 1.32 };
-        ci / ri
-    } else { 0.0 };
-
-    out.push_str(&format!("\n  Consistency Ratio (CR): {:.3}", cr));
-    if cr < 0.1 {
-        out.push_str(" ✅ (Acceptable, CR < 0.1)\n\n");
-    } else {
-        out.push_str(" ⚠️ (CR ≥ 0.1 — pairwise comparison perlu revisi)\n\n");
+    if !used_pairwise {
+        out.push_str("\n  Consistency Ratio (CR): N/A (no pairwise matrix provided)\n");
+        out.push_str("  For true CR: provide pairwise_matrix_json (n×n Saaty scale 1-9)\n\n");
     }
 
     // Phase 3: TOPSIS Ranking
@@ -109,7 +273,6 @@ pub fn assess(
         Err(_) => {
             out.push_str("  (No alternatives provided — skipping TOPSIS ranking)\n");
             out.push_str("  Format: [[\"Alt A\",[ekologi_score,sosial_score,ekonomi_score,kesehatan_score]],...]\n\n");
-            // Without alternatives, just return Leopold + AHP
             if net < -50.0 {
                 out.push_str("⚠️ Net impact sangat negatif. Proyek memerlukan mitigasi serius atau redesain.\n");
             }
@@ -187,7 +350,12 @@ pub fn assess(
     out.push_str(&format!("\n─ IMPACT SUMMARY ─\n"));
     out.push_str(&format!("  Leopold net impact: {:.1}\n", net));
     out.push_str(&format!("  Significant impacts: {}\n", count_sig));
-    out.push_str(&format!("  AHP consistency: CR={:.3} {}\n", cr, if cr < 0.1 { "✅" } else { "⚠️" }));
+    if used_pairwise {
+        out.push_str(&format!("  AHP: λ_max={:.4}, CI={:.4}, RI={:.2}, CR={:.4} {} ({} iter)\n",
+            lambda_max, ci, ri_val, cr, if cr < 0.1 { "✅" } else { "⚠️" }, iterations));
+    } else {
+        out.push_str(&format!("  AHP: direct weights (CR=N/A, no pairwise matrix)\n"));
+    }
     if !results.is_empty() {
         out.push_str(&format!("  TOPSIS best: {} (C*={:.3})\n", results[0].0, results[0].3));
     }
@@ -196,4 +364,34 @@ pub fn assess(
     }
 
     out
+}
+
+/// Fallback: process criteria_weights_json directly (no pairwise matrix → CR = N/A)
+/// Returns (normalized_weights, cr, lambda_max, ci, ri, used_pairwise, iterations)
+fn process_weights_fallback(
+    criteria_weights_json: &str,
+    out: &mut String,
+) -> (Vec<(String, f64)>, f64, f64, f64, f64, bool, usize) {
+    let criteria_weights: Vec<(String, f64)> = match serde_json::from_str(criteria_weights_json) {
+        Ok(v) => v,
+        Err(_) => {
+            out.push_str("─ PHASE 2: AHP (default weights — no custom criteria) ─\n\n");
+            vec![
+                ("Ekologi".into(), 0.40),
+                ("Sosial".into(), 0.25),
+                ("Ekonomi".into(), 0.20),
+                ("Kesehatan".into(), 0.15),
+            ]
+        }
+    };
+
+    let weight_sum: f64 = criteria_weights.iter().map(|(_, w)| w).sum();
+    let normalized: Vec<(String, f64)> = if weight_sum > 0.0 {
+        criteria_weights.iter().map(|(n, w)| (n.clone(), w / weight_sum)).collect()
+    } else {
+        criteria_weights
+    };
+
+    // CR = N/A when no pairwise matrix
+    (normalized, 0.0, 0.0, 0.0, 0.0, false, 0)
 }

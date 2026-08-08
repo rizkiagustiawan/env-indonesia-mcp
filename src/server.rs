@@ -1978,10 +1978,12 @@ pub struct ViirsFishingParam {
 pub struct EnhancedLeopoldParam {
     #[schemars(description = "JSON: [[\"kegiatan\",\"komponen\",magnitude(-10..10),importance(1..10)],...]")]
     pub impacts_json: String,
-    #[schemars(description = "JSON: [[\"criterion\",weight],...] (e.g. [[\"Ekologi\",0.4],[\"Sosial\",0.25],...])")]
+    #[schemars(description = "JSON: [[\"criterion\",weight],...] (e.g. [[\"Ekologi\",0.4],[\"Sosial\",0.25],...]). Used as criteria names if pairwise provided.")]
     pub criteria_weights_json: String,
     #[schemars(description = "JSON: [[\"Alt A\",[score1,score2,...]],...] for TOPSIS ranking")]
     pub alternatives_json: String,
+    #[schemars(description = "Optional: n×n AHP pairwise comparison matrix (Saaty 1-9 scale). If provided, computes true λ_max, CI, CR via power iteration. e.g. [[1,3,5],[0.333,1,3],[0.2,0.333,1]]")]
+    pub pairwise_matrix_json: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -4766,10 +4768,11 @@ impl EnvIndonesiaServer {
 
     // ═══ GOD TIER v3: 9 Advanced Modeling Tools ═══
 
-    #[tool(description = "Enhanced Leopold Matrix (AHP + TOPSIS). Leopold M×I + AHP pairwise weights (CR<0.1) + TOPSIS alternative ranking. Ref: Leopold 1971; Saaty 1980; Zhang 2026; Nasiri 2026. Input: impacts_json, criteria_weights_json, alternatives_json.")]
+    #[tool(description = "Enhanced Leopold Matrix (AHP + TOPSIS). Leopold M×I + AHP pairwise weights (CR<0.1 via power iteration eigenvalue) + TOPSIS alternative ranking. Optional pairwise_matrix_json for true AHP consistency check. Ref: Leopold 1971; Saaty 1980; Shiraishi 2025; Zhang 2026.")]
     fn enhanced_leopold_matrix(&self, Parameters(p): Parameters<EnhancedLeopoldParam>) -> String {
-        tools::calculators::enhanced_leopold::assess(
-            &p.impacts_json, &p.criteria_weights_json, &p.alternatives_json
+        tools::calculators::enhanced_leopold::assess_full(
+            &p.impacts_json, &p.criteria_weights_json, &p.alternatives_json,
+            p.pairwise_matrix_json.as_deref().unwrap_or("")
         )
     }
 
