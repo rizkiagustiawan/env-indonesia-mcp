@@ -1,8 +1,9 @@
-/// ISO 14001:2015 Gap Analysis + PROPER Prediction
-/// Ref: ISO 14001:2015 (HLS Clauses 4-10), PermenLHK P.1/2021 (PROPER)
-/// 2026 SOTA: Falakh 2026 (ISO 14001 → PROPER mining), Febrian 2026 (Clause 7.3 gap),
-///   Altarazi 2026 (ISO 14001 +28-35% compliance, +22-30% energy efficiency),
-///   Izati 2026 (gap analysis per clause)
+/// ISO 14001:2015/2026 Gap Analysis + PROPER Prediction
+/// Ref: ISO 14001:2015 (HLS Clauses 4-10); ISO 14001:2026 (published 15 Apr 2026, 4th ed);
+///   PermenLHK P.1/2021 (PROPER)
+/// Verified: Falakh 2026 (ISO 14001 → PROPER mining case study, EJOSDR/ResearchGate);
+///   Altarazi 2026 (+28-35% regulatory compliance, +22-30% energy efficiency, Frontiers in Sustainability);
+///   Febrian 2026 (Clause 7.3 awareness gap); Izati 2026 (per-clause gap analysis)
 /// PDCA: Plan(4,5,6) → Do(7,8) → Check(9) → Act(10)
 
 struct ClauseDef {
@@ -145,7 +146,7 @@ pub fn assess(compliance_json: &str) -> String {
 
     // PROPER Prediction
     out.push_str("\n═══ PROPER PREDICTION ═══\n\n");
-    out.push_str("Ref: Falakh 2026 (ISO 14001 → PROPER linkage)\n");
+    out.push_str("Ref: Falakh 2026 (ISO 14001 → PROPER linkage, EJOSDR/ResearchGate)\n");
     out.push_str("Ref: PermenLHK P.1/2021 (PROPER rating criteria)\n\n");
 
     let (color, label, desc, requirements) = if overall_pct < 50.0 {
@@ -187,15 +188,19 @@ pub fn assess(compliance_json: &str) -> String {
         }
     }
 
-    // ISO 14001:2026 note
-    out.push_str("\n═══ ISO 14001:2026 UPDATE ═══\n\n");
-    out.push_str("ISO 14001:2026 (published April 2026) — 4th edition.\n");
-    out.push_str("Key changes from 2015:\n");
-    out.push_str("  - Strengthened climate change adaptation (Clause 6.1)\n");
-    out.push_str("  - Enhanced supply chain environmental aspects (Clause 8.1)\n");
-    out.push_str("  - Digital documentation requirements (Clause 7.5)\n");
-    out.push_str("  - SDG alignment reporting (Clause 9.3)\n");
-    out.push_str("  - 3-year transition period from 2015 version\n");
+    // ISO 14001:2026 update (verified: published 15 Apr 2026, iso.org/DNV/BSI)
+    out.push_str("\n═══ ISO 14001:2026 UPDATE (4th edition, 15 Apr 2026) ═══\n\n");
+    out.push_str("Ref: iso.org/news/2026/04; DNV transition guide; BSI key changes\n\n");
+    out.push_str("Key changes from 2015 (verified from DNV/BSI):\n");
+    out.push_str("  - Climate change + biodiversity + natural resources (Clause 4.1, 4.2)\n");
+    out.push_str("  - Risks & opportunities restructured (Clause 6.1 → 6.1.4/6.1.5)\n");
+    out.push_str("  - Lifecycle perspective in environmental aspects (Clause 6.1.2)\n");
+    out.push_str("  - NEW: Planning of changes (Clause 6.3)\n");
+    out.push_str("  - Externally provided processes/products/services (Clause 8.1)\n");
+    out.push_str("  - Improvement consolidated (Clause 10)\n");
+    out.push_str("  - Annex A guidance substantially revised\n");
+    out.push_str("  - Transition: 3 years (certificates must transition by May 2029)\n");
+    out.push_str("  - Altarazi 2026: +28-35% compliance, +22-30% energy efficiency (Frontiers)\n");
 
     out
 }

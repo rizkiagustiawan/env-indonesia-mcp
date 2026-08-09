@@ -1,5 +1,5 @@
 /// ISPU Calculator (Indeks Standar Pencemar Udara)
-/// Ref: PermenLHK 73/2019
+/// Ref: PermenLHK P.14/2020 (Indeks Standar Pencemar Udara)
 
 pub fn calculate(
     pm10: Option<f64>,
@@ -52,7 +52,7 @@ pub fn calculate(
     let mut out = String::from(
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  ISPU Calculator\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
     );
-    out.push_str("Ref: PermenLHK No. 73 Tahun 2019\n");
+    out.push_str("Ref: PermenLHK No. P.14 Tahun 2020\n");
     out.push_str("Rumus: ISPU = ((Ih-Il)/(BPh-BPl)) × (Cp - BPl) + Il\n\n");
 
     let mut results: Vec<(&str, f64)> = Vec::new();

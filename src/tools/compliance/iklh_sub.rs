@@ -1,5 +1,10 @@
 /// IKLH Sub-Indices Calculator
-/// Ref: PermenLHK P.14/2020
+/// Ref: KLHK Pedoman IKLH (Indeks Kualitas Lingkungan Hidup)
+/// NOTE: P.14/2020 is the ISPU regulation, NOT the IKLH regulation.
+///       IKLH methodology is in KLHK Pedoman (IKA 30%, IKU 30%, IKTL 40%).
+///       The sub-index formulas below are SIMPLIFIED APPROXIMATIONS, not the
+///       exact KLHK transform functions. For official calculations, refer to
+///       the KLHK IKLH Pedoman document directly.
 
 /// IKA dari nilai-nilai Indeks Pencemaran
 pub fn calculate_ika(ip_values: &[f64]) -> String {
@@ -35,7 +40,7 @@ pub fn calculate_ika(ip_values: &[f64]) -> String {
     };
 
     let mut out = String::from("=== IKA (Indeks Kualitas Air) ===\n");
-    out.push_str("Ref: PermenLHK P.14/2020\n\n");
+    out.push_str("Ref: KLHK Pedoman IKLH (approximation — not official transform)\n\n");
     out.push_str(&format!("Jumlah Titik Pantau: {}\n", ip_values.len()));
     out.push_str(&format!("Nilai IP: {:?}\n", ip_values));
     out.push_str(&format!("Rata-rata IP: {:.2}\n\n", mean_ip));
@@ -77,7 +82,7 @@ pub fn calculate_iku(ispu_values: &[f64]) -> String {
     };
 
     let mut out = String::from("=== IKU (Indeks Kualitas Udara) ===\n");
-    out.push_str("Ref: PermenLHK P.14/2020\n\n");
+    out.push_str("Ref: KLHK Pedoman IKLH (approximation — not official transform)\n\n");
     out.push_str(&format!("Jumlah Stasiun: {}\n", ispu_values.len()));
     out.push_str(&format!("Nilai ISPU: {:?}\n", ispu_values));
     out.push_str(&format!("Rata-rata ISPU: {:.2}\n\n", mean_ispu));
@@ -120,7 +125,7 @@ pub fn calculate_iktl(forest_cover_pct: f64, target_pct: f64) -> String {
     };
 
     let mut out = String::from("=== IKTL (Indeks Kualitas Tutupan Lahan) ===\n");
-    out.push_str("Ref: PermenLHK P.14/2020\n\n");
+    out.push_str("Ref: KLHK Pedoman IKLH (approximation — not official transform)\n\n");
     out.push_str(&format!(
         "Tutupan Lahan Aktual : {:.1}%\n",
         forest_cover_pct
@@ -149,7 +154,7 @@ pub fn calculate_ikal(sea_quality_params: &str) -> String {
 
     let mut ratios = Vec::new();
     let mut out = String::from("=== IKAL (Indeks Kualitas Air Laut) ===\n");
-    out.push_str("Ref: PermenLHK P.14/2020\n\n");
+    out.push_str("Ref: KLHK Pedoman IKLH (approximation — not official transform)\n\n");
     out.push_str(
         format!(
             "{:<10} | {:<8} | {:<8} | {}\n",

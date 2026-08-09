@@ -157,12 +157,14 @@ pub fn assess(
     out.push_str(&format!("  Travel time: {:.0} days ({:.1} years)\n\n", travel_time, travel_time / 365.0));
 
     // ═══ Status Kepatuhan ═══
+    // EPA MCL (May 2025): PFOA/PFOS = 4 ng/L RETAINED.
+    // PFNA/PFHxS/GenX: EPA announced RESCISSION/reconsideration May 14 2025 (NOT confirmed).
     let epa_mcl_ng_l = match pfas_type.to_lowercase().as_str() {
         s if s.contains("pfoa") => 4.0,
         s if s.contains("pfos") => 4.0,
-        s if s.contains("pfna") => 10.0,
-        s if s.contains("pfhxs") => 10.0,
-        s if s.contains("genx") || s.contains("hpfoda") => 10.0,
+        s if s.contains("pfna") => 10.0, // proposed but RESCINDED — use as reference only
+        s if s.contains("pfhxs") => 10.0, // proposed but RESCINDED
+        s if s.contains("genx") || s.contains("hpfoda") => 10.0, // proposed but RESCINDED
         _ => 0.0,
     };
     let conc_ng_l = conc_at_receptor * 1e6;
@@ -170,6 +172,7 @@ pub fn assess(
         out.push_str("-- STATUS KEPATUHAN --\n");
         out.push_str(&format!("  EPA MCL: {:.0} ng/L, Measured: {:.2} ng/L -> {}\n",
             epa_mcl_ng_l, conc_ng_l, if conc_ng_l <= epa_mcl_ng_l {"PASS"} else {"FAIL"}));
+        out.push_str("  Note: PFOA/PFOS MCL=4 ng/L RETAINED (May 2025). PFNA/PFHxS/GenX MCL RESCINDED by EPA May 2025.\n");
         out.push_str("  Note: Indonesia belum punya baku mutu PFAS -- compare ke EPA/WHO\n\n");
     }
 

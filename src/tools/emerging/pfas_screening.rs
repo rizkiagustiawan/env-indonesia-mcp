@@ -1,12 +1,13 @@
 /// PFAS Risk Screening — EPA MCL + WHO + 2026 Treatment Comparison
 ///
-/// IMPLEMENTES: EPA MCL (confirmed May 2025) + WHO 2024
+/// IMPLEMENTES: EPA MCL (May 2025 update) + WHO 2024
 /// + 2026 treatment technology comparison from latest papers
 ///
-/// EPA MCL (2024, confirmed May 2025):
-///   PFOA: 4 ng/L | PFOS: 4 ng/L
-///   PFNA: 10 | PFHxS: 10 | GenX: 10 ng/L
-///   Hazard Index: <=1 (mixture)
+/// EPA MCL status (verified May 14 2025):
+///   PFOA: 4 ng/L — RETAINED (compliance extended to 2031)
+///   PFOS: 4 ng/L — RETAINED
+///   PFNA/PFHxS/GenX/Hazard Index: EPA RESCINDED/reconsidered May 2025
+///     (values shown as reference only, NOT enforceable)
 ///
 /// WHO (2024):
 ///   PFOA: 100 ng/L | PFOS: 200 ng/L
@@ -17,7 +18,7 @@
 
 pub fn assess(pfas_type: &str, conc_ng_l: f64, water_source: &str) -> String {
     let mut out = String::from("=== PFAS Risk Screening (2026) ===\n");
-    out.push_str("Ref: EPA MCL 2024 (confirmed May 2025); WHO 2024\n\n");
+    out.push_str("Ref: EPA MCL (May 2025: PFOA/PFOS retained, PFNA/PFHxS/GenX rescinded); WHO 2024\n\n");
 
     if conc_ng_l < 0.0 {
         return "ERROR [E102]: conc must be >= 0.".into();
@@ -40,9 +41,9 @@ pub fn assess(pfas_type: &str, conc_ng_l: f64, water_source: &str) -> String {
     out.push_str(&format!("PFAS: {} (conc: {:.1} ng/L)\n", pfas_type, conc_ng_l));
     out.push_str(&format!("Water source: {}\n\n", water_source));
 
-    out.push_str("EPA MCL (2024, confirmed May 2025):\n");
+    out.push_str("EPA MCL (May 2025 status):\n");
     out.push_str("  PFOA: 4 ng/L | PFOS: 4 ng/L\n");
-    out.push_str("  PFNA: 10 | PFHxS: 10 | GenX: 10 ng/L\n");
+    out.push_str("  PFNA: 10 | PFHxS: 10 | GenX: 10 ng/L (RESCINDED May 2025 — reference only)\n");
     out.push_str("  Hazard Index: <=1 (mixture)\n");
     out.push_str("WHO (2024): PFOA 100 ng/L, PFOS 200 ng/L\n");
     out.push_str("Indonesia: BELUM ADA baku mutu PFAS spesifik\n\n");

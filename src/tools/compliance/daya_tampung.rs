@@ -1,5 +1,5 @@
 /// Daya Tampung Beban Pencemaran
-/// Ref: PP 82/2001
+/// Ref: PP 22/2021 (mencabut PP 82/2001)
 
 pub fn calculate(
     q_river_m3s: f64,
