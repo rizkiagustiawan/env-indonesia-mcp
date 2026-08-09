@@ -15,7 +15,8 @@ Sistem ini memastikan setiap analisis spasial, perhitungan hidrologi, hingga pem
 - [Pemasangan](#pemasangan)
 - [Konfigurasi](#konfigurasi)
 - [Penggunaan CLI](#penggunaan-cli)
-- [Katalog Tools MCP (323 Tools)](#katalog-tools-mcp-323-tools)
+- [Katalog Tools MCP (333 Tools)](#katalog-tools-mcp-333-tools)
+- [Quality Assurance](#quality-assurance)
 - [AMDAL Pipeline Engine](#amdal-pipeline-engine)
 - [Deep Retrofit 2025-2026 (Research-Verified)](#deep-retrofit-2025-2026-research-verified)
 - [Integrasi ZeroClaw Multi-Agent](#integrasi-zeroclaw-multi-agent)
@@ -55,7 +56,7 @@ Sistem terhubung secara simultan (multi-sensor) untuk melakukan akuisisi data ob
 - **Tumpahan Minyak Lepas Pantai (Oil Spill Trajectory)**: Menggabungkan data arus laut aktuaria dari pemodelan kelautan HYCOM dengan parameter cuaca pesisir untuk memetakan vektor polusi laut.
 
 ### 4. Rantai Perhitungan Standar Lingkungan
-Lebih dari 323 model analitik terkalibrasi untuk kondisi iklim dan hidrologi Asia Tenggara:
+Lebih dari 333 model analitik terkalibrasi untuk kondisi iklim dan hidrologi Asia Tenggara:
 - **Dispersi Atmosfer**: Peningkatan pada Model Gaussian Plume yang memperhitungkan sumber garis (*line source* seperti jalan raya tol) dan sumber area (*area source* seperti kolam limbah/TPA), dengan parameter stabilitas Pasquill-Gifford.
 - **Kekeringan Iklim Tropis**: Implementasi *Standardized Precipitation Evapotranspiration Index* (SPEI) untuk akurasi prediksi kekeringan yang lebih komprehensif dibandingkan SPI konvensional.
 - **Kesehatan Masyarakat**: *2D Monte Carlo Risk Analysis* yang membedakan ketidakpastian episodik dan fundamental pada Human Health Risk Assessment (HHRA).
@@ -96,7 +97,7 @@ Semua tool *cutting-edge* telah di-*retrofit* dengan formula dan temuan terkini 
 │                 env-indonesia-mcp (Rust)                     │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐  │
 │  │ server.rs    │  │ amdal_       │  │ physics_validator.rs│  │
-│  │ 323 MCP tools│  │ pipeline.rs  │  │ circuit_breaker.rs  │  │
+│  │ 333 MCP tools│  │ pipeline.rs  │  │ circuit_breaker.rs  │  │
 │  └──────┬──────┘  └──────┬───────┘  └─────────────────────┘  │
 │         │                 │                                   │
 │  ┌──────▼──────┐  ┌──────▼───────┐                            │
@@ -253,9 +254,9 @@ target/release/env-indonesia-mcp --pipeline --lat -7.25 --lon 112.75 --buffer 10
 
 ---
 
-## Katalog Tools MCP (323 Tools)
+## Katalog Tools MCP (333 Tools)
 
-Server mendaftarkan **323 tool MCP** (dengan ~280+ struct parameter terdeskripsi otomatis). Tool dibagi ke dalam 22 kategori direktori di `src/tools/`:
+Server mendaftarkan **333 tool MCP** (dengan ~280+ struct parameter terdeskripsi otomatis). Tool dibagi ke dalam 22 kategori direktori di `src/tools/`:
 
 ### Kategori Tools
 
@@ -283,6 +284,11 @@ Server mendaftarkan **323 tool MCP** (dengan ~280+ struct parameter terdeskripsi
 | **AMDAL** | `amdal/` | 3 | AMDAL engine, EMP generator, generator |
 | **Meteorologi** | — | — | BMKG, Open-Meteo, NASA POWER, curah hujan, evapotranspirasi |
 | **Risiko Bencana** | — | — | InaRISK, MAGMA Indonesia, subsidence, banjir |
+| **Validasi Model** | `validation/` | 2 | `validate_model` (RMSE, MAE, MBE, R², NSE, KGE, PBIAS), `validation_badge` (Moriasi threshold) |
+| **Dampak Kesehatan** | — | 1 | `health_impact_assessment` (HIA: CRF → DALYs → biaya ekonomi PM2.5) |
+| **Biaya Restorasi** | — | 1 | `restoration_cost` (mangrove/gambut/sungai/tambang/karang + BCR karbon) |
+| **Workflow PCI** | — | 1 | `problem_solution_impact` (6 tipe masalah, 3 fase: problem→solution→impact) |
+| **Gap Indonesia** | — | 5 | `haze_trajectory` (transboundary karhutla), `jakarta_coastal_risk`, `river_source_apportionment` (Citarum), `coastal_erosion` (Pantura), `sanitation_impact` (BABS/STBM) |
 
 ### Sumber Data Eksternal Terintegrasi
 
@@ -304,6 +310,32 @@ Server mendaftarkan **323 tool MCP** (dengan ~280+ struct parameter terdeskripsi
 | **HYCOM** | Arus laut global |
 | **OJK** | Regulasi dan data ESG |
 | **Wrapper tools** | Port 8000-8004 (Python microservices) |
+
+---
+
+## Quality Assurance
+
+### 1. Formula Self-Check Tests
+Setiap formula yang diperbaiki disertai **self-check test** (67 test, semua pass) yang memvalidasi output terhadap nilai referensi/analytic. Bug formula yang diperbaiki mencakup: reaeration (unit velocity), forest_carbon (DBH cm), awd_ghg (N2O double-count + IPCC 2019 EF1FR), pfas_transport + contaminant_transport_1d/2d (erfc `e^(-x²)`), pfas_scwo (ppb→ng/L), pfas_electro_nf (defluorination 100×), pollution_index (Nemerow RMS + DO inverse), cyclone (d50), pump_treat (Javandel capture zone), river_quality (sign error), swe_solver (HLL rewrite), buffer_capacity (van't Hoff).
+
+### 2. Validation Framework (`src/validation/`)
+Framework validasi model baru untuk menilai akurasi model terhadap data observasi:
+- **Metrik**: RMSE, MAE, MBE, R², NSE (Nash-Sutcliffe), KGE (Kling-Gupta), PBIAS
+- **Badge**: `excellent` / `good` / `satisfactory` / `unsatisfactory` (threshold Moriasi et al.)
+- **MCP tool**: `validate_model` tersedia untuk konsumsi LLM
+
+### 3. ML Honesty Labels
+Tool yang mengadopsi pendekatan ML tidak meminjam akurasi paper riset sebagai performa tool sendiri. Angka seperti R²=0.997, 99.03%, 95.6%, F1=96% dipindahkan ke label **"Literature Reference (NOT this tool's performance)"**. Penamaan tool disesuaikan dengan implementasi sebenarnya:
+- PINN → **Physics-Constrained Finite Difference**
+- XGBoost → **heuristic sensitivity**
+- CNN-LSTM → **logistic regression**
+- 15 tool ML lainnya dilabeli serupa
+
+### 4. Stub Marking
+Tool yang belum lengkap ditandai **STUB/PLACEHOLDER** secara eksplisit agar tidak over-claim fungsionalitas: `report_parser`, `brin_spacemap`, `workflows/air_dispersion`, `workflows/water_quality`, `satellite/peatland`, `planetary_computer`.
+
+### 5. Regulatory Verification
+Referensi regulasi diverifikasi ke sumber primer: ISPU → PermenLHK 14/2020, IKLH, air laut → KepMen 51/2004, baku mutu air → PP 22/2021 (PP 82/2001 dicabut), EPA PFAS MCL (PFNA/PFHxS/GenX rescinded May 2025). Standar ISO 14001:2026 diverifikasi nyata (publikasi 15 Apr 2026).
 
 ---
 
@@ -532,10 +564,11 @@ env-indonesia-mcp/
 ├── env-indonesia-mcp.service   # Systemd unit
 ├── src/
 │   ├── main.rs                 # Entry point, CLI flags, inline tests
-│   ├── server.rs               # MCP server, 323 tools, ~280+ param structs (~6230+ baris)
+│   ├── server.rs               # MCP server, 333 tools, ~280+ param structs (~6230+ baris)
 │   ├── amdal_pipeline.rs       # AMDAL pipeline engine (20 maps)
 │   ├── physics_validator.rs    # Validasi berbasis fisika
 │   ├── circuit_breaker.rs      # Circuit breaker multi-agent
+│   ├── validation/             # Framework validasi model (RMSE/MAE/MBE/R²/NSE/KGE/PBIAS + badge)
 │   └── tools/
 │       ├── advanced_physics/   # 13: fire_spread (Neural-CA), fire_suppression, TRIGRS (CNN-LSTM+SHAP), SWE, tidal, EnKF, groundwater PDE, UHI
 │       ├── airquality/         # 11: ISPU, dispersi, fugitive dust, indoor air, stack height, baghouse, cyclone, ESP, scrubber
@@ -624,6 +657,10 @@ Hasil: 153/154 PASS (99.4%)
 1 FAIL: ndvi_timeseries — timeout GEE API > 60s
 ```
 
+### Self-Check Test Formula
+
+67 test formula (satu per formula yang diperbaiki) memvalidasi output terhadap nilai referensi/analytic. Semua pass. Total test suite: **108 test pass** (sebelumnya 36).
+
 ### Test Terpilih
 
 ```bash
@@ -690,8 +727,11 @@ Untuk tool *cutting-edge* (PFAS, microplastic, fire spread, eDNA, landslide, flo
 - **Sitasi DOI/arXiv ID** ke paper sumber untuk setiap formula
 - **Kuantifikasi ketidakpastian** (Monte Carlo 10,000+ iterasi, ILR transform, Bayesian credible interval)
 - **Batasan eksplisit** — aproksimasi diungkapkan jujur (mis. "simplified, not actual CNN")
+- **ML honesty** — akurasi paper riset dilabeli "Literature Reference (NOT this tool's performance)", bukan klaim performa tool
+- **Self-check test** — 67 test formula memvalidasi output terhadap nilai referensi
+- **Framework validasi** — RMSE/MAE/MBE/R²/NSE/KGE/PBIAS + quality badge (`src/validation/`)
 - **Konteks regulasi Indonesia** — Permen LH 6/2026, 8/2026, 10/2026, 11/2025, 12/2025
-- **Tidak ada over-claim** — hasil empiris dikaitkan dengan paper spesifik
+- **Tidak ada over-claim** — hasil empiris dikaitkan dengan paper spesifik, stub ditandai eksplisit
 
 ---
 

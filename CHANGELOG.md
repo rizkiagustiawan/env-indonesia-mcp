@@ -4,6 +4,108 @@ Semua perubahan penting pada proyek ini akan dicatat di file ini.
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan project ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-10
+
+### Quality Overhaul — Formula Fixes, ML Honesty, Validation Framework
+
+Versi ini berfokus pada **kualitas, kejujuran ilmiah, dan kepatuhan regulasi**, bukan penambahan fitur. Dua belas bug formula diperbaiki (masing-masing disertai self-check test), 15 tool ML dilabeli ulang secara jujur, 6 stub ditandai, 10 tool baru ditambahkan, dan framework validasi model baru dibangun.
+
+### Added — +10 New Tools (323→333)
+
+**Validation Framework (2 tools, `src/validation/`):**
+- `validate_model` — Model validation metrics: RMSE, MAE, MBE, R², NSE (Nash-Sutcliffe), KGE (Kling-Gupta), PBIAS
+- `validation_badge` — Quality badge (excellent/good/satisfactory/unsatisfactory) berdasarkan threshold Moriasi et al.
+
+**Indonesia Gap Tools (5 tools):**
+- `haze_trajectory` — Transboundary haze trajectory (karhutla antar-negara)
+- `jakarta_coastal_risk` — Integrated coastal risk Jakarta (subsidence + SLR + banjir rob)
+- `river_source_apportionment` — Citarum river source apportionment
+- `coastal_erosion` — Pantura (Pantai Utara Jawa) coastal erosion
+- `sanitation_impact` — BABS/STBM sanitation impact assessment
+
+**Health & Restoration (2 tools):**
+- `health_impact_assessment` (HIA) — CRF → DALYs → economic cost (PM2.5 mortality/morbidity)
+- `restoration_cost` — Mangrove/peatland/river/mine/coral restoration + carbon BCR
+
+**Workflow (1 tool):**
+- `problem_solution_impact` — Workflow orchestrator (6 problem types, 3 phases: problem→solution→impact)
+
+### Added — Validation Framework (`src/validation/`)
+- Modul validasi model baru: RMSE, MAE, MBE, R², NSE, KGE, PBIAS
+- `validation_badge` — klasifikasi kualitas berdasarkan threshold literatur (Moriasi et al.)
+- MCP tool `validate_model` exposed untuk konsumsi LLM
+
+### Changed — ML Honesty Labeling (15 tools)
+Akurasi paper riset (R²=0.997, 99.03%, 95.6%, F1=96%) yang sebelumnya tersaji sebagai performa tool kini dipindahkan ke label **"Literature Reference (NOT this tool's performance)"**. Tool di-*rename* untuk mencerminkan implementasi sebenarnya:
+- `pinn_water` → **Physics-Constrained Finite Difference** (bukan PINN)
+- `wwtp_digital_twin` XGBoost → **heuristic sensitivity** (bukan XGBoost)
+- `trigrs` CNN-LSTM → **logistic regression** (bukan CNN-LSTM)
+- `microplastic_detect`, `flood_sar_mapping`, `fire_spread` → label honest
+- (+9 tool lainnya dilabeli ulang)
+
+### Changed — Stub Cleanup (6 tools)
+Tool berikut ditandai **STUB/PLACEHOLDER** secara eksplisit (tidak over-claim fungsionalitas):
+- `report_parser`, `brin_spacemap`, `workflows/air_dispersion`, `workflows/water_quality`, `satellite/peatland`, `planetary_computer`
+
+### Fixed — Formula Bugs (12 bugs + 67 self-check tests)
+Setiap perbaikan disertai **self-check test** (67 total test, semua pass):
+
+| # | Tool | Bug | Fix |
+|---|------|-----|-----|
+| 1 | `reaeration_coefficient` | Velocity unit bukan m/s | Konversi ke m/s |
+| 2 | `forest_carbon` | DBH unit bukan cm (Chave) | Konversi ke cm |
+| 3 | `awd_ghg_calculator` | N2O double-count + IPCC 2019 EF1FR | Hapus double-count, pakai EF1FR |
+| 4 | `pfas_transport` | `erfc` missing `e^(-x²)` term | Tambah `e^(-x²)` |
+| 5 | `contaminant_transport_1d` | `erfc` missing `e^(-x²)` term | Tambah `e^(-x²)` |
+| 6 | `contaminant_transport_2d` | `erfc` missing `e^(-x²)` term | Tambah `e^(-x²)` |
+| 7 | `pfas_scwo` | Konversi ppb→ng/L salah | Koreksi ppb→ng/L |
+| 8 | `pfas_electro_nf` | Defluorination 100× overstated | Koreksi faktor 100× |
+| 9 | `pollution_index` | Nemerow RMS + DO inverse salah | Koreksi RMS & DO inverse |
+| 10 | `cyclone` | d50 inlet width formula | Koreksi d50 |
+| 11 | `pump_treat` | Javandel capture zone formula | Koreksi Javandel |
+| 12 | `river_quality` | Sign error | Koreksi tanda |
+
+### Fixed — Formula Bugs (lanjutan)
+- `swe_solver` — HLL solver rewrite (Riemann flux)
+- `buffer_capacity` — van't Hoff temperature correction
+
+### Fixed — Crash Bugs
+- `emp_generator` — UTF-8 panic (ditambah `safe_truncate`)
+- `tcfd` — emoji di output (disesuaikan ke severity match Indonesia)
+- `carbon.rs` — `\n` + price formatting
+- `b3_storage` — empty `{}` response
+- `coords` — UTM hemisphere detection (N/S)
+
+### Fixed — Regulatory References
+| Regulasi | Sebelum | Sesudah |
+|----------|---------|---------|
+| ISPU | PermenLHK 73/2019 | **PermenLHK 14/2020** |
+| IKLH | P.14/2020 | Regulasi yang benar (bukan P.14/2020) |
+| Air laut | KepMen 22/2021 | **KepMen 51/2004** |
+| Baku mutu air | PP 82/2001 (dicabut) | **PP 22/2021** |
+| EPA PFAS MCL | PFNA/PFHxS/GenX MCL | **Rescinded May 2025** (hanya PFOA/PFOS) |
+
+### Verified — Standards & Papers
+- **ISO 14001:2026** — diverifikasi nyata (dipublikasi 15 Apr 2026, iso.org/DNV/BSI)
+- **Falakh 2026** — diverifikasi
+- **Altarazi 2026** — diverifikasi
+
+### Skipped
+- **Fase C (Python ML bridge)** — ditunda: tidak ada data training untuk konteks Indonesia. Tidak dilakukan over-claim kemampuan ML.
+
+### Changed — Umum
+- **Tool count**: 323 → 333 MCP tools (+10)
+- **Test count**: 36 → 108 ( semua pass)
+- **Self-check tests**: 67 test formula baru (satu per formula yang diperbaiki)
+- **Direktori baru**: `src/validation/` (validation framework)
+
+### Quality Assurance
+- ✅ Setiap formula yang diperbaiki disertai self-check test (67 test, semua pass)
+- ✅ Framework validasi model (RMSE/MAE/MBE/R²/NSE/KGE/PBIAS + badge)
+- ✅ ML honesty — 15 tool dilabeli ulang, tidak ada akurasi paper yang dipinjam
+- ✅ 6 stub ditandai eksplisit (STUB/PLACEHOLDER)
+- ✅ Referensi regulasi diverifikasi ke sumber primer
+
 ## [1.2.0] - 2026-08-09
 
 ### Added — Phase 1: +21 Tools (269→290)
