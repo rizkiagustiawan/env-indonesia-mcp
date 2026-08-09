@@ -5,3 +5,4 @@ pub mod ocean_viz;
 pub mod oil_spill;
 pub mod sediment;
 pub mod wave;
+pub mod coastal_erosion;

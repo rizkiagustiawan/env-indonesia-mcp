@@ -27,3 +27,4 @@ pub mod nutrient_removal;
 pub mod struvite;
 pub mod chlorine_demand;
 pub mod remediation_target;
+pub mod river_source_apportionment;

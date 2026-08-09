@@ -1,5 +1,6 @@
 use std::sync::LazyLock;
 
+use crate::validation;
 use rmcp::{
     handler::server::router::tool::ToolRouter,
     model::{ServerCapabilities, ServerInfo},
@@ -2971,6 +2972,102 @@ pub struct WatershedTwinParam {
     pub rainfall_mm_yr: f64, pub soil_kd_l_kg: f64,
     pub foc_pct: f64, pub river_flow_m3_s: f64, pub n_subbasins: u32,
 }
+
+// ====== Phase 3 Gap-Filler Params (Indonesia-specific audit) ======
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct HazeTrajectoryParam {
+    #[schemars(description = "Fire source latitude (degrees)")]
+    pub fire_lat: f64,
+    #[schemars(description = "Fire source longitude (degrees)")]
+    pub fire_lon: f64,
+    #[schemars(description = "Wind speed m/s (>= 0.5)")]
+    pub wind_speed_m_s: f64,
+    #[schemars(description = "Wind direction degrees (meteorological FROM)")]
+    pub wind_dir_deg: f64,
+    #[schemars(description = "Duration hours (1-168, max 7 days)")]
+    pub duration_hours: f64,
+    #[schemars(description = "PM2.5 emission rate g/s")]
+    pub pm_emission_rate_g_s: f64,
+    #[schemars(description = "Effective stack/plume height m")]
+    pub stack_height_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct JakartaCoastalRiskParam {
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Subsidence rate mm/yr (InSAR; Jakarta ~-75, Semarang ~-150)")]
+    pub subsidence_rate_mm_yr: f64,
+    #[schemars(description = "Groundwater extraction m3/day")]
+    pub groundwater_extraction_m3_day: f64,
+    #[schemars(description = "Distance to coast km")]
+    pub distance_to_coast_km: f64,
+    #[schemars(description = "Ground elevation m above MSL")]
+    pub elevation_m: f64,
+    #[schemars(description = "Planning horizon years (1-100)")]
+    pub planning_horizon_years: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct RiverApportionmentParam {
+    #[schemars(description = "River length km")]
+    pub river_length_km: f64,
+    #[schemars(description = "River flow m3/s")]
+    pub flow_m3_s: f64,
+    #[schemars(description = "JSON array: [{\"name\":\"IPAL-X\",\"bod_kg_day\":100,\"distance_km\":10,\"type\":\"point\"}]")]
+    pub sources_json: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CoastalErosionParam {
+    pub shoreline_length_km: f64,
+    pub sea_level_rise_m: f64,
+    #[schemars(description = "Closure depth h* m (below MSL)")]
+    pub closure_depth_m: f64,
+    pub beach_width_m: f64,
+    #[schemars(description = "Significant wave height Hs m")]
+    pub wave_height_m: f64,
+    #[schemars(description = "Wave period T s")]
+    pub wave_period_s: f64,
+    #[schemars(description = "Wave angle to shoreline degrees")]
+    pub wave_angle_deg: f64,
+    #[schemars(description = "Sand mining volume m3/yr")]
+    pub sand_mining_m3_yr: f64,
+    #[schemars(description = "Mangrove loss ha over shoreline")]
+    pub mangrove_loss_ha: f64,
+    #[schemars(description = "Planning horizon years")]
+    pub planning_horizon_years: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SanitationImpactParam {
+    pub population: u32,
+    #[schemars(description = "Open defecation rate % (BABS rate)")]
+    pub open_defecation_rate_pct: f64,
+    #[schemars(description = "Septic tank coverage %")]
+    pub septic_coverage_pct: f64,
+    #[schemars(description = "Distance to river receptor m")]
+    pub river_distance_m: f64,
+    #[schemars(description = "Groundwater depth m (shallow <10m = high risk)")]
+    pub groundwater_depth_m: f64,
+    #[schemars(description = "River flow m3/s")]
+    pub river_flow_m3_s: f64,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+pub struct ValidateModelParam {
+    #[schemars(description = "Model name (e.g. 'Streeter-Phelps DO model')")]
+    pub model_name: String,
+    #[schemars(description = "Predicted values from model (comma-separated)")]
+    pub predicted: String,
+    #[schemars(description = "Observed values from field measurement (comma-separated)")]
+    pub observed: String,
+    #[schemars(description = "Units (e.g. 'mg/L', 'µg/m³')")]
+    pub units: String,
+}
+
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IonExchangeParam {
@@ -6221,6 +6318,63 @@ impl EnvIndonesiaServer {
             p.watershed_area_km2, p.pfas_source_kg_yr, p.rainfall_mm_yr,
             p.soil_kd_l_kg, p.foc_pct, p.river_flow_m3_s, p.n_subbasins
         )
+    }
+
+    // =====================================================
+    // PHASE 3 GAP-FILLERS — Indonesia-specific audit findings
+    // =====================================================
+
+    #[tool(description = "Transboundary Haze Trajectory (Lagrangian forward particle). Peat fire smoke transport Sumatra/Kalimantan -> Singapore/Malaysia. Gaussian puff + dry deposition. WHO 2021 PM2.5 + Singapore PSI. ASEAN Agreement UU 26/2014. Ref: Draxler & Hess 1998 (HYSPLIT); Seinfeld & Pandis 2016.")]
+    fn haze_trajectory(&self, Parameters(p): Parameters<HazeTrajectoryParam>) -> String {
+        tools::airquality::haze_trajectory::trajectory(
+            p.fire_lat, p.fire_lon, p.wind_speed_m_s, p.wind_dir_deg,
+            p.duration_hours, p.pm_emission_rate_g_s, p.stack_height_m
+        )
+    }
+
+    #[tool(description = "Jakarta Coastal Risk (integrated Subsidence + SLR + Groundwater + Rob). Compound flood depth + weighted risk score (subsidence 40% / SLR 30% / elevation 20% / GW 10%). IPCC AR6 SSP245. Ref: Abidin et al. 2015; Widiyarso 2026; Umarhadi 2026; Momin et al. 2026.")]
+    fn jakarta_coastal_risk(&self, Parameters(p): Parameters<JakartaCoastalRiskParam>) -> String {
+        tools::advanced_physics::jakarta_coastal_risk::assess(
+            p.lat, p.lon, p.subsidence_rate_mm_yr, p.groundwater_extraction_m3_day,
+            p.distance_to_coast_km, p.elevation_m, p.planning_horizon_years
+        )
+    }
+
+    #[tool(description = "River Source Apportionment (multi-source BOD decay). 1D steady-state first-order decay per source; attribution % at river mouth. PP 22/2021 Kelas II compliance (BOD <= 3 mg/L). Citarum/Brantas/Solo context. Ref: Chapra 2008; QUAL2K.")]
+    fn river_source_apportionment(&self, Parameters(p): Parameters<RiverApportionmentParam>) -> String {
+        tools::water::river_source_apportionment::apportion(
+            p.river_length_km, p.flow_m3_s, &p.sources_json
+        )
+    }
+
+    #[tool(description = "Pantura Coastal Erosion (Bruun + CERC longshore + sand mining + mangrove loss). Net shoreline recession rate m/yr. Risk class. Pantura context (Pekalongan, Semarang, Demak, Indramayu). Ref: Bruun 1962; USACE CERC SPM 1984; van Rijn 2014; Marfai et al.")]
+    fn coastal_erosion_pantura(&self, Parameters(p): Parameters<CoastalErosionParam>) -> String {
+        tools::ocean_modeling::coastal_erosion::assess(
+            p.shoreline_length_km, p.sea_level_rise_m, p.closure_depth_m, p.beach_width_m,
+            p.wave_height_m, p.wave_period_s, p.wave_angle_deg,
+            p.sand_mining_m3_yr, p.mangrove_loss_ha, p.planning_horizon_years
+        )
+    }
+
+    #[tool(description = "Sanitation Impact (BABS/STBM/open defecation). Fecal coliform load -> river/groundwater contamination -> health risk index. STBM/ODF verification. PP 22/2021 coliform + WHO recreational. SDG 6.2. Ref: WHO 2021 Sanitation; Mancini 1978; Permenkes 3/2023.")]
+    fn sanitation_impact(&self, Parameters(p): Parameters<SanitationImpactParam>) -> String {
+        tools::calculators::sanitation_impact::assess(
+            p.population, p.open_defecation_rate_pct, p.septic_coverage_pct,
+            p.river_distance_m, p.groundwater_depth_m, p.river_flow_m3_s
+        )
+    }
+
+    #[tool(description = "Model Validation (closed-loop). Compare model predictions vs field observations. Reports RMSE, MAE, MBE, R², NSE, KGE, PBIAS + validation badge (Moriasi 2007). Moves system from calculator to calibrated modeling. Ref: Moriasi 2007; Gupta 2009; Nash-Sutcliffe 1970.")]
+    fn validate_model(&self, Parameters(p): Parameters<ValidateModelParam>) -> String {
+        let predicted: Vec<f64> = p.predicted
+            .split(',')
+            .filter_map(|s| s.trim().parse::<f64>().ok())
+            .collect();
+        let observed: Vec<f64> = p.observed
+            .split(',')
+            .filter_map(|s| s.trim().parse::<f64>().ok())
+            .collect();
+        validation::validate_model(&p.model_name, &predicted, &observed, &p.units)
     }
 }
 

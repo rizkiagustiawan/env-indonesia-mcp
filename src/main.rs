@@ -8,6 +8,7 @@ mod indonesia;
 mod result_contract;
 mod server;
 mod tools;
+mod validation;
 
 #[cfg(test)]
 mod result_contract_tests {
