@@ -1,3 +1,5 @@
+// STUB (dead code, not wired to server.rs): returns index=1.0, no actual dispersion model.
+// To implement: call airquality::dispersion Gaussian plume with stack/anemometer params.
 use crate::result_contract::{ScientificResult, ResultStatus, Claim};
 
 pub fn run_air_dispersion_assessment(

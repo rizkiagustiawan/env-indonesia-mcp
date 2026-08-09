@@ -1,3 +1,7 @@
+// STUB (dead code, not wired to server.rs): peatland classifier bridge.
+// NOTE: peatland_classifier.py has hardcoded dates (2026-08-01..06) and a threshold
+// rule (not actual transfer-learning DL). confidence=0.85 is fabricated.
+// To implement: parameterize dates, use real trained model or label as threshold heuristic.
 use serde_json::json;
 use std::process::Command;
 

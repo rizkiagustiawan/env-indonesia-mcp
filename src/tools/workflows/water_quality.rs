@@ -1,3 +1,5 @@
+// STUB (dead code, not wired to server.rs): returns index=1.0, no actual water quality model.
+// To implement: call calculators::streeter_phelps + compliance::baku_mutu_air_permukaan.
 use crate::result_contract::{ScientificResult, ResultStatus, Claim};
 
 pub fn run_water_quality_assessment(
