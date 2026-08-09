@@ -106,5 +106,20 @@ pub fn design(
     out.push_str(&format!("  Efisiensi (NRC) = {:.1}%\n", e_actual * 100.0));
     out.push_str(&format!("  BOD effluent = {:.1} mg/L\n", bod_eff));
 
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN ───\n\n");
+    let bod_ok = bod_eff <= 30.0;
+    out.push_str(&format!("  BOD: {:.1} mg/L → ≤30 mg/L (domestik): {}\n", bod_eff, if bod_ok {"✅ MEMENUHI"} else {"❌ MELEBIHI"}));
+    
+    if !bod_ok {
+        out.push_str("\n─── REKOMENDASI MITIGASI ───\n");
+        out.push_str("  1. Tingkatkan recirculation ratio (R)\n");
+        out.push_str("  2. Tambah secondary clarifier / polishing step\n");
+        out.push_str("  3. Kurangi hydraulic loading rate\n");
+    }
+
+    out.push_str("\n─── PEMANTAUAN & PELAPORAN ───\n");
+    out.push_str("  Permen LH/BPLH 11/2025: Baku mutu air limbah domestik\n");
+    out.push_str("  Parameter: BOD, TSS, pH\n");
+
     out
 }

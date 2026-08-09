@@ -123,9 +123,18 @@ pub fn design(
     ));
 
     out.push_str(&format!(
-        "Digestate:\n  VS sisa = {:.1} kg/hari (pupuk organik)\n",
+        "Digestate:\n  VS sisa = {:.1} kg/hari (pupuk organik/padatan)\n",
         vs_remaining_kgd
     ));
+
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN ───\n\n");
+    out.push_str("  Note: Anaerobic Digestion umumnya bukan pengolahan tahap akhir.\n");
+    out.push_str("  Supernatant/filtrat (centrate) dari digestate memiliki BOD/COD/Amonia yang sangat tinggi.\n");
+    out.push_str("  Wajib dilanjutkan dengan pengolahan aerobik (contoh: SBR, aerated lagoon) sebelum dibuang.\n");
+    
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  Permen LH 5/2014: Baku mutu air limbah industri (untuk supernatant)\n");
+    out.push_str("  PP 22/2021: Persetujuan Lingkungan\n");
 
     out
 }

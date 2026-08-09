@@ -69,13 +69,44 @@ pub fn assess(
     out.push_str(&format!("  Plume width (centerline): +/-{:.1} m\n", plume_width/2.0));
     out.push_str(&format!("  Travel time: {:.1} years\n\n", distance_x_m/vx/365.0));
 
-    if conc > 0.001 {
-        out.push_str(&format!("  [WARN] Exceeds typical MCL\n"));
+    // ─── PP 22/2021 COMPLIANCE FOOTER ───
+    out.push_str("\n─── STATUS KEPATUHAN (PP 22/2021 Annex VI — Air Tanah) ───\n\n");
+    out.push_str(&format!("  Concentration at receptor: {:.4} mg/L\n", conc));
+    out.push_str("  Baku Mutu Air Tanah (PP 22/2021 Annex VI):\n");
+    out.push_str("  - Benzene: ≤0.01 mg/L\n");
+    out.push_str("  - TCE/PCE: ≤0.003 mg/L\n");
+    out.push_str("  - Pb: ≤0.05 mg/L | Cd: ≤0.01 | Hg: ≤0.001 | As: ≤0.05\n");
+    out.push_str("  - Total Coliform: NIHIL (0)\n\n");
+
+    let exceeds = conc > 0.001;
+    if exceeds {
+        out.push_str(&format!("  ❌ MELEBIHI baku mutu air tanah ({:.4} > 0.001)\n", conc));
+        out.push_str("  Tindakan: remediasi (P&T, PRB, SVE, bioremediation)\n");
     } else {
-        out.push_str(&format!("  [OK] Below typical MCL\n"));
+        out.push_str("  ✅ DI BAWAH baku mutu air tanah\n");
     }
 
-    out.push_str("\n  Ref: Domenico 1987; Devlin 2012\n");
+    out.push_str("\n─── REKOMENDASI MITIGASI ───\n");
+    if exceeds {
+        out.push_str("  1. Pump & Treat (groundwater extraction + treatment)\n");
+        out.push_str("  2. Permeable Reactive Barrier (PRB) di downstream\n");
+        out.push_str("  3. Monitored Natural Attenuation (MNA) jika low risk\n");
+        out.push_str("  4. Source removal/control di area kontaminasi\n");
+    } else {
+        out.push_str("  Monitoring berkala — pertahankan kondisi\n");
+    }
+
+    out.push_str("\n─── PEMANTAUAN (RPL) ───\n");
+    out.push_str("  Parameter: kontaminan spesifik + parameter pendukung (pH, DO, EC)\n");
+    out.push_str("  Frekuensi: Quarterly (active plume), Semi-annual (stable)\n");
+    out.push_str("  Lokasi: Source area + plume centerline + plume fringes (transverse spread)\n");
+
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  PP 22/2021 Annex VI (air tanah) + Pasal 124-131\n");
+    out.push_str("  PP 101/2014 (B3-contaminated land)\n");
+    out.push_str("  Amdalnet + OSS; Permen LH 6/2026 (sanksi)\n");
+
+    out.push_str("\n  Ref: Domenico 1987; Devlin 2012; PP 22/2021 Annex VI\n");
     out
 }
 

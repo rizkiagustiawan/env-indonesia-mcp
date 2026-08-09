@@ -1,5 +1,5 @@
 /// Baku Mutu Air Limbah Industri
-/// Ref: PermenLH 5/2014
+/// Ref: PermenLH 5/2014; Permen LH 12/2025 (Tekstil)
 
 pub fn check(industry: &str, parameter: &str, concentration: f64) -> String {
     let ind = industry.to_lowercase();
@@ -15,22 +15,34 @@ pub fn check(industry: &str, parameter: &str, concentration: f64) -> String {
     // (industry, parameter) -> (limit, unit)
     // Limits in mg/L unless otherwise noted; pH is unitless range
     let result: Option<(f64, f64, &str, bool)> = match (ind.as_str(), par.as_str()) {
-        // Tekstil
+        // Tekstil — BARU (Permen LH 12/2025) - nilai konservatif (debit <= 100 m3)
         ("tekstil" | "textile", "bod") => Some((60.0, 0.0, "mg/L", false)),
         ("tekstil" | "textile", "cod") => Some((150.0, 0.0, "mg/L", false)),
         ("tekstil" | "textile", "tss") => Some((50.0, 0.0, "mg/L", false)),
-        ("tekstil" | "textile", "phenol") => Some((0.5, 0.0, "mg/L", false)),
-        ("tekstil" | "textile", "cr6" | "cr_total") => Some((1.0, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "phenol" | "fenol") => Some((0.5, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "cr_total" | "cr") => Some((1.0, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "nh3n" | "ammonia" | "amonia") => Some((8.0, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "sulfida" | "h2s") => Some((0.3, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "oil_grease" | "minyak_lemak") => Some((3.0, 0.0, "mg/L", false)),
+        ("tekstil" | "textile", "warna" | "color") => Some((200.0, 0.0, "Pt-Co", false)),
         ("tekstil" | "textile", "ph") => Some((9.0, 6.0, "", true)),
-        // Sawit (Kelapa Sawit / CPO)
+        
+        // Pakan Ternak & Akuakultur — BARU (Permen LH 2/2026)
+        ("pakan_ternak" | "pakan" | "akuakultur", "bod") => Some((100.0, 0.0, "mg/L", false)),
+        ("pakan_ternak" | "pakan" | "akuakultur", "cod") => Some((200.0, 0.0, "mg/L", false)),
+        ("pakan_ternak" | "pakan" | "akuakultur", "tss") => Some((100.0, 0.0, "mg/L", false)),
+        ("pakan_ternak" | "pakan" | "akuakultur", "nh3n" | "ammonia") => Some((10.0, 0.0, "mg/L", false)),
+        ("pakan_ternak" | "pakan" | "akuakultur", "total_p" | "fosfor") => Some((5.0, 0.0, "mg/L", false)),
+        ("pakan_ternak" | "pakan" | "akuakultur", "ph") => Some((9.0, 6.0, "", true)),
+
+        // Sawit (Kelapa Sawit / CPO) - PermenLH 5/2014
         ("sawit" | "kelapa_sawit" | "cpo", "bod") => Some((100.0, 0.0, "mg/L", false)),
         ("sawit" | "kelapa_sawit" | "cpo", "cod") => Some((350.0, 0.0, "mg/L", false)),
         ("sawit" | "kelapa_sawit" | "cpo", "tss") => Some((250.0, 0.0, "mg/L", false)),
-        ("sawit" | "kelapa_sawit" | "cpo", "oil_grease" | "minyak_lemak") => {
-            Some((25.0, 0.0, "mg/L", false))
-        }
+        ("sawit" | "kelapa_sawit" | "cpo", "oil_grease" | "minyak_lemak") => Some((25.0, 0.0, "mg/L", false)),
         ("sawit" | "kelapa_sawit" | "cpo", "nh3n" | "ammonia") => Some((5.0, 0.0, "mg/L", false)),
         ("sawit" | "kelapa_sawit" | "cpo", "ph") => Some((9.0, 6.0, "", true)),
+        
         // Karet
         ("karet" | "rubber", "bod") => Some((60.0, 0.0, "mg/L", false)),
         ("karet" | "rubber", "cod") => Some((200.0, 0.0, "mg/L", false)),
@@ -121,7 +133,7 @@ pub fn check(industry: &str, parameter: &str, concentration: f64) -> String {
     };
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Baku Mutu Air Limbah Industri\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str("Ref: PermenLH No. 5 Tahun 2014\n\n");
+    out.push_str("Ref: PermenLH No. 5 Tahun 2014; Permen LH 12/2025 (Tekstil); Permen LH 2/2026 (Pakan)\n\n");
     out.push_str(&format!("Industri    : {}\n", industry));
     out.push_str(&format!("Parameter   : {}\n", parameter));
     if is_range {

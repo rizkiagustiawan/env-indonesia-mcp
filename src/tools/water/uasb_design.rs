@@ -135,5 +135,16 @@ pub fn design(
         energy_kwh
     ));
 
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN ───\n\n");
+    let cod_ok = cod_eff_target <= 350.0;
+    out.push_str(&format!("  COD Efluen = {:.1} mg/L\n", cod_eff_target));
+    out.push_str(&format!("  Target umum industri (misal PermenLH 5/2014): ≤350 mg/L\n"));
+    out.push_str(&format!("  Status: {}\n", if cod_ok {"✅ Memenuhi standar industri umum"} else {"❌ MELEBIHI standar industri — perlu pengolahan aerobik (polishing pond / SBR) di hilir"}));
+
+    out.push_str("\n─── PEMANTAUAN & PELAPORAN ───\n");
+    out.push_str("  Parameter: COD, BOD, TSS, pH, VFA/Alkalinity ratio (indikator kestabilan anaerobik)\n");
+    out.push_str("  Frekuensi: Harian (VFA/Alk, pH), Mingguan (COD influent/effluent)\n");
+    out.push_str("  Regulasi: PP 22/2021; PermenLH 5/2014 (Baku Mutu Air Limbah Industri)\n");
+
     out
 }

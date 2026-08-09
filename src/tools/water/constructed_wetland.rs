@@ -107,5 +107,14 @@ pub fn design(
     out.push_str("  • Phragmites karka (Karka) — adaptif di Indonesia\n");
     out.push_str("  • Scirpus grossus (Mensiang) — lokal Indonesia tropis, removal N tinggi\n");
 
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN ───\n\n");
+    let target_ok = ce_actual <= ce_target;
+    out.push_str(&format!("  {} Efluen: {:.1} mg/L vs Target {:.1} mg/L\n", param_name, ce_actual, ce_target));
+    out.push_str(&format!("  Status: {}\n", if target_ok {"✅ MEMENUHI TARGET"} else {"❌ MELEBIHI TARGET"}));
+    
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  Permen LH/BPLH 11/2025: Baku mutu air limbah domestik (jika untuk domestik)\n");
+    out.push_str("  Permen LH 5/2014: Baku mutu air limbah industri\n");
+
     out
 }
