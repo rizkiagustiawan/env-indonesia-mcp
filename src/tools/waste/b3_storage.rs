@@ -99,7 +99,7 @@ pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64)
         max_storage_days_cat2
     ));
 
-    result.push_str("KEBUTUHAN RUANG (maks {} hari):\n");
+    result.push_str(&format!("KEBUTUHAN RUANG (maks {} hari):\n", max_storage_days_cat1.max(max_storage_days_cat2)));
     result.push_str(&format!(
         "• Volume tersimpan maks         : {:.2} m³\n",
         max_stored_volume_m3

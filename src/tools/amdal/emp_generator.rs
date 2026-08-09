@@ -1,8 +1,17 @@
 /// Environmental Management Plan (RKL-RPL) Generator + KPI
 /// Ref: PermenLHK No. 5/2021 (AMDAL), PermenLHK No. 6/2021
 /// 2026 SOTA: Anggreini 2026 (peatland EMP+KPI), Harmuzan 2026 (sustainable finance KPIs)
-/// ISO 14001 link: Clause 8.1 (Operational Control), Clause 9.1 (Monitoring)
+/// ISO 14001:2026 link: Clause 8.1 (Operational Control), Clause 9.1 (Monitoring)
 /// Rani et al. 2026 (automated KPI dashboard for EMP)
+
+/// Safe UTF-8 truncation: truncates to max_chars without panicking on multibyte chars.
+/// BUG FIX: &str[..len.min(N)] byte-slice panics on multibyte UTF-8 (é, °, emoji, etc.)
+fn safe_truncate(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        Some((idx, _)) => &s[..idx],
+        None => s,
+    }
+}
 
 pub fn generate(
     impacts_json: &str,
@@ -54,10 +63,10 @@ pub fn generate(
 
         out.push_str(&format!("{:<4} {:<22} {:<28} {:<22} {:<15} {:<12}\n",
             i + 1,
-            &dampak[..dampak.len().min(21)],
-            &mitigasi[..mitigasi.len().min(27)],
-            &target[..target.len().min(21)],
-            &indikator[..indikator.len().min(14)],
+            safe_truncate(&dampak, 21),
+            safe_truncate(&mitigasi, 27),
+            safe_truncate(&target, 21),
+            safe_truncate(&indikator, 14),
             waktu));
         rkl_count += 1;
     }
@@ -74,11 +83,11 @@ pub fn generate(
         let (param, frekuensi, metode, baku_mutu) = suggest_monitoring(dampak, komponen);
         out.push_str(&format!("{:<4} {:<22} {:<25} {:<12} {:<15} {:<15}\n",
             i + 1,
-            &param[..param.len().min(21)],
-            &location[..location.len().min(24)],
+            safe_truncate(&param, 21),
+            safe_truncate(&location, 24),
             frekuensi,
-            &metode[..metode.len().min(14)],
-            &baku_mutu[..baku_mutu.len().min(14)]));
+            safe_truncate(&metode, 14),
+            safe_truncate(&baku_mutu, 14)));
     }
 
     // KPI Score
@@ -86,14 +95,16 @@ pub fn generate(
     out.push_str("Ref: Rani 2026 (automated KPI dashboard); Anggreini 2026 (peatland EMP)\n\n");
 
     let kpi_mitigation = (rkl_count as f64 / significant.len() as f64) * 100.0;
-    let kpi_monitoring = 85.0; // assumed baseline (requires actual monitoring data)
-    let kpi_compliance = 90.0; // assumed baseline (requires actual audit)
+    // NOTE: kpi_monitoring and kpi_compliance are PLACEHOLDERS — require actual monitoring
+    // schedule compliance data and audit results. Do NOT present as measured performance.
+    let kpi_monitoring = 85.0; // PLACEHOLDER (requires actual monitoring schedule data)
+    let kpi_compliance = 90.0; // PLACEHOLDER (requires actual audit/baku mutu results)
     let kpi_overall = (kpi_mitigation * 0.4 + kpi_monitoring * 0.35 + kpi_compliance * 0.25);
 
     out.push_str(&format!("  KPI Mitigasi:     {:>5.1}%  ({}/{} dampak punya mitigasi)\n", kpi_mitigation, rkl_count, significant.len()));
-    out.push_str(&format!("  KPI Pemantauan:   {:>5.1}%  (sesuai jadwal)\n", kpi_monitoring));
-    out.push_str(&format!("  KPI Compliance:   {:>5.1}%  (taat baku mutu)\n", kpi_compliance));
-    out.push_str(&format!("  KPI Overall:      {:>5.1}%\n\n", kpi_overall));
+    out.push_str(&format!("  KPI Pemantauan:   {:>5.1}%  [PLACEHOLDER — needs actual schedule data]\n", kpi_monitoring));
+    out.push_str(&format!("  KPI Compliance:   {:>5.1}%  [PLACEHOLDER — needs actual audit data]\n", kpi_compliance));
+    out.push_str(&format!("  KPI Overall:      {:>5.1}%  [mitigasi dihitung, lainnya placeholder]\n\n", kpi_overall));
 
     if kpi_overall >= 90.0 {
         out.push_str("  🟢 Excellent — EMP implementation sangat baik\n");

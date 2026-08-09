@@ -211,10 +211,11 @@ pub fn risk_assessment(sector: &str, location: &str) -> String {
 
     out.push_str("I. PHYSICAL RISKS:\n");
     for (risk, level, desc) in &physical_risks {
+        // BUG FIX: data uses Indonesian (SANGAT TINGGI/TINGGI/SEDANG) but emoji matched English.
         let emoji = match *level {
-            "VERY HIGH" => "🔴",
-            "HIGH" => "🟠",
-            "MODERATE" => "🟡",
+            "VERY HIGH" | "SANGAT TINGGI" => "🔴",
+            "HIGH" | "TINGGI" => "🟠",
+            "MODERATE" | "SEDANG" | "SEDANG-TINGGI" => "🟡",
             _ => "🟢",
         };
         out.push_str(&format!("  {} {} [{}] — {}\n", emoji, risk, level, desc));
@@ -223,9 +224,9 @@ pub fn risk_assessment(sector: &str, location: &str) -> String {
     out.push_str("\nII. TRANSITION RISKS:\n");
     for (risk, level, desc) in &transition_risks {
         let emoji = match *level {
-            "VERY HIGH" => "🔴",
-            "HIGH" => "🟠",
-            "MODERATE" => "🟡",
+            "VERY HIGH" | "SANGAT TINGGI" => "🔴",
+            "HIGH" | "TINGGI" => "🟠",
+            "MODERATE" | "SEDANG" | "SEDANG-TINGGI" => "🟡",
             _ => "🟢",
         };
         out.push_str(&format!("  {} {} [{}] — {}\n", emoji, risk, level, desc));

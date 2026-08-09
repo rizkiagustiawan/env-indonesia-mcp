@@ -14,7 +14,7 @@ pub fn transform(x: f64, y: f64, from_epsg: &str, to_epsg: &str) -> String {
                 let parts: Vec<&str> = result.split(',').collect();
                 format!("=== Coordinate Transform ===\nInput: ({:.6}, {:.6}) [{}]\nOutput: ({}, {}) [{}]\n\nUTM Zone Info: {}\n",
                     x, y, from_epsg, parts[0], parts[1], to_epsg,
-                    utm_zone_from_lon(x))
+                    utm_zone_from_lon(y, x)) // (lat=y, lon=x) for WGS84
             } else {
                 format!(
                     "ERROR: Transform failed: {}",
@@ -27,16 +27,12 @@ pub fn transform(x: f64, y: f64, from_epsg: &str, to_epsg: &str) -> String {
 }
 
 /// Auto-detect UTM zone for Indonesia coordinates
-pub fn utm_zone_from_lon(lon: f64) -> String {
+pub fn utm_zone_from_lon(lat: f64, lon: f64) -> String {
     let zone = ((lon + 180.0) / 6.0).floor() as i32 + 1;
-    let hemisphere = if lon >= 0.0 { "N" } else { "S" }; // Indonesia spans both
-                                                         // For Indonesia (mostly southern hemisphere, lon 95-141):
-    let epsg = if lon >= 95.0 && lon <= 141.0 {
-        // Indonesia UTM zones: 46S-54S (some northern Kalimantan is N)
-        32700 + zone // UTM South
-    } else {
-        32700 + zone
-    };
+    // BUG FIX: hemisphere is determined by LATITUDE not longitude.
+    // Old code used lon>=0 -> "N" which is wrong (Indonesia lon 95-141 is all >=0 but mostly S).
+    let hemisphere = if lat >= 0.0 { "N" } else { "S" };
+    let epsg = if lat >= 0.0 { 32600 + zone } else { 32700 + zone };
     format!("UTM Zone {}{} (EPSG:{})", zone, hemisphere, epsg)
 }
 
