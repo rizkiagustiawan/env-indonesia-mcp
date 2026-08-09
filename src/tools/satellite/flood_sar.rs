@@ -3,9 +3,12 @@ use serde_json::{json, Value};
 
 const MPC_STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1";
 
-/// Flood SAR Mapping — Sentinel-1 VV change detection
+/// Flood SAR Mapping — Sentinel-1 VV change detection (2026 SOTA DL methods)
 /// Methodology: download S1 GRD pre/post flood, VV threshold, change detection
 /// Ref: Clement et al. 2025; Twele et al. 2016; Cian et al. 2018
+/// 2026 SOTA: Siamese U-Net (Kacmaz 2026, F1=96%); TLE-FEDformer (Ahmadi 2026, 98.1%)
+///   LightFloodNet (Kinalioglu 2026, 1.57M params); CMFS-UNet Mamba (Wei 2025)
+///   FloodsNet (Wu 2025); RS-Mamba (Gierszewska 2026)
 ///
 /// LIMITATION:
 /// - 6-day revisit (not real-time)
@@ -77,6 +80,22 @@ pub async fn search_flood_scenes(
     out.push_str("5. Change detection: POST_water - PRE_water = FLOOD EXTENT\n");
     out.push_str("6. Mask permanent water (DEMNAS + JRC Global Surface Water)\n");
     out.push_str("7. Overlay OSM settlements within flood extent\n");
+    out.push_str("\n");
+    out.push_str("2026 SOTA DEEP LEARNING METHODS:\n");
+    out.push_str("  Method              F1/IoU     Params    Ref\n");
+    out.push_str("  ------              ------     ------    ---\n");
+    out.push_str("  Siamese U-Net       F1=96.1%   -         Kacmaz 2026 (Earth 7(3))\n");
+    out.push_str("  TLE-FEDformer       98.1%/97.4% -        Ahmadi 2026 (RS 18(6))\n");
+    out.push_str("  LightFloodNet       IoU=0.54   1.57M     Kinalioglu 2026 (Tuzal)\n");
+    out.push_str("  CMFS-UNet Mamba     mIoU=79.4% -         Wei 2025 (PIERS)\n");
+    out.push_str("  FloodsNet           F1+1-2%    -         Wu 2025 (RS 17(16))\n");
+    out.push_str("  RS-Mamba            mIoU=56.6% -         Gierszewska 2026 (JSTARS)\n");
+    out.push_str("  RF VH/VV ratio      94% acc    -         Amer 2025 (RS 17(11))\n");
+    out.push_str("  DAM-Net             IoU=93.2%  -         benchmark (S1GFloods)\n");
+    out.push_str("\n");
+    out.push_str("  Recommended: Siamese U-Net for emergency response (high recall)\n");
+    out.push_str("  Recommended: TLE-FEDformer for accuracy (multi-sensor fusion)\n");
+    out.push_str("  Recommended: LightFloodNet for edge deployment (1.57M params)\n");
     out.push_str("\n");
 
     if pre_count > 0 && post_count > 0 {
