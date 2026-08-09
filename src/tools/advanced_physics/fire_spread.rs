@@ -1,6 +1,11 @@
-/// Fire Spread — Neural-Parameterized 3-State Cellular Automata (2026 SOTA)
+/// Fire Spread — 3-State Cellular Automata with Hand-Tuned Kernels (Simplified)
 ///
-/// IMPLEMENTS: Zhenirovskyy et al. 2026 "Neural-Parameterized Cellular Automata
+/// NOTE: This is NOT a trained Neural-CA. It uses cellular automata with hand-tuned
+///   constant kernels (wind/slope/fuel). The Zhenirovskyy 2026 paper uses a trained
+///   multi-scale CNN to generate parameter maps — this tool does NOT.
+///   The limitation section below is honest about this.
+///
+/// IMPLEMENTS (simplified): Zhenirovskyy et al. 2026 concept (3-state U/B/R CA)
 /// for Wildfire Spread" (Ecological Informatics, DOI:10.1016/j.ecoinf.2026.103928)
 /// + Matei et al. 2026 "Aerial Wildfire Suppression" (arXiv:2606.13633)
 ///
@@ -50,8 +55,9 @@ pub fn assess(
     ignition_lon: f64,
     duration_hr: f64,
 ) -> String {
-    let mut out = String::from("=== Neural-Parameterized 3-State CA Fire Spread ===\n");
-    out.push_str("Ref: Zhenirovskyy 2026 (Ecol Informatics); Matei 2026 (arXiv:2606.13633)\n");
+    let mut out = String::from("=== 3-State CA Fire Spread (Hand-Tuned Kernels, NOT Neural-CA) ===\n");
+    out.push_str("Ref: Zhenirovskyy 2026 concept (simplified); Matei 2026 (arXiv:2606.13633)\n");
+    out.push_str("NOTE: This tool uses hand-tuned CA kernels, NOT a trained Neural-CA.\n\n");
     out.push_str("Model: 3-state probabilistic CA (Unburned/Burning/Burned)\n\n");
 
     if fuel_model < 1 || fuel_model > 13 {

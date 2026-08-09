@@ -162,26 +162,22 @@ pub fn assess(
     out.push_str(&format!("\n  FS evolution: {:.3} (dry) → {:.3} (after {:.1}mm rain)\n",
         fs_initial, fs_final, rainfall_mm_hr * duration_hr));
 
-    // ═══ Phase 3: ML — CNN-LSTM Hybrid + SHAP XAI + Spatial CV ═══
-    out.push_str("\n-- Phase 3: ML — CNN-LSTM Hybrid (2026 SOTA) --\n\n");
-    out.push_str("Ref: Teng 2026 (Sci Rep, CNN-LSTM 95.6%); Oh 2026 (Grad-CAM+SHAP XAI)\n");
-    out.push_str("    Kumar 2025 (RS, S-CV vs R-CV bias, 43 cit); Barua 2025 (DNN 99.2%)\n\n");
+    // ═══ Phase 3: Landslide Probability (Logistic Model — NOT CNN-LSTM) ═══
+    out.push_str("\n-- Phase 3: Landslide Probability (Logistic Model — NOT CNN-LSTM) --\n\n");
+    out.push_str("Ref: Teng 2026 (CNN-LSTM paper); Oh 2026 (SHAP XAI paper)\n");
+    out.push_str("    Kumar 2025 (S-CV vs R-CV bias, 43 cit); Barua 2025 (DNN)\n\n");
+    out.push_str("  -- Literature Reference (NOT this tool's performance) --\n");
+    out.push_str("  Teng 2026 CNN-LSTM: Acc=95.6%, F1=93.5%, AUC=0.98 — paper's model\n");
+    out.push_str("  This tool: logistic regression with fixed coefficients (NOT CNN-LSTM)\n\n");
 
-    // CNN-LSTM architecture (from Teng 2026):
-    // CNN extracts spatial features from satellite imagery + DEM
-    // LSTM captures temporal patterns from rainfall + reservoir level time series
-    // Combined: spatiotemporal landslide susceptibility
-    // Accuracy: 95.6%, F1: 93.5%, AUC: 0.98
-
+    // This tool uses a logistic model with fixed coefficients, NOT a CNN-LSTM.
     let pp_ratio = if tau > 0.0 { u / tau } else { 0.0 };
     let features = [fs, slope_deg, rainfall_mm_hr * duration_hr, depth_m, pp_ratio];
     let probability = logistic_landslide(&features);
 
-    out.push_str("Architecture:\n");
-    out.push_str("  CNN: satellite imagery + DEM -> spatial features (conv layers)\n");
-    out.push_str("  LSTM: rainfall + reservoir time series -> temporal patterns\n");
-    out.push_str("  Dense: concatenate CNN+LSTM -> landslide probability\n");
-    out.push_str("  Performance: Acc=95.6%, F1=93.5%, AUC=0.98 (Teng 2026)\n\n");
+    out.push_str("This tool's model:\n");
+    out.push_str("  Logistic function with fixed coefficients (not trained on data)\n");
+    out.push_str("  Features: FS, slope, rainfall×duration, depth, pore pressure ratio\n\n");
 
     out.push_str(&format!("  ML Features (simplified to tabular):\n"));
     out.push_str(&format!("    FS: {:.3}, Slope: {:.1} deg, Rainfall: {:.1}mm\n", features[0], features[1], features[2]));
@@ -198,9 +194,9 @@ pub fn assess(
         out.push_str("  [LOW] Stable conditions\n");
     }
 
-    // SHAP XAI (from Oh 2026)
-    out.push_str("\n  SHAP Feature Attribution (XAI):\n");
-    out.push_str("  Ref: Lundberg 2020 TreeSHAP O(TLD^2); Oh 2026 (Grad-CAM+SHAP)\n\n");
+    // SHAP XAI (from Oh 2026) — heuristic approximation, NOT TreeSHAP
+    out.push_str("\n  Feature Attribution (Heuristic Sensitivity — NOT actual SHAP):\n");
+    out.push_str("  Ref: Oh 2026 (Grad-CAM+SHAP); Lundberg 2020 TreeSHAP\n\n");
 
     // Simplified SHAP values (proportional to feature contribution)
     let shap_fs = -3.5 * (fs - 1.0) / 10.0;
@@ -209,13 +205,13 @@ pub fn assess(
     let shap_pp = 5.0 * (pp_ratio - 0.3) / 10.0;
     let shap_total = shap_fs + shap_slope + shap_rain + shap_pp;
 
-    out.push_str("  Feature         SHAP value  Direction\n");
+    out.push_str("  Feature         Sensitivity  Direction (heuristic, not SHAP)\n");
     out.push_str("  -------         -----------  ---------\n");
     out.push_str(&format!("  FS              {:>+8.4}      {}\n", shap_fs, if shap_fs > 0.0 {"increases risk"} else {"decreases risk"}));
     out.push_str(&format!("  Slope           {:>+8.4}      {}\n", shap_slope, if shap_slope > 0.0 {"increases risk"} else {"decreases risk"}));
     out.push_str(&format!("  Rainfall        {:>+8.4}      {}\n", shap_rain, if shap_rain > 0.0 {"increases risk"} else {"decreases risk"}));
     out.push_str(&format!("  Pore pressure   {:>+8.4}      {}\n", shap_pp, if shap_pp > 0.0 {"increases risk"} else {"decreases risk"}));
-    out.push_str(&format!("\n  Sum(SHAP) = {:>+.4} -> P(landslide) = {:.1}%\n\n", shap_total, probability * 100.0));
+    out.push_str(&format!("\n  Sum(sensitivity) = {:>+.4} -> P(landslide) = {:.1}%\n\n", shap_total, probability * 100.0));
 
     // Spatial Cross-Validation Warning (Kumar 2025, 43 cit)
     out.push_str("  Spatial Cross-Validation (IMPORTANT):\n");

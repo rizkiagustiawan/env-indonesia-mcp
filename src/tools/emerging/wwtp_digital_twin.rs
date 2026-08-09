@@ -57,10 +57,11 @@ pub fn assess(influent_bod_mg_l: f64, influent_cod_mg_l: f64, flow_m3_day: f64, 
     out.push_str(&format!("  >> Recommended DO setpoint: {:.1} mg/L\n\n", optimal_do));
 
     // Phase 3: XGBoost+SHAP Feature Attribution
-    out.push_str("-- Phase 3: XGBoost+SHAP Feature Attribution (Nourani 2025) --\n\n");
+    out.push_str("-- Phase 3: Feature Attribution (Simplified Sensitivity, NOT actual XGBoost+SHAP) --\n\n");
     out.push_str("Ref: Nourani 2025 (J Water Proc Eng, 34 cit)\n");
-    out.push_str("  XGBoost model: R2=0.997 (train), 0.911 (test)\n");
-    out.push_str("  SHAP dual-purpose: model explanation + feature selection\n\n");
+    out.push_str("  -- Literature Reference (NOT this tool's output) --\n");
+    out.push_str("  Nourani 2025 XGBoost: R2=0.997 (train), 0.911 (test) — paper's model, not this tool\n");
+    out.push_str("  This tool uses heuristic linear sensitivity (not TreeSHAP, not XGBoost)\n\n");
 
     // Simplified SHAP values (proportional to feature contribution)
     let shap_bod = (influent_bod_mg_l - 200.0) * 0.3 / 100.0;
@@ -70,22 +71,23 @@ pub fn assess(influent_bod_mg_l: f64, influent_cod_mg_l: f64, flow_m3_day: f64, 
     let shap_flow = (flow_m3_day - 5000.0) * 0.2 / 10000.0;
     let shap_total = shap_bod + shap_do + shap_mlss + shap_temp + shap_flow;
 
-    out.push_str("  Feature         SHAP value  Direction\n");
+    out.push_str("  Feature         Sensitivity  Direction (heuristic, not SHAP)\n");
     out.push_str("  -------         -----------  ---------\n");
     out.push_str(&format!("  Influent BOD    {:>+8.4}      {}\n", shap_bod, if shap_bod > 0.0 {"increases effluent"} else {"decreases effluent"}));
     out.push_str(&format!("  DO              {:>+8.4}      {}\n", shap_do, if shap_do > 0.0 {"increases"} else {"decreases (more DO = better removal)"}));
     out.push_str(&format!("  MLSS            {:>+8.4}      {}\n", shap_mlss, if shap_mlss > 0.0 {"increases"} else {"decreases (more biomass = better)"}));
     out.push_str(&format!("  Temperature     {:>+8.4}      {}\n", shap_temp, if shap_temp > 0.0 {"increases (warm = faster kinetics)"} else {"decreases"}));
     out.push_str(&format!("  Flow            {:>+8.4}      {}\n", shap_flow, if shap_flow > 0.0 {"increases (higher loading)"} else {"decreases"}));
-    out.push_str(&format!("\n  Sum(SHAP) = {:>+.4}\n", shap_total));
-    out.push_str("  TreeSHAP: O(TLD^2), T=trees, L=leaves, D=depth (Lundberg 2020)\n\n");
+    out.push_str(&format!("\n  Sum(sensitivity) = {:>+.4}\n", shap_total));
+    out.push_str("  NOTE: These are heuristic linear deviations, NOT TreeSHAP O(TLD^2) values.\n");
 
-    // Phase 4: LSTM-GRU Hybrid (Xiong 2025)
-    out.push_str("-- Phase 4: LSTM-GRU Hybrid Prediction (Xiong 2025) --\n\n");
+    // Phase 4: LSTM-GRU Hybrid (Xiong 2025) — Literature Reference Only
+    out.push_str("-- Phase 4: LSTM-GRU Hybrid (Literature Reference — NOT implemented) --\n\n");
     out.push_str("Ref: Xiong 2025 (Water 17, 23 cit)\n");
-    out.push_str("  Dual hybrid: LSTM (residue refinement) + XGBoost (temporal features)\n");
+    out.push_str("  -- Literature Reference (this tool does NOT run LSTM-GRU) --\n");
+    out.push_str("  Paper's dual hybrid: LSTM (residue) + XGBoost (temporal)\n");
     out.push_str("  Outperforms SVR, RF for COD, NH4-N, TN, TP prediction\n");
-    out.push_str("  Captures nonlinear multivariate time series\n\n");
+    out.push_str("  This tool: ASM1 Monod kinetics only (no LSTM, no XGBoost)\n\n");
 
     // Phase 5: Carbon Reduction (Yun 2025)
     out.push_str("-- Phase 5: Carbon Reduction (Yun 2025) --\n\n");

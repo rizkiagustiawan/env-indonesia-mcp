@@ -49,14 +49,14 @@ pub fn assess(
     out.push_str(&format!("  Mean: {:.0} um, Min: {:.0}, Max: {:.0}\n", mean_size, min_size, max_size));
     out.push_str(&format!("  Fragments (>500um): {}, Fibers (<=500um): {}\n\n", n_fragments, n_fibers));
 
-    // ═══ Phase 2: CNN1D Autoencoder Spectral Classification ═══
-    out.push_str("-- Phase 2: CNN1D Autoencoder Classification (Yan 2026) --\n\n");
-    out.push_str("Method:\n");
-    out.push_str("  1. Raman spectral data collected (15 polymer types)\n");
-    out.push_str("  2. Autoencoder (AE) denoises + reconstructs spectra\n");
-    out.push_str("  3. CNN1D classifies reconstructed spectra\n");
-    out.push_str("  Accuracy: 99.03% (Yan 2026, Anal Chem)\n");
-    out.push_str("  Time: <5 min for all samples (vs hours manual)\n\n");
+    // ═══ Phase 2: Spectral Classification (Cosine Similarity — NOT CNN) ═══
+    out.push_str("-- Phase 2: Spectral Classification (Cosine Similarity) --\n\n");
+    out.push_str("Method (this tool): cosine similarity matching against reference spectra\n");
+    out.push_str("  NOTE: This is NOT a CNN1D Autoencoder. The CNN1D+AE method (Yan 2026)\n");
+    out.push_str("  achieved 99.03% accuracy in the PAPER — this tool does spectral matching only.\n\n");
+    out.push_str("  -- Literature Reference (NOT this tool's accuracy) --\n");
+    out.push_str("  Yan 2026 CNN1D+AE: 99.03% accuracy (Anal Chem) — paper's model, not this tool\n");
+    out.push_str("  This tool: cosine similarity on user-supplied spectra\n\n");
 
     let (best_polymer, best_match) = spectra.iter()
         .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
@@ -91,6 +91,7 @@ pub fn assess(
 
     // ═══ Phase 5: Alternative Detection Methods ═══
     out.push_str("-- Phase 5: Alternative Detection Methods (2026) --\n\n");
+    out.push_str("  -- Literature Comparison (NOT this tool's performance) --\n");
     out.push_str("Method                     Accuracy  LoD        Ref\n");
     out.push_str("------                     --------  ---        ---\n");
     out.push_str("CNN1D + AE Raman           99.03%    -          Yan 2026\n");

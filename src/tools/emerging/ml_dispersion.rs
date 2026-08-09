@@ -1,9 +1,12 @@
-/// ML-Based Air Dispersion Model (AERMOD Surrogate)
-/// Wind-weighted emissions + mixing height + land use correction
-/// Ref: Nature s44407-025-00035-4 (2025)
+/// Air Dispersion Screening Model (Gaussian + Land-Use Correction)
+/// NOTE: This is NOT a trained ML model. It is a Gaussian plume with an empirical
+///   land-use correction factor. The R²>0.8 / 100-1000× faster claims below are
+///   from the cited paper's ML surrogate, NOT this tool's performance.
+/// Ref: ML surrogate concept — Nature s44407-025-00035-4 (2025)
 pub fn assess(emission_g_s: f64, wind_speed_m_s: f64, wind_dir_deg: f64, mixing_height_m: f64, distance_m: f64, land_use: &str, receptor_height_m: f64) -> String {
-    let mut out = String::from("=== ML-Based Air Dispersion (AERMOD Surrogate) ===\n");
-    out.push_str("Ref: Nature s44407-025-00035-4 (2025); 100-1000x faster than AERMOD\n\n");
+    let mut out = String::from("=== Air Dispersion Screening (Gaussian + Land-Use Correction) ===\n");
+    out.push_str("NOTE: This is a Gaussian plume model with empirical correction, NOT a trained ML surrogate.\n");
+    out.push_str("Ref: ML surrogate concept — Nature s44407-025-00035-4 (2025)\n\n");
     let z0 = match land_use.to_lowercase().as_str() {
         s if s.contains("urban") || s.contains("kota") => 1.0,
         s if s.contains("forest") || s.contains("hutan") => 1.5,
@@ -30,12 +33,14 @@ pub fn assess(emission_g_s: f64, wind_speed_m_s: f64, wind_dir_deg: f64, mixing_
     out.push_str(&format!("  Correction factor: {:.2}\n\n", correction_factor));
     out.push_str("-- Prediction --\n\n");
     out.push_str(&format!("  Base Gaussian: {:.2} µg/m3\n", conc_ug_m3));
-    out.push_str(&format!("  >> ML-corrected: {:.2} µg/m3\n\n", conc_corrected));
+    out.push_str(&format!("  >> Land-use corrected: {:.2} µg/m3\n\n", conc_corrected));
     out.push_str("-- STATUS KEPATUHAN --\n");
     out.push_str("  PP 22/2021 Lampiran VII (Udara Ambien):\n");
-    out.push_str(&format!("  SO2 1jam:150 | NO2 1jam:200 | PM10 24jam:75 | PM2.5 24jam:55 µg/m3\n"));
+    out.push_str("  SO2 1jam:150 | NO2 1jam:200 | PM10 24jam:75 | PM2.5 24jam:55 µg/m3\n");
     out.push_str(&format!("  Measured: {:.2} µg/m3 → check parameter\n\n", conc_corrected));
-    out.push_str("  Note: ML model 100-1000x faster than AERMOD (R²>0.8)\n");
-    out.push_str("  Ref: Nature s44407-025-00035-4 (2025)\n");
+    out.push_str("  -- Literature Reference (NOT this tool's performance) --\n");
+    out.push_str("  ML surrogate (Nature s44407-025-00035-4): R²>0.8, 100-1000x faster than AERMOD\n");
+    out.push_str("  NOTE: This tool is a screening Gaussian model, NOT the cited ML surrogate.\n");
+    out.push_str("  For regulatory compliance: use AERMOD (EPA) or CALPUFF.\n");
     out
 }
