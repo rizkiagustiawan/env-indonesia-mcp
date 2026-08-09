@@ -1,10 +1,20 @@
-/// Physics-Informed Interpolation for Water Quality
-/// Simplified PINN: PDE residual constraint + sparse data fitting
-/// Ref: DiBella, Raissi et al. 2026 (Water Research)
-/// Loss = data_loss + λ × physics_loss (mass balance)
+/// Physics-Constrained Finite-Difference Interpolation for Water Quality
+///
+/// NOTE: Despite the PINN framing in the reference paper, THIS TOOL runs NO neural
+/// network, NO training loop, and NO gradient optimization. It is a pure
+/// finite-difference (FD) time-stepping of the advection-dispersion-reaction PDE
+/// with hard injection of observed values. "Physics-informed" here means the PDE
+/// residual is used as a constraint, NOT that a PINN is trained.
+///
+/// Literature Reference (NOT this tool's performance):
+///   DiBella, Raissi et al. 2026 (Water Research) — PINN framework
+///   The paper's Loss = data_loss + λ × physics_loss (mass balance) describes a
+///   trained network; this tool implements the equivalent PDE constraint via FD.
 pub fn assess(observations_json: &str, domain_length_m: f64, velocity_m_s: f64, dispersion_m2_s: f64, decay_rate_s: f64, n_grid: u32) -> String {
-    let mut out = String::from("=== Physics-Informed Water Quality Estimation ===\n");
-    out.push_str("Ref: DiBella, Raissi et al. 2026 (Water Research) — simplified PINN\n\n");
+    let mut out = String::from("=== Physics-Constrained FD Water Quality Estimation ===\n");
+    out.push_str("NOTE: No neural network runs here — this is a finite-difference PDE solver.\n");
+    out.push_str("Literature Reference (NOT this tool's performance):\n");
+    out.push_str("  DiBella, Raissi et al. 2026 (Water Research) — PINN framework (training-based)\n\n");
     let obs: Vec<(f64, f64)> = match serde_json::from_str(observations_json) {
         Ok(v) => v,
         Err(_) => return "ERROR: observations_json must be [[x, C], ...]".into(),
@@ -40,7 +50,7 @@ pub fn assess(observations_json: &str, domain_length_m: f64, velocity_m_s: f64, 
     out.push_str(&format!("Observation points: {}\n", obs.len()));
     out.push_str("-- PDE Constraint (Advection-Dispersion-Reaction) --\n");
     out.push_str("  ∂C/∂t = -v·∂C/∂x + D·∂²C/∂x² - k·C\n\n");
-    out.push_str("-- Physics-Informed Results --\n\n");
+    out.push_str("-- Physics-Informed Results (FD-constrained, NOT a trained PINN) --\n\n");
     out.push_str(&format!("  {:>8} {:>12} {:>12}\n", "x (m)", "Conc", "Source"));
     out.push_str(&"-".repeat(34));
     out.push('\n');
@@ -49,8 +59,10 @@ pub fn assess(observations_json: &str, domain_length_m: f64, velocity_m_s: f64, 
         let is_obs = obs.iter().any(|&(ox, _)| ((ox/dx) as usize) == i as usize);
         out.push_str(&format!("  {:>8.1} {:>12.4} {:>12}\n", x, c[i as usize], if is_obs {"observed"} else {"predicted"}));
     }
-    out.push_str("\n  >> Physics-informed interpolation complete\n");
+    out.push_str("\n  >> Physics-constrained FD interpolation complete (no NN training)\n");
     out.push_str("  >> Mass balance enforced at each time step\n\n");
-    out.push_str("  Ref: DiBella, Raissi et al. 2026 (Water Research) — simplified PINN\n");
+    out.push_str("  Literature Reference (NOT this tool's performance):\n");
+    out.push_str("    DiBella, Raissi et al. 2026 (Water Research) — PINN (trained network)\n");
+    out.push_str("    This tool = finite-difference PDE solver with observation injection\n");
     out
 }

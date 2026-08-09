@@ -3,10 +3,20 @@ use serde_json::{json, Value};
 
 const MPC_STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1";
 
-/// Flood SAR Mapping — Sentinel-1 VV change detection (2026 SOTA DL methods)
-/// Methodology: download S1 GRD pre/post flood, VV threshold, change detection
+/// Flood SAR Mapping — Sentinel-1 scene search (2026 SOTA DL methods referenced)
+///
+/// IMPORTANT: This tool ONLY searches for Sentinel-1 GRD scenes (pre/post flood)
+/// via Planetary Computer STAC. It does NOT run any deep-learning flood-segmentation
+/// model. The F1=96% / 98.1% / IoU figures in the "2026 SOTA" table below are
+/// ACCURACIES REPORTED IN THE CITED PAPERS, NOT results achievable by or produced
+/// by this tool. This tool finds candidate scenes; the DL methods listed must be
+/// run separately (external training/inference) to obtain those accuracies.
+///
+/// Methodology (described, not all executed here): download S1 GRD pre/post flood,
+/// VV threshold, change detection.
 /// Ref: Clement et al. 2025; Twele et al. 2016; Cian et al. 2018
-/// 2026 SOTA: Siamese U-Net (Kacmaz 2026, F1=96%); TLE-FEDformer (Ahmadi 2026, 98.1%)
+/// 2026 SOTA (Literature Reference — NOT this tool's performance):
+///   Siamese U-Net (Kacmaz 2026, F1=96%); TLE-FEDformer (Ahmadi 2026, 98.1%)
 ///   LightFloodNet (Kinalioglu 2026, 1.57M params); CMFS-UNet Mamba (Wei 2025)
 ///   FloodsNet (Wu 2025); RS-Mamba (Gierszewska 2026)
 ///
@@ -50,7 +60,8 @@ pub async fn search_flood_scenes(
     out.push_str(&format!("Flood event date: {}\n", flood_date));
     out.push_str(&format!("BBox: {:.4},{:.4},{:.4},{:.4} (W,S,E,N)\n\n", w, s, e, n));
     out.push_str("Ref: Twele et al. 2016; Cian et al. 2018; Clement et al. 2025\n");
-    out.push_str("Method: S1 GRD VV threshold + change detection + DEMNAS mask\n\n");
+    out.push_str("Method: S1 GRD VV threshold + change detection + DEMNAS mask\n");
+    out.push_str("NOTE: This tool searches for scenes only — no DL model runs here.\n\n");
 
     let pre_body = json!({
         "collections": ["sentinel-1-grd"],
@@ -81,7 +92,9 @@ pub async fn search_flood_scenes(
     out.push_str("6. Mask permanent water (DEMNAS + JRC Global Surface Water)\n");
     out.push_str("7. Overlay OSM settlements within flood extent\n");
     out.push_str("\n");
-    out.push_str("2026 SOTA DEEP LEARNING METHODS:\n");
+    out.push_str("2026 SOTA DEEP LEARNING METHODS (Literature Reference — NOT this tool's performance):\n");
+    out.push_str("  [These F1/IoU figures are from the cited papers, NOT produced by this tool.\n");
+    out.push_str("   This tool finds scenes; the DL models must be run separately.]\n");
     out.push_str("  Method              F1/IoU     Params    Ref\n");
     out.push_str("  ------              ------     ------    ---\n");
     out.push_str("  Siamese U-Net       F1=96.1%   -         Kacmaz 2026 (Earth 7(3))\n");
@@ -93,6 +106,7 @@ pub async fn search_flood_scenes(
     out.push_str("  RF VH/VV ratio      94% acc    -         Amer 2025 (RS 17(11))\n");
     out.push_str("  DAM-Net             IoU=93.2%  -         benchmark (S1GFloods)\n");
     out.push_str("\n");
+    out.push_str("  Recommended (external — NOT run by this tool):\n");
     out.push_str("  Recommended: Siamese U-Net for emergency response (high recall)\n");
     out.push_str("  Recommended: TLE-FEDformer for accuracy (multi-sensor fusion)\n");
     out.push_str("  Recommended: LightFloodNet for edge deployment (1.57M params)\n");

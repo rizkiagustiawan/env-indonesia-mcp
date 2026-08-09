@@ -43,8 +43,10 @@ pub fn assess(
     detections_json: &str,
     target_species: &str,
 ) -> String {
-    let mut out = String::from("=== eDNA Biodiversity — 3-Level Bayesian Occupancy ===\n");
-    out.push_str("Ref: MacKenzie 2002; Schmidt 2013; occumb R; Schütz 2025; Plewnia 2026\n\n");
+    let mut out = String::from("=== eDNA Biodiversity — 3-Level Occupancy (method-of-moments, NOT MCMC) ===\n");
+    out.push_str("NOTE: No JAGS/Stan/MCMC runs here — estimates are method-of-moments + normal-approx CI.\n");
+    out.push_str("Literature Reference (NOT this tool's performance):\n");
+    out.push_str("  MacKenzie 2002; Schmidt 2013; occumb R; Schütz 2025; Plewnia 2026 (Bayesian MCMC)\n\n");
 
     // Parse detection matrix: [[site1_rep1, site1_rep2, ...], [site2_rep1, ...], ...]
     let detections: Vec<Vec<u8>> = match serde_json::from_str(detections_json) {
@@ -109,7 +111,7 @@ pub fn assess(
     let theta_se = (theta_est * (1.0 - theta_est) / (n_sites * n_samples_per_site) as f64).sqrt();
     let p_se = (p_est * (1.0 - p_est) / n_eff.max(1.0)).sqrt();
 
-    out.push_str("Posterior estimates (MCMC simplified):\n");
+    out.push_str("Moment estimates (no MCMC — method-of-moments + normal-approx CI):\n");
     out.push_str(&format!("  ψ = {:.3} (95% CI: {:.3}-{:.3})\n",
         psi_est, (psi_est - 1.96*psi_se).max(0.0), (psi_est + 1.96*psi_se).min(1.0)));
     out.push_str(&format!("  θ = {:.3} (95% CI: {:.3}-{:.3})\n",

@@ -1,9 +1,22 @@
-/// Satellite-Based Compliance Monitoring
-/// Ref: ESA/Copernicus; PP 22/2021; Permen LH 6/2026
-/// Multi-sensor: TROPOMI + Sentinel-2 + MODIS
+/// Compliance Limit Checker (satellite-referenced)
+///
+/// NOTE: Despite the satellite references, THIS TOOL performs NO atmospheric
+/// correction, NO background subtraction, NO plume fitting, and NO emission
+/// quantification. It is a limit-checker: it compares a caller-supplied
+/// measured_value against a regulatory_limit and reports exceedance + sanctions.
+/// The "satellite_source" string is only echoed as a label; no satellite data is
+/// retrieved or processed. The plume-fitting evidence chain shown below is the
+/// methodology described in the references, NOT something this tool executes.
+///
+/// Literature Reference (NOT this tool's performance):
+///   ESA/Copernicus TROPOMI plume-fitting & emission quantification (real method).
+///   PP 22/2021; Permen LH 6/2026 (Indonesian regulatory framework).
+///   Those pipelines require external satellite processing not done here.
 pub fn assess(facility_name: &str, lat: f64, lon: f64, parameter: &str, measured_value: f64, regulatory_limit: f64, satellite_source: &str) -> String {
-    let mut out = String::from("=== Satellite Compliance Monitoring ===\n");
-    out.push_str("Ref: ESA; PP 22/2021; Permen LH 6/2026\n\n");
+    let mut out = String::from("=== Compliance Limit Checker (satellite-referenced) ===\n");
+    out.push_str("NOTE: No satellite/plume-fitting runs here — this is a limit comparison only.\n");
+    out.push_str("Literature Reference (NOT this tool's performance):\n");
+    out.push_str("  ESA TROPOMI plume fitting; PP 22/2021; Permen LH 6/2026\n\n");
     let sensor = match satellite_source.to_lowercase().as_str() {
         s if s.contains("tropomi") || s.contains("sentinel-5p") || s.contains("s5p") => "Sentinel-5P TROPOMI (5.5×3.5km, daily)",
         s if s.contains("sentinel-2") || s.contains("s2") => "Sentinel-2 MSI (10m, 5-day)",
@@ -35,9 +48,10 @@ pub fn assess(facility_name: &str, lat: f64, lon: f64, parameter: &str, measured
     } else {
         out.push_str("  No sanksi — maintain compliance\n\n");
     }
-    out.push_str("-- Evidence Chain --\n");
+    out.push_str("-- Evidence Chain (reference methodology; NOT executed by this tool) --\n");
     out.push_str("  Satellite data → atmospheric correction → background subtraction\n");
-    out.push_str("  → plume fitting → emission quantification → legal evidence\n\n");
+    out.push_str("  → plume fitting → emission quantification → legal evidence\n");
+    out.push_str("  (This tool only compares measured_value vs limit; chain above is external.)\n\n");
     out.push_str("-- DATA ACCESS --\n");
     out.push_str("  Copernicus Open Access Hub (free)\n");
     out.push_str("  GEE (Google Earth Engine) for processing\n");

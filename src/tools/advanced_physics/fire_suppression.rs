@@ -1,25 +1,31 @@
-/// Aerial Wildfire Suppression Optimizer
+/// Aerial Wildfire Suppression — Algebraic Suppression Estimator
 ///
-/// IMPLEMENTES: Matei et al. 2026 "Aerial Wildfire Suppression Planning with
-/// a Hybrid CNN-Cellular Automata Fire Model" (arXiv:2606.13633)
+/// NOTE: Despite the reference paper using gradient-based optimization through a
+/// differentiable 3-state Cellular Automata (CA) model with a Straight-Through
+/// Estimator and Adam optimizer in JAX, THIS TOOL runs NO autograd, NO gradient
+/// computation, and NO differentiable CA. All suppression math below is closed-form
+/// algebra: coverage fractions, fixed suppression coefficients, and a Monte-Carlo
+/// sensitivity sweep (uniform random sampling, not gradient-based optimization).
 ///
-/// KEY INNOVATION: Gradient-based optimization of aerial intervention
-/// through a differentiable 3-state CA wildfire model.
+/// Literature Reference (NOT this tool's performance):
+///   Matei et al. 2026 "Aerial Wildfire Suppression Planning with a Hybrid
+///   CNN-Cellular Automata Fire Model" (arXiv:2606.13633).
+///   That paper's loss-function optimization is NOT performed by this tool.
 ///
-/// SUPPRESSION PHYSICS:
+/// SUPPRESSION PHYSICS (algebraic analog of the paper's model):
 ///   Water: immediate reduction of active burning
 ///     s_water = exp(-E_water), pB' = pB * s_water
 ///   Retardant: persistent reduction of future spread
 ///     r(t+1) = r(t) * exp(-E_retardant), f_eff = f * r
 ///
-/// LOSS FUNCTION:
+/// LOSS FUNCTION (from the paper; NOT minimized here — shown for reference):
 ///   L = lambda_burn * L_burn + lambda_final * L_final + lambda_budget * L_budget
 ///   L_burn = (1/T) * sum_t sum_x P_fire(x,t)
 ///   L_final = (1/N) * sum_x P_fire(x,T)
 ///
-/// OPTIMIZATION:
-///   Two-stage: (1) minimize fire area, (2) budget refinement (prune drops)
-///   Binary drops via Straight-Through Estimator (STE)
+/// OPTIMIZATION (algebraic stand-in; NOT the paper's STE/Adam pipeline):
+///   Two-stage heuristic: (1) coverage-fraction estimate, (2) fixed-ratio drop pruning
+///   Binary drops in the paper use a Straight-Through Estimator (STE); not used here.
 
 pub fn assess(
     fire_area_ha: f64,
@@ -31,9 +37,11 @@ pub fn assess(
     fuel_model: u8,
     budget_drops: u32,
 ) -> String {
-    let mut out = String::from("=== Aerial Wildfire Suppression Optimizer ===\n");
-    out.push_str("Ref: Matei et al. 2026 (arXiv:2606.13633)\n");
-    out.push_str("Model: Gradient-based intervention through 3-state CA\n\n");
+    let mut out = String::from("=== Aerial Wildfire Suppression — Algebraic Estimator ===\n");
+    out.push_str("NOTE: No gradient/autograd/differentiable-CA runs here — closed-form algebra only.\n");
+    out.push_str("Literature Reference (NOT this tool's performance):\n");
+    out.push_str("  Matei et al. 2026 (arXiv:2606.13633) — gradient-based diff-CA optimization\n");
+    out.push_str("Model (algebraic analog): 3-state CA suppression physics\n\n");
 
     if fire_area_ha <= 0.0 || duration_hr <= 0.0 {
         return "ERROR [E102]: fire_area and duration must be > 0.".into();
@@ -82,8 +90,8 @@ pub fn assess(
     out.push_str("  f_eff = f * r  (reduces future spread)\n");
     out.push_str(&format!("  alpha_retardant = {}\n\n", alpha_retardant));
 
-    // ═══ Phase 3: Optimization (Two-Stage) ═══
-    out.push_str("-- Phase 3: Two-Stage Optimization --\n\n");
+    // ═══ Phase 3: Heuristic Two-Stage Scheduling (NOT gradient optimization) ═══
+    out.push_str("-- Phase 3: Two-Stage Heuristic Scheduling (algebraic, not gradient-based) --\n\n");
 
     // Stage 1: Fire area minimization
     let lambda_burn = 70.0;

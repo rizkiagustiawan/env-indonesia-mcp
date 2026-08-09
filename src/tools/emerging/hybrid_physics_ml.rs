@@ -1,9 +1,19 @@
-/// Hybrid Physics-ML Water Quality Prediction
-/// ADE solver (finite difference) + ensemble averaging (simplified RF)
-/// Ref: 2026 Discover Applied Sciences
+/// Hybrid Physics + Perturbation-UQ Water Quality Prediction
+///
+/// NOTE: Despite the reference paper using an ADE solver + RF/MLP ensemble, THIS
+/// TOOL runs NO Random Forest and NO MLP. Stage 1 is a genuine finite-difference
+/// ADE solver. Stage 2 "ensemble" is a ±5% multiplicative noise perturbation of
+/// the FD solution across 10 members — this is a perturbation-based uncertainty
+/// quantification (UQ), NOT a trained ML ensemble. No model fitting occurs.
+///
+/// Literature Reference (NOT this tool's performance):
+///   2026 Discover Applied Sciences — ADE + RF/MLP hybrid.
+///   That paper trains RF/MLP surrogates; this tool uses deterministic FD + noise UQ.
 pub fn assess(observations_json: &str, velocity_m_s: f64, dispersion_m2_s: f64, domain_length_m: f64, n_grid: u32) -> String {
-    let mut out = String::from("=== Hybrid Physics-ML Water Quality Prediction ===\n");
-    out.push_str("Ref: 2026 Discover Applied Sciences — ADE + RF/MLP hybrid\n\n");
+    let mut out = String::from("=== Hybrid Physics + Perturbation-UQ Water Quality ===\n");
+    out.push_str("NOTE: No RF/MLP runs here — Stage 2 is ±5% noise-perturbation UQ.\n");
+    out.push_str("Literature Reference (NOT this tool's performance):\n");
+    out.push_str("  2026 Discover Applied Sciences — ADE + RF/MLP hybrid (trained)\n\n");
     let obs: Vec<(f64, f64)> = match serde_json::from_str(observations_json) {
         Ok(v) => v,
         Err(_) => return "ERROR: observations_json must be [[x, C], ...]".into(),
@@ -44,8 +54,8 @@ pub fn assess(observations_json: &str, velocity_m_s: f64, dispersion_m2_s: f64, 
     out.push_str("-- Stage 1: Physics (ADE Solver) --\n");
     out.push_str("  ∂C/∂t + u∂C/∂x = D∂²C/∂x²\n");
     out.push_str("  Finite difference, 200 timesteps\n\n");
-    out.push_str("-- Stage 2: ML Ensemble (10 members) --\n");
-    out.push_str("  Noise-perturbed ensemble (simplified RF analog)\n");
+    out.push_str("-- Stage 2: Perturbation-Based UQ (10 members, ±5% noise; NOT RF/MLP) --\n");
+    out.push_str("  Multiplicative noise ensemble (no model training)\n");
     out.push_str("  Mean + uncertainty quantification\n\n");
     out.push_str("-- Results --\n\n");
     out.push_str(&format!("  {:>8} {:>12} {:>12} {:>12}\n", "x(m)", "Mean", "Std", "95% CI"));
@@ -57,7 +67,9 @@ pub fn assess(observations_json: &str, velocity_m_s: f64, dispersion_m2_s: f64, 
         let hi = c_mean[i as usize] + 1.96 * c_std[i as usize];
         out.push_str(&format!("  {:>8.1} {:>12.4} {:>12.4} [{:.2},{:.2}]\n", x, c_mean[i as usize], c_std[i as usize], lo, hi));
     }
-    out.push_str("\n  >> Hybrid physics-ML prediction with uncertainty\n");
-    out.push_str("  Ref: 2026 Discover Applied Sciences\n");
+    out.push_str("\n  >> Hybrid physics (FD) + perturbation-UQ (no ML training)\n");
+    out.push_str("  Literature Reference (NOT this tool's performance):\n");
+    out.push_str("    2026 Discover Applied Sciences — ADE + RF/MLP hybrid (trained)\n");
+    out.push_str("    This tool = FD solver + ±5% noise UQ; paper accuracy NOT reproduced\n");
     out
 }
