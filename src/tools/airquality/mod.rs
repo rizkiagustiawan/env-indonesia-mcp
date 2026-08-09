@@ -5,3 +5,6 @@ pub mod cyclone;
 pub mod baghouse;
 pub mod scrubber;
 pub mod esp;
+pub mod indoor_air;
+pub mod stack_height;
+pub mod fugitive_dust;

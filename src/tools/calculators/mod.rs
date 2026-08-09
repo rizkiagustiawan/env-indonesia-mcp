@@ -62,3 +62,11 @@ pub mod bioremediation;
 
 #[cfg(test)]
 mod tests;
+pub mod vapor_intrusion;
+pub mod river_quality;
+pub mod reaeration;
+pub mod sediment_oxygen_demand;
+pub mod chlorophyll_prediction;
+pub mod buffer_capacity;
+pub mod pome;
+pub mod mdl_calculator;

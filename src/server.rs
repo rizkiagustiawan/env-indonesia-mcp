@@ -2301,6 +2301,340 @@ pub struct GacDesignParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ContaminantTransport1DParam {
+    #[schemars(description = "Distance from source m")]
+    pub distance_m: f64,
+    #[schemars(description = "Groundwater velocity m/day")]
+    pub velocity_m_day: f64,
+    #[schemars(description = "Dispersion coefficient m2/day")]
+    pub dispersion_m2_day: f64,
+    #[schemars(description = "Time days")]
+    pub time_days: f64,
+    #[schemars(description = "Retardation factor R (1=no retardation)")]
+    pub retardation_factor: f64,
+    #[schemars(description = "First-order decay rate day-1")]
+    pub decay_rate_day: f64,
+    #[schemars(description = "Initial concentration mg/L")]
+    pub initial_conc_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ContaminantTransport2DParam {
+    #[schemars(description = "Distance x (downgradient) m")]
+    pub distance_x_m: f64,
+    #[schemars(description = "Source width y m")]
+    pub source_width_y_m: f64,
+    #[schemars(description = "Source depth z m")]
+    pub source_depth_z_m: f64,
+    #[schemars(description = "Groundwater velocity m/day")]
+    pub velocity_m_day: f64,
+    #[schemars(description = "Longitudinal dispersion m2/day")]
+    pub dispersion_x_m2_day: f64,
+    #[schemars(description = "Transverse dispersion y m2/day")]
+    pub dispersion_y_m2_day: f64,
+    #[schemars(description = "Vertical dispersion z m2/day")]
+    pub dispersion_z_m2_day: f64,
+    #[schemars(description = "Time days")]
+    pub time_days: f64,
+    #[schemars(description = "Retardation factor")]
+    pub retardation_factor: f64,
+    #[schemars(description = "Decay rate day-1")]
+    pub decay_rate_day: f64,
+    #[schemars(description = "Initial concentration mg/L")]
+    pub initial_conc_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct VaporIntrusionParam {
+    #[schemars(description = "Source concentration ug/m3")]
+    pub source_conc_ug_m3: f64,
+    #[schemars(description = "Total soil porosity")]
+    pub soil_porosity_total: f64,
+    #[schemars(description = "Water-filled porosity")]
+    pub soil_porosity_water: f64,
+    #[schemars(description = "Air-filled porosity")]
+    pub soil_porosity_air: f64,
+    #[schemars(description = "Stratum thickness (source to building) m")]
+    pub stratum_thickness_m: f64,
+    #[schemars(description = "Building footprint m2")]
+    pub bldg_footprint_m2: f64,
+    #[schemars(description = "Building height m")]
+    pub bldg_height_m: f64,
+    #[schemars(description = "Air exchange rate hr-1 (ACH)")]
+    pub air_exchange_rate_hr: f64,
+    #[schemars(description = "Foundation crack area m2")]
+    pub crack_area_m2: f64,
+    #[schemars(description = "Crack depth m")]
+    pub crack_depth_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct RiverQualityParam {
+    #[schemars(description = "River length m")]
+    pub river_length_m: f64,
+    #[schemars(description = "Flow m3/s")]
+    pub flow_m3_s: f64,
+    #[schemars(description = "Velocity m/s")]
+    pub velocity_m_s: f64,
+    #[schemars(description = "Initial BOD mg/L")]
+    pub initial_bod_mg_l: f64,
+    #[schemars(description = "Initial DO mg/L")]
+    pub initial_do_mg_l: f64,
+    #[schemars(description = "BOD decay rate day-1")]
+    pub bod_decay_rate_day: f64,
+    #[schemars(description = "Reaeration rate day-1")]
+    pub reaeration_rate_day: f64,
+    #[schemars(description = "Saturation DO mg/L")]
+    pub saturation_do_mg_l: f64,
+    #[schemars(description = "Number of reaches")]
+    pub n_reaches: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ReaerationParam {
+    #[schemars(description = "Velocity m/s")]
+    pub velocity_m_s: f64,
+    #[schemars(description = "Depth m")]
+    pub depth_m: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SODParam {
+    #[schemars(description = "SOD at 20C g/m2/day")]
+    pub sod20_g_m2_day: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+    #[schemars(description = "Sediment area m2")]
+    pub area_m2: f64,
+    #[schemars(description = "River flow m3/s (0=ignore)")]
+    pub river_flow_m3_s: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ChlorophyllParam {
+    #[schemars(description = "Phosphorus load kg/year")]
+    pub phosphorus_load_kg_yr: f64,
+    #[schemars(description = "Lake area km2")]
+    pub lake_area_km2: f64,
+    #[schemars(description = "Lake volume m3")]
+    pub lake_volume_m3: f64,
+    #[schemars(description = "Outflow m3/s")]
+    pub outflow_m3_s: f64,
+    #[schemars(description = "Lake type: deep, shallow, or mixed")]
+    pub lake_type: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MBRParam {
+    #[schemars(description = "Flow m3/day")]
+    pub flow_m3_day: f64,
+    #[schemars(description = "Influent BOD mg/L")]
+    pub influent_bod_mg_l: f64,
+    #[schemars(description = "Target effluent BOD mg/L")]
+    pub target_effluent_bod_mg_l: f64,
+    #[schemars(description = "HRT hours")]
+    pub hrt_hours: f64,
+    #[schemars(description = "SRT days")]
+    pub srt_days: f64,
+    #[schemars(description = "MLSS mg/L")]
+    pub mlss_mg_l: f64,
+    #[schemars(description = "Membrane flux LMH (L/m2/hr)")]
+    pub membrane_flux_lmh: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SBRParam {
+    #[schemars(description = "Flow m3/day")]
+    pub flow_m3_day: f64,
+    #[schemars(description = "Influent BOD mg/L")]
+    pub influent_bod_mg_l: f64,
+    #[schemars(description = "Target BOD mg/L")]
+    pub target_bod_mg_l: f64,
+    #[schemars(description = "Cycles per day")]
+    pub n_cycles_day: u32,
+    #[schemars(description = "MLSS mg/L")]
+    pub mlss_mg_l: f64,
+    #[schemars(description = "Fill fraction (0-1)")]
+    pub fill_fraction: f64,
+    #[schemars(description = "React time hr")]
+    pub react_time_hr: f64,
+    #[schemars(description = "Settle time hr")]
+    pub settle_time_hr: f64,
+    #[schemars(description = "Draw time hr")]
+    pub draw_time_hr: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct AOPParam {
+    #[schemars(description = "Contaminant name")]
+    pub contaminant: String,
+    #[schemars(description = "Initial concentration mg/L")]
+    pub initial_conc_mg_l: f64,
+    #[schemars(description = "Target concentration mg/L")]
+    pub target_conc_mg_l: f64,
+    #[schemars(description = "Process: ozone, uv_h2o2, fenton, uv_ozone")]
+    pub process_type: String,
+    #[schemars(description = "k_OH rate constant M-1 s-1 (0=auto)")]
+    pub k_oh_m: f64,
+    #[schemars(description = "OH radical concentration M (0=auto)")]
+    pub oh_conc_m: f64,
+    #[schemars(description = "Contact time min")]
+    pub contact_time_min: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct NutrientRemovalParam {
+    #[schemars(description = "Influent TKN mg/L")]
+    pub influent_tkn_mg_l: f64,
+    #[schemars(description = "Influent NO3 mg/L")]
+    pub influent_no3_mg_l: f64,
+    #[schemars(description = "Target TN mg/L")]
+    pub target_tn_mg_l: f64,
+    #[schemars(description = "SRT days")]
+    pub srt_days: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+    #[schemars(description = "DO mg/L")]
+    pub do_mg_l: f64,
+    #[schemars(description = "MLSS mg/L")]
+    pub mlss_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StruviteParam {
+    #[schemars(description = "Mg concentration mg/L")]
+    pub mg_mg_l: f64,
+    #[schemars(description = "NH4 concentration mg/L")]
+    pub nh4_mg_l: f64,
+    #[schemars(description = "PO4 concentration mg/L")]
+    pub po4_mg_l: f64,
+    #[schemars(description = "pH")]
+    pub ph: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ChlorineDemandParam {
+    #[schemars(description = "Free chlorine mg/L")]
+    pub free_chlorine_mg_l: f64,
+    #[schemars(description = "Contact time min")]
+    pub contact_time_min: f64,
+    #[schemars(description = "Target log removal")]
+    pub target_log_removal: f64,
+    #[schemars(description = "Contaminant: giardia, virus, bacteria")]
+    pub contaminant: String,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+    #[schemars(description = "pH")]
+    pub ph: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BufferCapacityParam {
+    #[schemars(description = "Alkalinity mg/L as CaCO3")]
+    pub alkalinity_mg_l_caco3: f64,
+    #[schemars(description = "pH")]
+    pub ph: f64,
+    #[schemars(description = "Temperature C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct IndoorAirParam {
+    #[schemars(description = "Emission rate mg/hr")]
+    pub emission_rate_mg_hr: f64,
+    #[schemars(description = "Room volume m3")]
+    pub room_volume_m3: f64,
+    #[schemars(description = "Ventilation rate m3/hr")]
+    pub ventilation_m3_hr: f64,
+    #[schemars(description = "Outdoor concentration mg/m3")]
+    pub outdoor_conc_mg_m3: f64,
+    #[schemars(description = "Deposition rate hr-1")]
+    pub deposition_rate_hr: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StackHeightParam {
+    #[schemars(description = "Building height m")]
+    pub building_height_m: f64,
+    #[schemars(description = "Building width m")]
+    pub building_width_m: f64,
+    #[schemars(description = "Building length m")]
+    pub building_length_m: f64,
+    #[schemars(description = "Wind direction degrees")]
+    pub wind_direction_deg: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FugitiveDustParam {
+    #[schemars(description = "Road type: paved, unpaved_industrial, unpaved_public")]
+    pub road_type: String,
+    #[schemars(description = "Silt loading g/m2 (paved)")]
+    pub silt_loading_g_m2: f64,
+    #[schemars(description = "Silt content % (unpaved)")]
+    pub silt_content_pct: f64,
+    #[schemars(description = "Average vehicle weight ton")]
+    pub avg_vehicle_weight_ton: f64,
+    #[schemars(description = "Precipitation days/year")]
+    pub precip_days: u32,
+    #[schemars(description = "Vehicle count")]
+    pub vehicle_count: u32,
+    #[schemars(description = "Road length m")]
+    pub road_length_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct POMEParam {
+    #[schemars(description = "FFB processed ton/day")]
+    pub ton_ffb_day: f64,
+    #[schemars(description = "Has pond system? (true/false)")]
+    pub has_pond_system: bool,
+    #[schemars(description = "Target BOD mg/L")]
+    pub target_bod_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MDLParam {
+    #[schemars(description = "JSON array of replicate concentrations [c1,c2,...]")]
+    pub replicate_concs_json: String,
+    #[schemars(description = "Spike level mg/L")]
+    pub spike_level_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct HoldingTimeParam {
+    #[schemars(description = "Parameter name (bod, cod, voc, metals, etc.)")]
+    pub parameter: String,
+    #[schemars(description = "Sample matrix (water, soil)")]
+    pub sample_matrix: String,
+    #[schemars(description = "Days since sampling")]
+    pub days_since_sampling: f64,
+    #[schemars(description = "Preserved? (true/false)")]
+    pub preserved: bool,
+    #[schemars(description = "Storage temperature C")]
+    pub temp_c: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CalibrationParam {
+    #[schemars(description = "Instrument name")]
+    pub instrument: String,
+    #[schemars(description = "JSON array of standard concentrations")]
+    pub std_concs_json: String,
+    #[schemars(description = "JSON array of measured concentrations")]
+    pub measured_concs_json: String,
+    #[schemars(description = "Calibration range low")]
+    pub calibration_range_low: f64,
+    #[schemars(description = "Calibration range high")]
+    pub calibration_range_high: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IonExchangeParam {
     #[schemars(description = "Target ion (ca2+, mg2+, na+, no3-, cl-, so42-, fe3+, cr6+)")]
     pub target_ion: String,
@@ -5135,6 +5469,157 @@ impl EnvIndonesiaServer {
         tools::water::ion_exchange::design(
             &p.target_ion, p.c_influent_mg_l, p.exchange_capacity_eq_l,
             p.flow_m3_day, p.bed_volume_m3, p.selectivity_coeff, &p.regenerant_type
+        )
+    }
+
+    #[tool(description = "Contaminant Transport 1D (Ogata-Banks). Analytical solution for 1D advection-dispersion with retardation and decay. C/C0 = 0.5*erfc((x-v*t)/(2*sqrt(D*t))). Ref: Ogata & Banks 1961; Freeze & Cherry 1979.")]
+    fn contaminant_transport_1d(&self, Parameters(p): Parameters<ContaminantTransport1DParam>) -> String {
+        tools::water::contaminant_transport_1d::assess(
+            p.distance_m, p.velocity_m_day, p.dispersion_m2_day, p.time_days,
+            p.retardation_factor, p.decay_rate_day, p.initial_conc_mg_l
+        )
+    }
+
+    #[tool(description = "Contaminant Transport 2D (Domenico). Analytical solution for 2D advection-dispersion from finite source. Includes transverse dispersion. Ref: Domenico 1987; Devlin 2012.")]
+    fn contaminant_transport_2d(&self, Parameters(p): Parameters<ContaminantTransport2DParam>) -> String {
+        tools::water::contaminant_transport_2d::assess(
+            p.distance_x_m, p.source_width_y_m, p.source_depth_z_m,
+            p.velocity_m_day, p.dispersion_x_m2_day, p.dispersion_y_m2_day, p.dispersion_z_m2_day,
+            p.time_days, p.retardation_factor, p.decay_rate_day, p.initial_conc_mg_l
+        )
+    }
+
+    #[tool(description = "Vapor Intrusion (Johnson & Ettinger). Attenuation factor for subsurface vapor to indoor air. Millington-Quirk diffusion, building ventilation. Ref: Johnson & Ettinger 1991; EPA 2017.")]
+    fn vapor_intrusion_je(&self, Parameters(p): Parameters<VaporIntrusionParam>) -> String {
+        tools::calculators::vapor_intrusion::assess(
+            p.source_conc_ug_m3, p.soil_porosity_total, p.soil_porosity_water, p.soil_porosity_air,
+            p.stratum_thickness_m, p.bldg_footprint_m2, p.bldg_height_m,
+            p.air_exchange_rate_hr, p.crack_area_m2, p.crack_depth_m
+        )
+    }
+
+    #[tool(description = "River Quality Model (QUAL2K simplified). BOD-DO using Streeter-Phelps. Shows BOD decay and DO sag curve along river. Ref: Chapra 2008.")]
+    fn river_quality_model(&self, Parameters(p): Parameters<RiverQualityParam>) -> String {
+        tools::calculators::river_quality::assess(
+            p.river_length_m, p.flow_m3_s, p.velocity_m_s, p.initial_bod_mg_l, p.initial_do_mg_l,
+            p.bod_decay_rate_day, p.reaeration_rate_day, p.saturation_do_mg_l, p.n_reaches
+        )
+    }
+
+    #[tool(description = "Reaeration Coefficient. Multiple formulas: O'Connor-Dobbins, Churchill, Owens-Gibbs. Temperature-corrected. Ref: Chapra 2008.")]
+    fn reaeration_coefficient(&self, Parameters(p): Parameters<ReaerationParam>) -> String {
+        tools::calculators::reaeration::assess(p.velocity_m_s, p.depth_m, p.temp_c)
+    }
+
+    #[tool(description = "Sediment Oxygen Demand (SOD). Temperature-corrected SOD, total demand, DO depletion in water column. Ref: DiToro 2001; Chapra 2008.")]
+    fn sediment_oxygen_demand(&self, Parameters(p): Parameters<SODParam>) -> String {
+        tools::calculators::sediment_oxygen_demand::assess(
+            p.sod20_g_m2_day, p.temp_c, p.area_m2, p.river_flow_m3_s
+        )
+    }
+
+    #[tool(description = "Chlorophyll-a Prediction (Vollenweider/OECD). P loading -> P concentration -> Chl-a. Trophic state classification. Ref: Vollenweider 1968; OECD 1982.")]
+    fn chlorophyll_a_prediction(&self, Parameters(p): Parameters<ChlorophyllParam>) -> String {
+        tools::calculators::chlorophyll_prediction::assess(
+            p.phosphorus_load_kg_yr, p.lake_area_km2, p.lake_volume_m3, p.outflow_m3_s, &p.lake_type
+        )
+    }
+
+    #[tool(description = "MBR (Membrane Bioreactor) Design. Reactor volume, F/M, membrane area, O2 demand, nitrification SRT check. Ref: Judd & Judd 2011.")]
+    fn mbr_design(&self, Parameters(p): Parameters<MBRParam>) -> String {
+        tools::water::mbr_design::assess(
+            p.flow_m3_day, p.influent_bod_mg_l, p.target_effluent_bod_mg_l,
+            p.hrt_hours, p.srt_days, p.mlss_mg_l, p.membrane_flux_lmh, p.temp_c
+        )
+    }
+
+    #[tool(description = "SBR (Sequencing Batch Reactor) Design. Cycle phases (fill/react/settle/draw/idle), reactor volume, F/M. Ref: Metcalf & Eddy 2004.")]
+    fn sbr_design(&self, Parameters(p): Parameters<SBRParam>) -> String {
+        tools::water::sbr_design::assess(
+            p.flow_m3_day, p.influent_bod_mg_l, p.target_bod_mg_l, p.n_cycles_day,
+            p.mlss_mg_l, p.fill_fraction, p.react_time_hr, p.settle_time_hr, p.draw_time_hr
+        )
+    }
+
+    #[tool(description = "AOP (Advanced Oxidation Process) Design. OH radical kinetics for ozone/UV-H2O2/Fenton. Pseudo-first-order. Ref: Glaze & Kang 1989; Beltran 2003.")]
+    fn aop_design(&self, Parameters(p): Parameters<AOPParam>) -> String {
+        tools::water::aop_design::assess(
+            &p.contaminant, p.initial_conc_mg_l, p.target_conc_mg_l, &p.process_type,
+            p.k_oh_m, p.oh_conc_m, p.contact_time_min
+        )
+    }
+
+    #[tool(description = "Nutrient Removal (Nitrification/Denitrification). AOB/NOB kinetics, SRT minimum, denitrification rate. Ref: Grady et al. 2011; Metcalf & Eddy 2004.")]
+    fn nutrient_removal(&self, Parameters(p): Parameters<NutrientRemovalParam>) -> String {
+        tools::water::nutrient_removal::assess(
+            p.influent_tkn_mg_l, p.influent_no3_mg_l, p.target_tn_mg_l,
+            p.srt_days, p.temp_c, p.do_mg_l, p.mlss_mg_l
+        )
+    }
+
+    #[tool(description = "Struvite Precipitation. Ksp=10^-13.26, supersaturation Omega=IAP/Ksp, recovery potential. For P recovery from wastewater. Ref: Bhuiyan 2007.")]
+    fn struvite_precipitation(&self, Parameters(p): Parameters<StruviteParam>) -> String {
+        tools::water::struvite::assess(p.mg_mg_l, p.nh4_mg_l, p.po4_mg_l, p.ph, p.temp_c)
+    }
+
+    #[tool(description = "Chlorine Demand & CT Concept. EPA SWTR compliance for Giardia/Virus inactivation. CT values, breakpoint chlorination. Ref: Crittenden 2012; EPA 40 CFR 141.72.")]
+    fn chlorine_demand(&self, Parameters(p): Parameters<ChlorineDemandParam>) -> String {
+        tools::water::chlorine_demand::assess(
+            p.free_chlorine_mg_l, p.contact_time_min, p.target_log_removal,
+            &p.contaminant, p.temp_c, p.ph
+        )
+    }
+
+    #[tool(description = "Buffer Capacity (Carbonate System). Speciation (H2CO3/HCO3/CO3), buffer intensity. Stumm & Morgan. Ref: Stumm & Morgan 1996.")]
+    fn buffer_capacity(&self, Parameters(p): Parameters<BufferCapacityParam>) -> String {
+        tools::calculators::buffer_capacity::assess(p.alkalinity_mg_l_caco3, p.ph, p.temp_c)
+    }
+
+    #[tool(description = "Indoor Air Quality Model. Steady-state concentration from emission + ventilation + deposition. ACH check. Ref: ASHRAE 62.1; EPA IAQ.")]
+    fn indoor_air_quality(&self, Parameters(p): Parameters<IndoorAirParam>) -> String {
+        tools::airquality::indoor_air::assess(
+            p.emission_rate_mg_hr, p.room_volume_m3, p.ventilation_m3_hr,
+            p.outdoor_conc_mg_m3, p.deposition_rate_hr
+        )
+    }
+
+    #[tool(description = "Stack Height (GEP). Good Engineering Practice per EPA 40 CFR 51.100. Avoid building downwash. Ref: EPA 40 CFR 51.100; ASME.")]
+    fn stack_height_gep(&self, Parameters(p): Parameters<StackHeightParam>) -> String {
+        tools::airquality::stack_height::assess(
+            p.building_height_m, p.building_width_m, p.building_length_m, p.wind_direction_deg
+        )
+    }
+
+    #[tool(description = "Fugitive Dust (EPA AP-42 Ch.13). PM10/PM2.5 emission factors for paved/unpaved roads. Vehicle weight, silt loading. Ref: EPA AP-42; WRAP 2006.")]
+    fn fugitive_dust_ap42(&self, Parameters(p): Parameters<FugitiveDustParam>) -> String {
+        tools::airquality::fugitive_dust::assess(
+            &p.road_type, p.silt_loading_g_m2, p.silt_content_pct, p.avg_vehicle_weight_ton,
+            p.precip_days, p.vehicle_count, p.road_length_m
+        )
+    }
+
+    #[tool(description = "POME (Palm Oil Mill Effluent). FFB->POME volume, BOD/COD/TSS, pond system design (KLHK P.05/2014), biogas potential. Ref: KLHK P.05/2014; Rana 2017.")]
+    fn pome_calculator(&self, Parameters(p): Parameters<POMEParam>) -> String {
+        tools::calculators::pome::assess(p.ton_ffb_day, p.has_pond_system, p.target_bod_mg_l)
+    }
+
+    #[tool(description = "MDL/LOQ Calculator. Method Detection Limit from replicate analyses. t-test, LOQ=10*SD, PQL=5*SD. Ref: EPA 40 CFR 136 App. B.")]
+    fn mdl_calculator(&self, Parameters(p): Parameters<MDLParam>) -> String {
+        tools::calculators::mdl_calculator::assess(&p.replicate_concs_json, p.spike_level_mg_l)
+    }
+
+    #[tool(description = "Holding Time & Preservation Checker. EPA 40 CFR 136 Table II. 25+ parameters, matrix-specific, expired/valid. Ref: EPA 40 CFR 136.")]
+    fn holding_time_checker(&self, Parameters(p): Parameters<HoldingTimeParam>) -> String {
+        tools::compliance::holding_time::assess(
+            &p.parameter, &p.sample_matrix, p.days_since_sampling, p.preserved, p.temp_c
+        )
+    }
+
+    #[tool(description = "Calibration & Verification (ISO 17025). Linear regression, R2, RSD of response factors, ICV recovery. Pass/fail criteria. Ref: ISO 17025; EPA.")]
+    fn calibration_verification(&self, Parameters(p): Parameters<CalibrationParam>) -> String {
+        tools::compliance::calibration::assess(
+            &p.instrument, &p.std_concs_json, &p.measured_concs_json,
+            p.calibration_range_low, p.calibration_range_high
         )
     }
 }
