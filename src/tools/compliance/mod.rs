@@ -23,3 +23,7 @@ pub mod storet;
 pub mod iso14001_gap;
 pub mod holding_time;
 pub mod calibration;
+pub mod baku_mutu_air_permukaan;
+pub mod sanksi_administratif;
+pub mod ndc_mrv;
+pub mod carbon_registry;

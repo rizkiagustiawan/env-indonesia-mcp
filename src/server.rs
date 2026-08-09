@@ -2635,6 +2635,188 @@ pub struct CalibrationParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BakuMutuAirPermukaanParam {
+    #[schemars(description = "Parameter name (bod, do, tss, ph, pb, hg, total_coliform, etc.)")]
+    pub parameter: String,
+    #[schemars(description = "Measured value")]
+    pub value: f64,
+    #[schemars(description = "Water quality class 1-4 (1=drinking, 2=recreation, 3=livestock, 4=irrigation)")]
+    pub kelas: u8,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BakuMutuAirPermukaanMultiParam {
+    #[schemars(description = "JSON object of parameter:value pairs")]
+    pub params_json: String,
+    #[schemars(description = "Water quality class 1-4")]
+    pub kelas: u8,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SanksiAdministratifParam {
+    #[schemars(description = "Violation type")]
+    pub violation_type: String,
+    #[schemars(description = "Has Persetujuan Lingkungan?")]
+    pub has_persetujuan_lingkungan: bool,
+    #[schemars(description = "Has Perizinan Berusaha?")]
+    pub has_perizinan_berusaha: bool,
+    #[schemars(description = "Investment value in Rupiah")]
+    pub nilai_investasi_rp: f64,
+    #[schemars(description = "Wastewater discharge m3/day")]
+    pub debit_m3_day: f64,
+    #[schemars(description = "Pollutant concentration mg/L")]
+    pub konsentrasi_pencemar_mg_l: f64,
+    #[schemars(description = "Duration of violation in days")]
+    pub durasi_hari: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct NDCMRVParam {
+    #[schemars(description = "Current emissions in Gg CO2e")]
+    pub current_emissions_gg_co2e: f64,
+    #[schemars(description = "Sector (energi, ippu, pertanian, limbah, folu, kelautan, migas)")]
+    pub sector: String,
+    #[schemars(description = "Year")]
+    pub year: u32,
+    #[schemars(description = "Has MRV active?")]
+    pub has_mrv: bool,
+    #[schemars(description = "NDC scenario: LCCP_L, LCCP_H, CM1, CM2")]
+    pub ndc_scenario: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TrafficImpactParam {
+    #[schemars(description = "Road type (2/2-TT, 4/2-T, 6/2-T)")]
+    pub road_type: String,
+    #[schemars(description = "Lane width in meters")]
+    pub lane_width_m: f64,
+    #[schemars(description = "Traffic volume kend/jam")]
+    pub volume_kend_per_jam: f64,
+    #[schemars(description = "EMP for mobil penumpang")]
+    pub emp_mp: f64,
+    #[schemars(description = "EMP for kendaraan sedang")]
+    pub emp_ks: f64,
+    #[schemars(description = "EMP for sepeda motor")]
+    pub emp_sm: f64,
+    #[schemars(description = "EMP for bus besar")]
+    pub emp_bb: f64,
+    #[schemars(description = "Volume mobil penumpang")]
+    pub vol_mp: f64,
+    #[schemars(description = "Volume kendaraan sedang")]
+    pub vol_ks: f64,
+    #[schemars(description = "Volume sepeda motor")]
+    pub vol_sm: f64,
+    #[schemars(description = "Volume bus besar")]
+    pub vol_bb: f64,
+    #[schemars(description = "Side friction class (sangat rendah/rendah/sedang/tinggi/sangat tinggi)")]
+    pub khs: String,
+    #[schemars(description = "Shoulder width in meters")]
+    pub shoulder_width_m: f64,
+    #[schemars(description = "City population in millions")]
+    pub city_population_million: f64,
+    #[schemars(description = "Direction split percentage (50-70)")]
+    pub direction_split: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MineReclamationParam {
+    #[schemars(description = "Pit area in hectares")]
+    pub pit_area_ha: f64,
+    #[schemars(description = "Overburden area in hectares")]
+    pub overburden_area_ha: f64,
+    #[schemars(description = "Post-mining land use")]
+    pub post_mining_land_use: String,
+    #[schemars(description = "Revegetation species")]
+    pub revegetation_species: String,
+    #[schemars(description = "Target canopy cover percentage")]
+    pub target_canopy_cover_pct: f64,
+    #[schemars(description = "Years since reclamation started")]
+    pub years_since_reclamation: u32,
+    #[schemars(description = "Reclamation bond in Rupiah")]
+    pub bond_rp: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct RemediationTargetParam {
+    pub contaminant: String,
+    pub contaminant_conc_mg_kg: f64,
+    pub groundwater_conc_mg_l: f64,
+    pub land_use: String,
+    pub has_residential_receptor: bool,
+    pub depth_to_groundwater_m: f64,
+    pub soil_organic_carbon_pct: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct OilSpillResponseParam {
+    pub spill_volume_ton: f64,
+    pub oil_type: String,
+    pub wind_speed_ms: f64,
+    pub current_speed_ms: f64,
+    pub sea_state: u8,
+    pub distance_to_coast_km: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct AquacultureWasteParam {
+    pub fish_type: String,
+    pub production_ton_year: f64,
+    pub fcr: f64,
+    pub feed_protein_pct: f64,
+    pub feed_n_pct: f64,
+    pub feed_p_pct: f64,
+    pub water_body_volume_m3: f64,
+    pub outflow_m3_s: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ForestCarbonParam {
+    pub forest_type: String,
+    pub area_ha: f64,
+    pub tree_density_per_ha: f64,
+    pub avg_dbh_cm: f64,
+    pub avg_height_m: f64,
+    pub soil_carbon_ton_ha: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CarbonRegistryParam {
+    pub project_type: String,
+    pub emission_reduction_ton_co2e: f64,
+    pub vintage_year: u32,
+    pub buyer: String,
+    pub seller: String,
+    pub price_rp_per_ton: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PesticideRunoffParam {
+    pub pesticide: String,
+    pub application_rate_kg_ha: f64,
+    pub koc: f64,
+    pub half_life_days: f64,
+    pub rainfall_mm: f64,
+    pub slope_pct: f64,
+    pub soil_erodibility: f64,
+    pub area_ha: f64,
+    pub water_body_distance_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TailingsManagementParam {
+    pub ore_type: String,
+    pub tailings_volume_m3_day: f64,
+    pub tailings_solid_pct: f64,
+    pub dam_height_m: f64,
+    pub dam_volume_m3: f64,
+    pub supernatant_ph: f64,
+    pub supernatant_metals_json: String,
+    pub disposal_method: String,
+    pub foundation_type: String,
+    pub seismic_zone: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IonExchangeParam {
     #[schemars(description = "Target ion (ca2+, mg2+, na+, no3-, cl-, so42-, fe3+, cr6+)")]
     pub target_ion: String,
@@ -5620,6 +5802,106 @@ impl EnvIndonesiaServer {
         tools::compliance::calibration::assess(
             &p.instrument, &p.std_concs_json, &p.measured_concs_json,
             p.calibration_range_low, p.calibration_range_high
+        )
+    }
+
+    #[tool(description = "Baku Mutu Air Permukaan (PP 22/2021 Lampiran VI). 50+ parameters, 4 classes (I=drinking, II=recreation, III=livestock, IV=irrigation). Compliance verdict + mitigation + monitoring + reporting.")]
+    fn baku_mutu_air_permukaan(&self, Parameters(p): Parameters<BakuMutuAirPermukaanParam>) -> String {
+        tools::compliance::baku_mutu_air_permukaan::assess(&p.parameter, p.value, p.kelas)
+    }
+
+    #[tool(description = "Baku Mutu Air Permukaan Multi-Parameter (PP 22/2021). Check multiple parameters at once. Input JSON: {\"bod\":4.5,\"do\":3.8,\"tss\":60}. Returns compliance table.")]
+    fn baku_mutu_air_permukaan_multi(&self, Parameters(p): Parameters<BakuMutuAirPermukaanMultiParam>) -> String {
+        tools::compliance::baku_mutu_air_permukaan::assess_multi(&p.params_json, p.kelas)
+    }
+
+    #[tool(description = "Sanksi Administratif LH (Permen LH 6/2026). 4 jenjang: Teguran→Paksaan→Denda(max Rp3M)→Pencabutan. Denda=debit×konsentrasi×durasi. Berbasis risiko, OSS integrated.")]
+    fn sanksi_administratif_lh(&self, Parameters(p): Parameters<SanksiAdministratifParam>) -> String {
+        tools::compliance::sanksi_administratif::assess(
+            &p.violation_type, p.has_persetujuan_lingkungan, p.has_perizinan_berusaha,
+            p.nilai_investasi_rp, p.debit_m3_day, p.konsentrasi_pencemar_mg_l, p.durasi_hari
+        )
+    }
+
+    #[tool(description = "NDC & MRV Tracker (Second NDC 2025 + Permen LH 7/2026). Absolute targets: 2030 peak 1.35-1.49 Gt, 2035 decline 1.26-1.49 Gt. FOLU Net Sink 2030. Sektor baru: kelautan, karbon biru, migas.")]
+    fn ndc_mrv_tracker(&self, Parameters(p): Parameters<NDCMRVParam>) -> String {
+        tools::compliance::ndc_mrv::assess(
+            p.current_emissions_gg_co2e, &p.sector, p.year, p.has_mrv, &p.ndc_scenario
+        )
+    }
+
+    #[tool(description = "Analisis Dampak Lalu Lintas/Andalalin (Permen PUPR 28/2015 + PKJI 2023). V/C ratio→LOS A-F, kapasitas jalan, kecepatan, kepadatan. Komponen AMDAL wajib untuk jalan/tambang.")]
+    fn traffic_impact_andal(&self, Parameters(p): Parameters<TrafficImpactParam>) -> String {
+        tools::calculators::traffic_impact::assess(
+            &p.road_type, p.lane_width_m, p.volume_kend_per_jam,
+            p.emp_mp, p.emp_ks, p.emp_sm, p.emp_bb,
+            p.vol_mp, p.vol_ks, p.vol_sm, p.vol_bb,
+            &p.khs, p.shoulder_width_m, p.city_population_million, p.direction_split
+        )
+    }
+
+    #[tool(description = "Mine Reclamation Plan (Kepmen ESDM 1827K/2018). 4 kriteria: area compliance, re-contouring, revegetation, final completion. Canopy cover paling sulit. Bond calculation.")]
+    fn mine_reclamation_plan(&self, Parameters(p): Parameters<MineReclamationParam>) -> String {
+        tools::calculators::mine_reclamation::assess(
+            p.pit_area_ha, p.overburden_area_ha, &p.post_mining_land_use,
+            &p.revegetation_species, p.target_canopy_cover_pct,
+            p.years_since_reclamation, p.bond_rp
+        )
+    }
+
+    #[tool(description = "Remediation Target Levels (PP 22/2021 soil + PP 101/2014 B3). Site-specific cleanup based on receptor pathway. Technology selection by contaminant type.")]
+    fn remediation_target(&self, Parameters(p): Parameters<RemediationTargetParam>) -> String {
+        tools::water::remediation_target::assess(
+            &p.contaminant, p.contaminant_conc_mg_kg, p.groundwater_conc_mg_l,
+            &p.land_use, p.has_residential_receptor, p.depth_to_groundwater_m, p.soil_organic_carbon_pct
+        )
+    }
+
+    #[tool(description = "Oil Spill Response Planning (ITOPF + KepMen LH 51/2004). Boom deployment, recovery rate, ESI sensitivity, shoreline impact time, waste management. Marine baku mutu.")]
+    fn oil_spill_response(&self, Parameters(p): Parameters<OilSpillResponseParam>) -> String {
+        tools::calculators::oil_spill_response::assess(
+            p.spill_volume_ton, &p.oil_type, p.wind_speed_ms, p.current_speed_ms,
+            p.sea_state, p.distance_to_coast_km
+        )
+    }
+
+    #[tool(description = "Aquaculture Waste Load (Permen LH 2/2026 + Permen KP 30/2021). FCR-based N/P/COD load, effluent BOD, carrying capacity. Baku mutu pakan akuakultur.")]
+    fn aquaculture_waste_load(&self, Parameters(p): Parameters<AquacultureWasteParam>) -> String {
+        tools::calculators::aquaculture_waste::assess(
+            &p.fish_type, p.production_ton_year, p.fcr, p.feed_protein_pct,
+            p.feed_n_pct, p.feed_p_pct, p.water_body_volume_m3, p.outflow_m3_s
+        )
+    }
+
+    #[tool(description = "Forest Carbon Stock (IPCC 2006). AGB/BGB by forest type (primer/sekunder/mangrove/agroforestry). Chave 2014 equation. FOLU Net Sink 2030 contribution.")]
+    fn carbon_stock_forest(&self, Parameters(p): Parameters<ForestCarbonParam>) -> String {
+        tools::calculators::forest_carbon::assess(
+            &p.forest_type, p.area_ha, p.tree_density_per_ha, p.avg_dbh_cm, p.avg_height_m, p.soil_carbon_ton_ha
+        )
+    }
+
+    #[tool(description = "Sistem Registri Unit Karbon (Permen LH 10/2026). Carbon trading: issuance, transfer, retirement. PASTI/FOLU/tekstur categories. NDC alignment.")]
+    fn carbon_registry(&self, Parameters(p): Parameters<CarbonRegistryParam>) -> String {
+        tools::compliance::carbon_registry::assess(
+            &p.project_type, p.emission_reduction_ton_co2e, p.vintage_year,
+            &p.buyer, &p.seller, p.price_rp_per_ton
+        )
+    }
+
+    #[tool(description = "Pesticide Runoff & Leaching Risk (GUS Index). GUS=log(Koc)×√(t½). <1.8=immobile, >2.8=mobile. Surface runoff + groundwater leaching. PP 22/2021.")]
+    fn pesticide_runoff_risk(&self, Parameters(p): Parameters<PesticideRunoffParam>) -> String {
+        tools::calculators::pesticide_runoff::assess(
+            &p.pesticide, p.application_rate_kg_ha, p.koc, p.half_life_days,
+            p.rainfall_mm, p.slope_pct, p.soil_erodibility, p.area_ha, p.water_body_distance_m
+        )
+    }
+
+    #[tool(description = "Tailings Management (GISTM + Permen ESDM). Dam safety (FS), supernatant quality, acid generation potential. Disposal: TSF/submarine/backfill. Critical for nickel/tin.")]
+    fn tailings_management(&self, Parameters(p): Parameters<TailingsManagementParam>) -> String {
+        tools::calculators::tailings_management::assess(
+            &p.ore_type, p.tailings_volume_m3_day, p.tailings_solid_pct,
+            p.dam_height_m, p.dam_volume_m3, p.supernatant_ph, &p.supernatant_metals_json,
+            &p.disposal_method, &p.foundation_type, &p.seismic_zone
         )
     }
 }

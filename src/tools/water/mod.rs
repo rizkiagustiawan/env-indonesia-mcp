@@ -26,3 +26,4 @@ pub mod aop_design;
 pub mod nutrient_removal;
 pub mod struvite;
 pub mod chlorine_demand;
+pub mod remediation_target;
