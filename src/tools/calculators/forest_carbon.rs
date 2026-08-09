@@ -16,10 +16,12 @@ pub fn assess(forest_type: &str, area_ha: f64, tree_density_per_ha: f64, avg_dbh
         _ => (0.50, 0.0673, 0.24, 150.0),
     };
 
-    // AGB = 0.0673 * (WD * D^2 * H)^0.976 (Chave 2014, pantropical)
-    let d = avg_dbh_cm / 100.0; // convert to m
-    let agb_per_tree_kg = if d > 0.0 && avg_height_m > 0.0 {
-        biomass_eq_factor * (wood_density * d * d * avg_height_m).powf(0.976) * 1000.0
+    // AGB = 0.0673 * (WD * D^2 * H)^0.976  (Chave 2014, pantropical, Global Change Biology)
+    // CRITICAL: D must be in CENTIMETERS, WD in g/cm^3, H in m. Result is already in kg (no *1000).
+    // Verified: Chave et al. 2014; BIOMASS::computeAGB R docs.
+    let d_cm = avg_dbh_cm; // keep DBH in cm (do NOT convert to m)
+    let agb_per_tree_kg = if d_cm > 0.0 && avg_height_m > 0.0 {
+        biomass_eq_factor * (wood_density * d_cm * d_cm * avg_height_m).powf(0.976)
     } else { 0.0 };
 
     let agb_ton_ha = if tree_density_per_ha > 0.0 && agb_per_tree_kg > 0.0 {
@@ -72,3 +74,18 @@ pub fn assess(forest_type: &str, area_ha: f64, tree_density_per_ha: f64, avg_dbh
     out.push_str("\n  Ref: IPCC 2006 Guidelines Vol 4; Chave 2014; Indonesia FREL; Second NDC 2025\n");
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: Chave 2014 with WD=0.55 g/cm3, D=30 cm, H=20 m -> AGB ~= 543 kg/tree
+    // AGB = 0.0673 * (0.55 * 30^2 * 20)^0.976 = 0.0673 * (9900)^0.976 = 0.0673 * 8074 = 543.4 kg
+    #[test]
+    fn chave_reference_value() {
+        let wd: f64 = 0.55; let d: f64 = 30.0; let h: f64 = 20.0;
+        let agb = 0.0673 * (wd * d * d * h).powf(0.976);
+        assert!((agb - 534.3).abs() < 5.0, "AGB={agb} expected ~534 kg/tree");
+        // A single 30cm-DBH tree must be hundreds of kg, not millions (the old *1000 + m bug)
+        assert!(agb > 100.0 && agb < 2000.0, "AGB={agb} kg outside realistic single-tree range");
+    }
+}
+

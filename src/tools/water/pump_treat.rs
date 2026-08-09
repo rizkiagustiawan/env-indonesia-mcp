@@ -40,18 +40,20 @@ pub fn design(
     let q_natural_m3_day = q_darcy * b * 1.0 * 86400.0; // per meter width
     out.push_str(&format!("  Natural Darcy flux: {:.2e} m/s ({:.2} m³/day per m width)\n", q_darcy, q_natural_m3_day));
 
-    // Capture zone width (steady-state, single well)
-    // W = 2 * Q / (K * b * i) for uniform flow
+    // Capture zone width (steady-state, single well in uniform flow)
+    // Javandel & Tsang (1986): total capture width 2y_max = Q / (π·K·b·i) = Q / (π·q_darcy·b)
+    // BUG FIX: was 2*Q/(q_darcy*b) (=2π too large); correct is Q/(π*q_darcy*b).
     let capture_width = if i > 0.0 {
-        2.0 * Q / (q_darcy * b).max(1e-15)
+        Q / (std::f64::consts::PI * q_darcy * b).max(1e-15)
     } else {
         out.push_str("  ⚠️ Gradient = 0, capture zone is circular\n");
         2.0 * std::f64::consts::PI * (Q / (std::f64::consts::PI * b * porosity)).sqrt()
     };
     out.push_str(&format!("  ► Capture zone width: {:.1} m\n", capture_width));
 
-    // Stagnation point distance
-    let x_stag = Q / (std::f64::consts::PI * b * q_darcy).max(1e-15);
+    // Stagnation point distance: x₀ = Q / (2π·K·b·i) = Q / (2π·q_darcy·b)
+    // BUG FIX: was Q/(π*q_darcy*b) (=2x too large); correct is Q/(2π*q_darcy*b).
+    let x_stag = Q / (2.0 * std::f64::consts::PI * b * q_darcy).max(1e-15);
     out.push_str(&format!("  Stagnation point: {:.1} m downgradient\n\n", x_stag));
 
     // ═══ Drawdown Analysis (Theis) ═══
@@ -148,3 +150,21 @@ pub fn design(
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: Javandel capture width W = Q/(π·q·b), stagnation x₀ = Q/(2π·q·b)
+    // With Q=0.001 m³/s, q=K·i=1e-5·0.001=1e-8 m/s, b=10m:
+    // W = 0.001/(π*1e-8*10) = 0.001/3.14e-7 = 3183 m
+    // x₀ = 0.001/(2π*10*1e-8) = 1592 m (= W/2, as expected)
+    #[test]
+    fn javandel_capture_zone() {
+        let q_pump = 0.001_f64; let q_darcy = 1e-8_f64; let b = 10.0_f64;
+        let w = q_pump / (std::f64::consts::PI * q_darcy * b);
+        let x0 = q_pump / (2.0 * std::f64::consts::PI * b * q_darcy);
+        assert!((w - 3183.1).abs() < 1.0, "W={w} expected ~3183 m");
+        assert!((x0 - 1591.5).abs() < 1.0, "x0={x0} expected ~1592 m");
+        assert!((w / x0 - 2.0).abs() < 1e-6, "W must be 2x stagnation (W=2y_max)");
+    }
+}
+

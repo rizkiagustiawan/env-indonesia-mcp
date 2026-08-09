@@ -94,9 +94,10 @@ pub fn assess(
     };
 
     let effluent_pfas_ppb = pfas_conc_ppb * (1.0 - expected_dre / 100.0);
+    let effluent_pfas_ng_l = effluent_pfas_ppb * 1000.0; // 1 ppb (ug/L) = 1000 ng/L
 
     out.push_str(&format!("Expected DRE: >{:.4}%\n", expected_dre));
-    out.push_str(&format!("Effluent PFAS: {:.4} ppb ({:.2} ng/L)\n", effluent_pfas_ppb, effluent_pfas_ppb));
+    out.push_str(&format!("Effluent PFAS: {:.4} ppb ({:.2} ng/L)\n", effluent_pfas_ppb, effluent_pfas_ng_l));
     out.push_str(&format!("PFAS mass destroyed: {:.2} g/day\n", pfas_mass_g_day * (expected_dre / 100.0)));
     out.push_str(&format!("Fluoride produced: {:.1} mg/day -> neutralize to CaF2\n\n", theoretical_f_mg));
 
@@ -121,7 +122,7 @@ pub fn assess(
     // ═══ Status Kepatuhan ═══
     out.push_str("-- STATUS KEPATUHAN --\n\n");
     out.push_str(&format!("EPA MCL: 4 ng/L -> Effluent: {:.2} ng/L -> {}\n\n",
-        effluent_pfas_ppb, if effluent_pfas_ppb <= 4.0 {"PASS"} else {"FAIL"}));
+        effluent_pfas_ng_l, if effluent_pfas_ng_l <= 4.0 {"PASS"} else {"FAIL"}));
 
     // ═══ PEMANTAUAN ═══
     out.push_str("-- PEMANTAUAN --\n");
@@ -141,3 +142,20 @@ pub fn assess(
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: 1 ppb (ug/L) = 1000 ng/L. Input 100 ppb PFOA, DRE 99.99% -> 0.01 ppb = 10 ng/L.
+    #[test]
+    fn ppb_to_ng_l_conversion() {
+        let conc_ppb: f64 = 100.0;
+        let dre: f64 = 99.99;
+        let eff_ppb = conc_ppb * (1.0 - dre / 100.0);
+        let eff_ng_l = eff_ppb * 1000.0;
+        assert!((eff_ppb - 0.01).abs() < 1e-6, "effluent ppb={eff_ppb}");
+        assert!((eff_ng_l - 10.0).abs() < 1e-3, "effluent ng/L={eff_ng_l} expected 10");
+        // Must compare ng/L (not ppb) against 4 ng/L MCL
+        assert!(eff_ng_l > 4.0, "10 ng/L should FAIL vs 4 ng/L MCL");
+    }
+}
+

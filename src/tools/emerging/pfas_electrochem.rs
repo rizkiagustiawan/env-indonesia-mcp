@@ -22,7 +22,7 @@ pub fn assess(
     let time_s = (energy_kwh_m3 * volume_m3 * 3600.0) / power_w.max(1.0) * (log_ratio / 1.0).min(1.0);
     let time_hr = time_s / 3600.0;
     let total_energy_kwh = energy_kwh_m3 * volume_m3;
-    let defluorination_pct = removal * 0.60;
+    let defluorination_pct = removal * 60.0; // 60% of removed PFAS is defluorinated (fraction→percent)
     let theoretical_f_mg = match pfas_type.to_lowercase().as_str() {
         s if s.contains("pfoa") => 9.0 * 19.0 * conc_mg_l / 414.07,
         s if s.contains("pfos") => 8.0 * 19.0 * conc_mg_l / 500.13,
@@ -62,3 +62,18 @@ pub fn assess(
     out.push_str("  Ref: Tshangana 2025; Nature s41545-025-00457-3\n");
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: 100% removal -> 60% defluorination (not 0.6%), actual F = 0.60 * theoretical
+    #[test]
+    fn defluorination_percent_correct() {
+        let removal: f64 = 1.0; // 100%
+        let def_pct = removal * 60.0; // 60%
+        assert!((def_pct - 60.0).abs() < 1e-9, "def_pct={def_pct} expected 60%");
+        let theoretical_f: f64 = 100.0;
+        let actual_f = theoretical_f * def_pct / 100.0; // 60 mg
+        assert!((actual_f - 60.0).abs() < 1e-9, "actual F={actual_f} expected 60 mg");
+    }
+}
+

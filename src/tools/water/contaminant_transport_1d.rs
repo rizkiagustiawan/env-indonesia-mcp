@@ -106,5 +106,19 @@ fn erfc_approx(x: f64) -> f64 {
     // Ref: Abramowitz & Stegun 1964, Formula 7.1.26
     let t = 1.0 / (1.0 + 0.3275911 * x.abs());
     let poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-    if x >= 0.0 { poly } else { 2.0 - poly }
+    // A&S 7.1.26: erfc(x) = poly * e^(-x^2). BUG FIX: e^(-x^2) factor was missing.
+    let erfc_pos = poly * (-x * x).exp();
+    if x >= 0.0 { erfc_pos } else { 2.0 - erfc_pos }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::erfc_approx;
+    #[test]
+    fn erfc_reference_values() {
+        assert!((erfc_approx(0.0) - 1.0).abs() < 1e-4);
+        assert!((erfc_approx(1.0) - 0.157299).abs() < 1e-4, "erfc(1)={}", erfc_approx(1.0));
+        assert!((erfc_approx(2.0) - 0.004678).abs() < 1e-4, "erfc(2)={}", erfc_approx(2.0));
+    }
+}
+

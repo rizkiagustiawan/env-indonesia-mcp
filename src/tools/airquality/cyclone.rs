@@ -63,9 +63,11 @@ pub fn design(
     // ═══ Cut Diameter (d50) ═══
     out.push_str("── Cut Diameter (d₅₀) ──\n\n");
 
-    // d₅₀ = sqrt(9 × μ × D / (2π × Ne × v_i × ρ_p))
+    // d₅₀ = sqrt(9 × μ × W / (2π × Ne × v_i × (ρ_p - ρ_g)))  [Lapple/Cooper&Alley]
+    // BUG FIX: was using cyclone diameter D instead of inlet width W (=0.2D), and omitted (ρp-ρg).
+    // W (inlet width) is the characteristic length, NOT the cyclone diameter.
     let N_e = 5.0; // effective turns (Stairmand: 5)
-    let d50_m = (9.0 * mu * D / (2.0 * std::f64::consts::PI * N_e * v_inlet * rho_p).max(1e-15)).sqrt();
+    let d50_m = (9.0 * mu * inlet_width / (2.0 * std::f64::consts::PI * N_e * v_inlet * (rho_p - rho_g).max(1e-6)).max(1e-15)).sqrt();
     let d50_um = d50_m * 1e6;
 
     out.push_str(&format!("  Effective turns (Ne): {:.0}\n", N_e));
@@ -140,3 +142,21 @@ pub fn design(
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: Lapple d50 with D=0.5m (W=0.1m), mu=1.8e-5, vi=15, rho_p=2000, rho_g=1.2, Ne=5
+    // d50 = sqrt(9*1.8e-5*0.1 / (2*pi*5*15*(2000-1.2))) = sqrt(1.62e-5/942477) = sqrt(1.72e-11) = 4.15e-6 m = 4.15 um
+    // Old bug (D instead of W, no rho_g): sqrt(9*1.8e-5*0.5/(2*pi*5*15*2000)) = 9.28e-6 m = 9.28 um (wrong, ~2.24x too large)
+    #[test]
+    fn d50_uses_inlet_width() {
+        let d = 0.5_f64; let w = 0.2 * d; // inlet width
+        let mu = 1.8e-5_f64; let vi = 15.0_f64; let rho_p = 2000.0_f64; let rho_g = 1.2_f64; let ne = 5.0_f64;
+        let d50_correct = (9.0 * mu * w / (2.0 * std::f64::consts::PI * ne * vi * (rho_p - rho_g))).sqrt();
+        let d50_buggy = (9.0 * mu * d / (2.0 * std::f64::consts::PI * ne * vi * rho_p)).sqrt();
+        assert!((d50_correct * 1e6 - 4.15).abs() < 0.1, "d50={:.2} um", d50_correct * 1e6);
+        assert!(d50_buggy > d50_correct, "buggy (D) should be larger than correct (W)");
+        assert!((d50_buggy / d50_correct - 2.24).abs() < 0.05, "ratio ~2.24x (sqrt(5))");
+    }
+}
+

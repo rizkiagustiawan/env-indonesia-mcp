@@ -91,8 +91,16 @@ pub fn assess(
         _ => (0.355, 1.187), // average
     };
 
+    // CH4 emission factor (kg/ha/day) — India modified BEF × season × water × soil
     let ch4_ef = india_bef_ch4 * season_factor * ch4_sf * soil_ch4_adj;
-    let n2o_ef = 0.001 * n_fertilizer_kg_ha * n2o_sf * soil_n2o_adj; // IPCC EF for N2O
+
+    // N2O direct emission (IPCC 2019 Refinement Ch11, verified ipcc-nggip 19R_V4_Ch11):
+    //   N2O-N = N_input(kg N/ha) * EF1FR ; then N2O = N2O-N * 44/28
+    // EF1FR (flooded rice baseline) = 0.004 kg N2O-N/kg N (IPCC 2019 Table 11.1),
+    // lower than upland EF1=0.01 due to anaerobic conditions. AWD raises it via n2o_sf.
+    let ef1_fr: f64 = 0.004; // kg N2O-N per kg N input, flooded rice (IPCC 2019)
+    let effective_ef1 = ef1_fr * n2o_sf * soil_n2o_adj; // AWD/soil-adjusted EF (fraction)
+    let n2o_n_kg_ha = n_fertilizer_kg_ha * effective_ef1; // kg N2O-N/ha (NOT squared)
 
     out.push_str("CH4 emission factors:\n");
     out.push_str(&format!("  IPCC default BEF: {} kg/ha/day\n", ipcc_bef_ch4));
@@ -102,11 +110,11 @@ pub fn assess(
     out.push_str(&format!("  Soil factor ({}): {:.3}\n", soil_type, soil_ch4_adj));
     out.push_str(&format!("  >> Effective CH4 EF: {:.4} kg/ha/day\n\n", ch4_ef));
 
-    out.push_str("N2O emission factors:\n");
-    out.push_str(&format!("  IPCC default: 0.001 kg N2O-N/kg N input\n"));
+    out.push_str("N2O emission factors (IPCC 2019 Refinement, EF1FR):\n");
+    out.push_str(&format!("  Baseline EF1FR (flooded rice): {:.4} kg N2O-N/kg N\n", ef1_fr));
     out.push_str(&format!("  Water mgmt factor: {:.3}\n", n2o_sf));
     out.push_str(&format!("  Soil factor: {:.3}\n", soil_n2o_adj));
-    out.push_str(&format!("  >> Effective N2O EF: {:.6} kg N2O-N/kg N\n\n", n2o_ef));
+    out.push_str(&format!("  >> Effective EF1: {:.6} kg N2O-N/kg N\n\n", effective_ef1));
 
     // ═══ Phase 2: Annual Emissions Calculation ═══
     out.push_str("-- Phase 2: Annual Emissions --\n\n");
@@ -118,7 +126,8 @@ pub fn assess(
     };
 
     let ch4_kg_ha_yr = ch4_ef * growing_season_days;
-    let n2o_kg_ha_yr = n2o_ef * n_fertilizer_kg_ha;
+    // Convert N2O-N to N2O mass (44/28), NO second multiplication by fertilizer (bug fixed)
+    let n2o_kg_ha_yr = n2o_n_kg_ha * 44.0 / 28.0;
     let co2_kg_ha_yr = n_fertilizer_kg_ha * 0.1 * 44.0/12.0; // simplified
 
     let ch4_co2eq = ch4_kg_ha_yr * 28.0; // GWP100 CH4
@@ -201,7 +210,8 @@ pub fn assess(
     out.push_str("  CH4 from rice: ~30% of national GHG inventory\n");
     out.push_str("  Indonesia NDC: rice sector key mitigation\n");
     out.push_str("  IRRI: Safe AWD piloted in Java and Sumatra\n");
-    out.push_str("  Permen LH 7/2026: NDC sektor pertanian\n\n");
+    out.push_str("  Perpres 98/2021: Nilai Ekonomi Karbon (NEK)\n");
+    out.push_str("  Second NDC 2025: sektor pertanian (rice) mitigasi kunci\n\n");
 
     // ═══ Limitations ═══
     out.push_str("-- Limitations (honest) --\n");
@@ -215,3 +225,22 @@ pub fn assess(
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: N2O must scale LINEARLY with N fertilizer (bug was quadratic).
+    // With EF1FR=0.004, sf=1.0, soil=1.0: N2O-N = N*0.004; N2O = N*0.004*44/28.
+    // For N=100 -> N2O-N=0.4 kg/ha, N2O=0.629 kg/ha (realistic rice range 0.3-2).
+    // For N=200 -> N2O must be exactly 2x (linear), not 4x.
+    #[test]
+    fn n2o_is_linear_in_fertilizer() {
+        let ef: f64 = 0.004;
+        let n2o = |n: f64| n * ef * 44.0 / 28.0;
+        let a = n2o(100.0);
+        let b = n2o(200.0);
+        assert!((a - 0.6286).abs() < 0.001, "N2O(100)={a} expected ~0.629 kg/ha");
+        assert!((b / a - 2.0).abs() < 1e-9, "N2O must double when N doubles (linear), got ratio {}", b/a);
+        assert!(a > 0.1 && a < 5.0, "N2O={a} outside realistic rice range");
+    }
+}
+

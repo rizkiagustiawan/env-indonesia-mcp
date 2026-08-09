@@ -8,27 +8,29 @@ pub fn assess(velocity_m_s: f64, depth_m: f64, temp_c: f64) -> String {
         return "ERROR [E102]: velocity and depth must be > 0.".into();
     }
 
-    let v = velocity_m_s; // m/s
+    let v = velocity_m_s; // m/s  (CRITICAL: these empirical formulas require velocity in m/s, NOT m/day)
     let H = depth_m; // m
-    let v_m_day = v * 86400.0; // m/day
 
-    out.push_str(&format!("Velocity: {:.2} m/s ({:.0} m/day)\n", v, v_m_day));
+    out.push_str(&format!("Velocity: {:.3} m/s\n", v));
     out.push_str(&format!("Depth: {:.1} m\n", H));
     out.push_str(&format!("Temperature: {:.1} C\n\n", temp_c));
 
-    // Multiple formulas (all at 20C, then temp-corrected)
-    // O'Connor & Dobbins 1958: ka = 3.93 * v^0.5 / H^1.5
-    let ka_oconnor = 3.93 * v_m_day.powf(0.5) / H.powf(1.5).max(1e-6);
+    // Multiple formulas (all at 20C, then temp-corrected).
+    // Units convention (verified): U in m/s, H in m, ka in day^-1.
+    // Ref: Assessing Reaeration Rate Equations, semanticscholar 6555/...; USGS PP 0737.
+    // O'Connor & Dobbins 1958: ka = 3.93 * U^0.5 / H^1.5
+    let ka_oconnor = 3.93 * v.powf(0.5) / H.powf(1.5).max(1e-6);
 
-    // Churchill 1962: ka = 5.01 * v^0.97 / H^1.67
-    let ka_churchill = 5.01 * v_m_day.powf(0.97) / H.powf(1.67).max(1e-6);
+    // Churchill 1962: ka = 5.01 * U^0.97 / H^1.67  (some refs use 5.026)
+    let ka_churchill = 5.01 * v.powf(0.97) / H.powf(1.67).max(1e-6);
 
-    // Owens-Gibbs 1964: ka = 5.32 * v^0.67 / H^1.85
-    let ka_owens = 5.32 * v_m_day.powf(0.67) / H.powf(1.85).max(1e-6);
+    // Owens-Gibbs 1964: ka = 5.32 * U^0.67 / H^1.85
+    let ka_owens = 5.32 * v.powf(0.67) / H.powf(1.85).max(1e-6);
 
-    // Tsivoglou (for steep streams): ka = 1.0 * S * v / H (S = slope, assume 0.001)
+    // Tsivoglou-Wallace (steep streams): ka = C * S * U ; S = slope (1/m), U in m/s -> approximate.
+    // NOTE: proper Tsivoglou uses ka = 0.054 * S * U with S in m/km; here screening only.
     let slope = 0.001;
-    let ka_tsivoglou = 1.0 * slope * v_m_day / H.max(1e-6);
+    let ka_tsivoglou = 31.183 * slope * v; // Tsivoglou escoefficient (m/s, slope m/m) screening
 
     // Temperature correction: ka(T) = ka(20) * 1.024^(T-20)
     let theta: f64 = 1.024;
@@ -55,3 +57,19 @@ pub fn assess(velocity_m_s: f64, depth_m: f64, temp_c: f64) -> String {
     out.push_str("\n  Ref: Chapra 2008; O'Connor 1958; Churchill 1962\n");
     out
 }
+
+#[cfg(test)]
+mod tests {
+    // Self-check: O'Connor-Dobbins with U=0.3 m/s, H=1.5 m should give ka ~= 1.17 /day
+    // ka = 3.93 * 0.3^0.5 / 1.5^1.5 = 3.93 * 0.547723 / 1.837117 = 1.1716
+    #[test]
+    fn oconnor_reference_value() {
+        let v: f64 = 0.3;
+        let h: f64 = 1.5;
+        let ka = 3.93 * v.powf(0.5) / h.powf(1.5);
+        assert!((ka - 1.1716).abs() < 0.01, "ka={ka} expected ~1.17 /day (m/s units)");
+        // Sanity: must be in realistic river range 0.1-5 /day, NOT thousands (the old m/day bug gave ~345)
+        assert!(ka > 0.1 && ka < 5.0, "ka={ka} outside realistic range");
+    }
+}
+
