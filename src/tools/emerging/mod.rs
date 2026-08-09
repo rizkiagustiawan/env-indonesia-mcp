@@ -3,6 +3,7 @@ pub mod pfas_electrochem;
 pub mod pfas_scwo;
 pub mod pfas_foam;
 pub mod pfas_screening;
+pub mod pfas_electro_nf;
 pub mod nano_treatment;
 pub mod blockchain_credit;
 pub mod edna_biodiversity;

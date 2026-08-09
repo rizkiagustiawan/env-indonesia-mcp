@@ -9,3 +9,4 @@ pub mod tidal_flood;
 pub mod trigrs;
 pub mod enkf;
 pub mod fire_spread;
+pub mod fire_suppression;

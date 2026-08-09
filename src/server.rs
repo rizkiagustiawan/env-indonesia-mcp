@@ -2118,6 +2118,26 @@ pub struct FireSpreadParam {
     pub duration_hr: f64,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FireSuppressionParam {
+    #[schemars(description = "Fire area in hectares")]
+    pub fire_area_ha: f64,
+    #[schemars(description = "Duration hours")]
+    pub duration_hr: f64,
+    #[schemars(description = "Number of aircraft")]
+    pub n_aircraft: u32,
+    #[schemars(description = "Aircraft mix: mixed/standard, water_only/helicopter, heavy/vlats")]
+    pub aircraft_mix: String,
+    #[schemars(description = "Wind speed m/s")]
+    pub wind_speed_ms: f64,
+    #[schemars(description = "Wind direction degrees")]
+    pub wind_dir_deg: f64,
+    #[schemars(description = "Anderson fuel model 1-13")]
+    pub fuel_model: u8,
+    #[schemars(description = "Budget number of drops")]
+    pub budget_drops: u32,
+}
+
 // ═══ ENVIRONMENTAL ENGINEERING DESIGN TOOLS (11) ═══
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -2816,6 +2836,18 @@ pub struct TailingsManagementParam {
     pub seismic_zone: String,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct AwdGhgParam {
+    pub area_ha: f64,
+    pub water_management: String,
+    pub rice_season: String,
+    pub soil_type: String,
+    pub n_fertilizer_kg_ha: f64,
+    pub organic_amendment: String,
+    pub climate_zone: String,
+    pub duration_years: f64,
+}
+
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct PfasTransportParam {
@@ -2849,6 +2881,13 @@ pub struct PfasFoamParam {
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct PfasScreeningParam {
     pub pfas_type: String, pub conc_ng_l: f64, pub water_source: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasElectroNfParam {
+    pub pfas_type: String, pub feed_conc_ng_l: f64, pub membrane_type: String,
+    pub applied_voltage_v: f64, pub pressure_mpa: f64, pub flow_rate_lmh: f64,
+    pub temperature_c: f64, pub treatment_goal_ng_l: f64,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -5676,6 +5715,14 @@ impl EnvIndonesiaServer {
         )
     }
 
+    #[tool(description = "Aerial Wildfire Suppression Optimizer. Two-stage gradient-based intervention design through 3-state CA model. Water vs retardant physics. Fleet config from Matei 2026. Ref: Matei et al. 2026 (arXiv:2606.13633). For BNPB/Manggala Agni operations.")]
+    fn fire_suppression_optimizer(&self, Parameters(p): Parameters<FireSuppressionParam>) -> String {
+        tools::advanced_physics::fire_suppression::assess(
+            p.fire_area_ha, p.duration_hr, p.n_aircraft, &p.aircraft_mix,
+            p.wind_speed_ms, p.wind_dir_deg, p.fuel_model, p.budget_drops
+        )
+    }
+
     // ═══ ENVIRONMENTAL ENGINEERING DESIGN TOOLS (11) ═══
 
     #[tool(description = "Pump-and-Treat Remediation Design. Capture zone, drawdown (Theis), pore volume, cleanup time, mass removal. Ref: Suthersan 2016; Sharma & Reddy 2004; US EPA 1989.")]
@@ -6022,6 +6069,14 @@ impl EnvIndonesiaServer {
         )
     }
 
+    #[tool(description = "AWD (Alternate Wetting and Drying) GHG Calculator. CH4 -64.5%, N2O +18.7%, GWP -42.1%. India modified EFs (BEF=0.51). DNDC scenarios. Ref: Rafy 2025 (47 studies); Bhattacharyya 2025; Minamikawa 2025.")]
+    fn awd_ghg_calculator(&self, Parameters(p): Parameters<AwdGhgParam>) -> String {
+        tools::calculators::awd_ghg::assess(
+            p.area_ha, &p.water_management, &p.rice_season, &p.soil_type,
+            p.n_fertilizer_kg_ha, &p.organic_amendment, &p.climate_zone, p.duration_years
+        )
+    }
+
     #[tool(description = "PFAS Transport in Groundwater (Brusseau 2025). Advection-dispersion + Langmuir air-water interface + solid sorption. EPA MCL comparison.")]
     fn pfas_transport_3d(&self, Parameters(p): Parameters<PfasTransportParam>) -> String {
         tools::emerging::pfas_transport::assess(
@@ -6058,6 +6113,15 @@ impl EnvIndonesiaServer {
     #[tool(description = "PFAS Risk Screening. EPA MCL 4 ng/L PFOA/PFOS. WHO guidelines. Indonesia belum ada baku mutu.")]
     fn pfas_risk_screening(&self, Parameters(p): Parameters<PfasScreeningParam>) -> String {
         tools::emerging::pfas_screening::assess(&p.pfas_type, p.conc_ng_l, &p.water_source)
+    }
+
+    #[tool(description = "PFAS Electro-Nanofiltration Design. Modified SDEM with externally imposed field. PFOA 90.4%, PFBS 83.9%, <1.92 kWh/m3. Ref: Hua 2026 (J HazMat 141395).")]
+    fn pfas_electro_nanofiltration(&self, Parameters(p): Parameters<PfasElectroNfParam>) -> String {
+        tools::emerging::pfas_electro_nf::assess(
+            &p.pfas_type, p.feed_conc_ng_l, &p.membrane_type,
+            p.applied_voltage_v, p.pressure_mpa, p.flow_rate_lmh,
+            p.temperature_c, p.treatment_goal_ng_l
+        )
     }
 
     #[tool(description = "Nano-Treatment Design (MOF). PCN-999 1090 mg/g, TA@MOF-808 2500 mg/g. Langmuir + pseudo-2nd-order.")]

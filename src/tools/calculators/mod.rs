@@ -77,3 +77,4 @@ pub mod aquaculture_waste;
 pub mod forest_carbon;
 pub mod pesticide_runoff;
 pub mod tailings_management;
+pub mod awd_ghg;
