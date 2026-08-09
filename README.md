@@ -476,9 +476,9 @@ description = "Audit ESG dan kepatuhan"
 Notifikasi dan interaksi via bot Telegram:
 
 ```bash
-# Konfigurasi bot (di zeroclaw config)
-TELEGRAM_BOT_TOKEN="8802330994:AAGvzwFZzFCMzMtdxn36Dq2R1mawkCwvtZA"
-TELEGRAM_CHAT_ID="775545807"
+# Konfigurasi bot (di zeroclaw config — JANGAN hardcode di repo)
+TELEGRAM_BOT_TOKEN="<isi-token-dari-BotFather>"
+TELEGRAM_CHAT_ID="<isi-chat-id>"
 ```
 
 ### Contoh Perintah Pengguna
@@ -498,9 +498,9 @@ DEMNAS (Digital Elevation Model Nasional, resolusi 8m dari BIG) diunduh otomatis
 ### Kredensial (environment variables)
 
 ```bash
-# Di ~/.config/systemd/user/zeroclaw.service
-Environment="DEMNAS_EMAIL=katagiriawan@gmail.com"
-Environment="DEMNAS_PASSWORD=@Awanfinger123"
+# Di ~/.config/systemd/user/zeroclaw.service — JANGAN commit ke repo
+Environment="DEMNAS_EMAIL=<email-big-tanahair>"
+Environment="DEMNAS_PASSWORD=<password-big-tanahair>"
 ```
 
 ### Alur

@@ -5,15 +5,21 @@ Membaca Chat ID dari config ZeroClaw atau menggunakan default.
 import sys, os, requests, tomli
 
 def get_chat_id():
+    # Prioritas: env var > config ZeroClaw > error
+    env_chat = os.environ.get("TELEGRAM_CHAT_ID")
+    if env_chat:
+        return env_chat
     try:
         with open(os.path.expanduser('~/.zeroclaw/config.toml'), "rb") as f:
             c = tomli.load(f)
         return c['peer_groups']['telegram_default']['external_peers'][0]
     except:
-        return "775545807"
+        raise RuntimeError("TELEGRAM_CHAT_ID not set: pass via env var or ~/.zeroclaw/config.toml")
 
 def send_to_telegram(file_path, caption):
-    bot_token = "8802330994:AAGvzwFZzFCMzMtdxn36Dq2R1mawkCwvtZA"
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not bot_token:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN env var not set — do not hardcode secrets in source")
     chat_id = get_chat_id()
     
     if not os.path.exists(file_path):
