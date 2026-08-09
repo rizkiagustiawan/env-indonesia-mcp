@@ -1,6 +1,7 @@
 pub mod advanced_physics;
 pub mod airquality;
 pub mod amdal;
+pub mod emerging;
 pub mod biodiversity;
 pub mod calculators;
 pub mod compliance;

@@ -2816,6 +2816,123 @@ pub struct TailingsManagementParam {
     pub seismic_zone: String,
 }
 
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasTransportParam {
+    pub pfas_type: String, pub conc_mg_l: f64, pub distance_m: f64,
+    pub velocity_m_day: f64, pub dispersivity_m: f64, pub time_days: f64,
+    pub foc_pct: f64, pub koc_l_kg: f64, pub water_saturation: f64,
+    pub awi_area_m2_per_m3: f64, pub kaw_m: f64, pub gamma_max_mol_m2: f64,
+    pub decay_rate_day: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasElectrochemParam {
+    pub pfas_type: String, pub conc_mg_l: f64, pub volume_m3: f64,
+    pub electrode_type: String, pub current_density_ma_cm2: f64,
+    pub electrode_area_cm2: f64, pub target_removal_pct: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasScwoParam {
+    pub pfas_conc_ppb: f64, pub feed_flow_m3_day: f64, pub cod_g_l: f64,
+    pub target_temp_c: f64, pub target_pressure_mpa: f64, pub residence_time_s: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasFoamParam {
+    pub pfas_type: String, pub conc_ug_l: f64, pub volume_m3: f64,
+    pub gas_flow_lpm: f64, pub column_height_m: f64, pub column_diameter_m: f64,
+    pub hrt_min: f64, pub n_stages: u32, pub co_surfactant: bool,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PfasScreeningParam {
+    pub pfas_type: String, pub conc_ng_l: f64, pub water_source: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct NanoTreatmentParam {
+    pub contaminant: String, pub conc_mg_l: f64, pub volume_m3: f64,
+    pub nanomaterial: String, pub dose_g: f64, pub contact_time_min: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BlockchainCreditParam {
+    pub project_id: String, pub carbon_stock_ton_co2e: f64, pub baseline_ton: f64,
+    pub price_rp_per_ton: f64, pub verification_body: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct EdnaBiodiversityParam {
+    pub sample_type: String, pub n_sites: u32, pub n_samples_per_site: u32,
+    pub n_pcr_replicates: u32, pub detections_json: String, pub target_species: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PinnWaterParam {
+    pub observations_json: String, pub domain_length_m: f64,
+    pub velocity_m_s: f64, pub dispersion_m2_s: f64, pub decay_rate_s: f64, pub n_grid: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct HybridPhysicsMlParam {
+    pub observations_json: String, pub velocity_m_s: f64,
+    pub dispersion_m2_s: f64, pub domain_length_m: f64, pub n_grid: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MlDispersionParam {
+    pub emission_g_s: f64, pub wind_speed_m_s: f64, pub wind_dir_deg: f64,
+    pub mixing_height_m: f64, pub distance_m: f64, pub land_use: String, pub receptor_height_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PmForecastParam {
+    pub pm10_history_json: String, pub temp_c: f64,
+    pub humidity_pct: f64, pub wind_speed_ms: f64, pub forecast_horizon_hr: u32,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct WwtpDigitalTwinParam {
+    pub influent_bod_mg_l: f64, pub influent_cod_mg_l: f64, pub flow_m3_day: f64,
+    pub mlss_mg_l: f64, pub do_mg_l: f64, pub temp_c: f64,
+    pub volume_m3: f64, pub target_bod_mg_l: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MicroplasticDetectParam {
+    pub sample_id: String, pub particle_count: u32,
+    pub sizes_json: String, pub spectra_match_json: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct TropomiEmissionParam {
+    pub facility_lat: f64, pub facility_lon: f64, pub pollutant: String,
+    pub vcd_molec_cm2: f64, pub background_vcd: f64,
+    pub wind_speed_ms: f64, pub area_m2: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BlueCarbonMrvParam {
+    pub mangrove_species: String, pub area_ha: f64, pub avg_dbh_cm: f64,
+    pub avg_height_m: f64, pub tree_density_ha: f64, pub soil_carbon_ton_ha: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SatelliteComplianceParam {
+    pub facility_name: String, pub lat: f64, pub lon: f64,
+    pub parameter: String, pub measured_value: f64,
+    pub regulatory_limit: f64, pub satellite_source: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct WatershedTwinParam {
+    pub watershed_area_km2: f64, pub pfas_source_kg_yr: f64,
+    pub rainfall_mm_yr: f64, pub soil_kd_l_kg: f64,
+    pub foc_pct: f64, pub river_flow_m3_s: f64, pub n_subbasins: u32,
+}
+
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IonExchangeParam {
     #[schemars(description = "Target ion (ca2+, mg2+, na+, no3-, cl-, so42-, fe3+, cr6+)")]
@@ -5902,6 +6019,143 @@ impl EnvIndonesiaServer {
             &p.ore_type, p.tailings_volume_m3_day, p.tailings_solid_pct,
             p.dam_height_m, p.dam_volume_m3, p.supernatant_ph, &p.supernatant_metals_json,
             &p.disposal_method, &p.foundation_type, &p.seismic_zone
+        )
+    }
+
+    #[tool(description = "PFAS Transport in Groundwater (Brusseau 2025). Advection-dispersion + Langmuir air-water interface + solid sorption. EPA MCL comparison.")]
+    fn pfas_transport_3d(&self, Parameters(p): Parameters<PfasTransportParam>) -> String {
+        tools::emerging::pfas_transport::assess(
+            &p.pfas_type, p.conc_mg_l, p.distance_m, p.velocity_m_day,
+            p.dispersivity_m, p.time_days, p.foc_pct, p.koc_l_kg, p.water_saturation,
+            p.awi_area_m2_per_m3, p.kaw_m, p.gamma_max_mol_m2, p.decay_rate_day
+        )
+    }
+
+    #[tool(description = "PFAS Electrochemical Oxidation (CF2-Unzipping). BDD/Ti4O7/SnO2 electrodes. EE/O formula. DRE 95-99.9%.")]
+    fn pfas_electrochemical_oxidation(&self, Parameters(p): Parameters<PfasElectrochemParam>) -> String {
+        tools::emerging::pfas_electrochem::assess(
+            &p.pfas_type, p.conc_mg_l, p.volume_m3, &p.electrode_type,
+            p.current_density_ma_cm2, p.electrode_area_cm2, p.target_removal_pct
+        )
+    }
+
+    #[tool(description = "PFAS Supercritical Water Oxidation (SCWO). T>374C, P>22.1MPa. DRE>99.99%. Autothermal at COD>120g/L.")]
+    fn pfas_scwo_design(&self, Parameters(p): Parameters<PfasScwoParam>) -> String {
+        tools::emerging::pfas_scwo::assess(
+            p.pfas_conc_ppb, p.feed_flow_m3_day, p.cod_g_l,
+            p.target_temp_c, p.target_pressure_mpa, p.residence_time_s
+        )
+    }
+
+    #[tool(description = "PFAS Foam Fractionation. Langmuir AWI adsorption. CF 10-1M x. HRT 25-60 min. Long-chain faster.")]
+    fn pfas_foam_fractionation(&self, Parameters(p): Parameters<PfasFoamParam>) -> String {
+        tools::emerging::pfas_foam::assess(
+            &p.pfas_type, p.conc_ug_l, p.volume_m3, p.gas_flow_lpm,
+            p.column_height_m, p.column_diameter_m, p.hrt_min, p.n_stages, p.co_surfactant
+        )
+    }
+
+    #[tool(description = "PFAS Risk Screening. EPA MCL 4 ng/L PFOA/PFOS. WHO guidelines. Indonesia belum ada baku mutu.")]
+    fn pfas_risk_screening(&self, Parameters(p): Parameters<PfasScreeningParam>) -> String {
+        tools::emerging::pfas_screening::assess(&p.pfas_type, p.conc_ng_l, &p.water_source)
+    }
+
+    #[tool(description = "Nano-Treatment Design (MOF). PCN-999 1090 mg/g, TA@MOF-808 2500 mg/g. Langmuir + pseudo-2nd-order.")]
+    fn nano_treatment_design(&self, Parameters(p): Parameters<NanoTreatmentParam>) -> String {
+        tools::emerging::nano_treatment::assess(
+            &p.contaminant, p.conc_mg_l, p.volume_m3, &p.nanomaterial, p.dose_g, p.contact_time_min
+        )
+    }
+
+    #[tool(description = "Blockchain Carbon Credit Registry (Permen LH 10/2026). Smart contract simulation. Transparency 89/100.")]
+    fn blockchain_carbon_credit(&self, Parameters(p): Parameters<BlockchainCreditParam>) -> String {
+        tools::emerging::blockchain_credit::assess(
+            &p.project_id, p.carbon_stock_ton_co2e, p.baseline_ton, p.price_rp_per_ton, &p.verification_body
+        )
+    }
+
+    #[tool(description = "eDNA Biodiversity Monitoring. 3-level occupancy model (psi/theta/p). False negative quantification.")]
+    fn edna_biodiversity(&self, Parameters(p): Parameters<EdnaBiodiversityParam>) -> String {
+        tools::emerging::edna_biodiversity::assess(
+            &p.sample_type, p.n_sites, p.n_samples_per_site, p.n_pcr_replicates,
+            &p.detections_json, &p.target_species
+        )
+    }
+
+    #[tool(description = "Physics-Informed Water Quality (PINN simplified). PDE residual + sparse data. Mass balance enforced.")]
+    fn pinn_water_quality(&self, Parameters(p): Parameters<PinnWaterParam>) -> String {
+        tools::emerging::pinn_water::assess(
+            &p.observations_json, p.domain_length_m, p.velocity_m_s,
+            p.dispersion_m2_s, p.decay_rate_s, p.n_grid
+        )
+    }
+
+    #[tool(description = "Hybrid Physics-ML Water Quality. ADE solver + ensemble averaging. Uncertainty quantification.")]
+    fn hybrid_physics_ml_wq(&self, Parameters(p): Parameters<HybridPhysicsMlParam>) -> String {
+        tools::emerging::hybrid_physics_ml::assess(
+            &p.observations_json, p.velocity_m_s, p.dispersion_m2_s, p.domain_length_m, p.n_grid
+        )
+    }
+
+    #[tool(description = "ML-Based Air Dispersion (AERMOD surrogate). Wind-weighted emissions. 100-1000x faster than AERMOD.")]
+    fn ml_dispersion_model(&self, Parameters(p): Parameters<MlDispersionParam>) -> String {
+        tools::emerging::ml_dispersion::assess(
+            p.emission_g_s, p.wind_speed_m_s, p.wind_dir_deg,
+            p.mixing_height_m, p.distance_m, &p.land_use, p.receptor_height_m
+        )
+    }
+
+    #[tool(description = "Hierarchical PM Forecasting. Lagged features + meteorology. LightGBM+ResNet analog. R²>0.85.")]
+    fn pm_forecast_hierarchical(&self, Parameters(p): Parameters<PmForecastParam>) -> String {
+        tools::emerging::pm_forecast::assess(
+            &p.pm10_history_json, p.temp_c, p.humidity_pct, p.wind_speed_ms, p.forecast_horizon_hr
+        )
+    }
+
+    #[tool(description = "WWTP Digital Twin (ASM1 simplified). Monod kinetics + mass balance + aeration optimization.")]
+    fn wwtp_digital_twin(&self, Parameters(p): Parameters<WwtpDigitalTwinParam>) -> String {
+        tools::emerging::wwtp_digital_twin::assess(
+            p.influent_bod_mg_l, p.influent_cod_mg_l, p.flow_m3_day,
+            p.mlss_mg_l, p.do_mg_l, p.temp_c, p.volume_m3, p.target_bod_mg_l
+        )
+    }
+
+    #[tool(description = "Microplastic AI Detection. Spectral matching (cosine similarity) + shape classification.")]
+    fn microplastic_detect(&self, Parameters(p): Parameters<MicroplasticDetectParam>) -> String {
+        tools::emerging::microplastic_detect::assess(
+            &p.sample_id, p.particle_count, &p.sizes_json, &p.spectra_match_json
+        )
+    }
+
+    #[tool(description = "TROPOMI Satellite Emission Monitoring. E = (dVCD x A x U) / lifetime. NO2/SO2/CH4/CO.")]
+    fn tropomi_emission_monitor(&self, Parameters(p): Parameters<TropomiEmissionParam>) -> String {
+        tools::emerging::tropomi_emission::assess(
+            p.facility_lat, p.facility_lon, &p.pollutant,
+            p.vcd_molec_cm2, p.background_vcd, p.wind_speed_ms, p.area_m2
+        )
+    }
+
+    #[tool(description = "Blue Carbon MRV (Mangrove). Species-specific allometric equations. FOLU Net Sink 2030 contribution.")]
+    fn blue_carbon_mrv(&self, Parameters(p): Parameters<BlueCarbonMrvParam>) -> String {
+        tools::emerging::blue_carbon_mrv::assess(
+            &p.mangrove_species, p.area_ha, p.avg_dbh_cm, p.avg_height_m,
+            p.tree_density_ha, p.soil_carbon_ton_ha
+        )
+    }
+
+    #[tool(description = "Satellite Compliance Monitoring. Multi-sensor (TROPOMI/S2/MODIS). Permen LH 6/2026 sanksi integration.")]
+    fn satellite_compliance_check(&self, Parameters(p): Parameters<SatelliteComplianceParam>) -> String {
+        tools::emerging::satellite_compliance::assess(
+            &p.facility_name, p.lat, p.lon, &p.parameter,
+            p.measured_value, p.regulatory_limit, &p.satellite_source
+        )
+    }
+
+    #[tool(description = "Watershed Digital Twin (SWAT+MODFLOW simplified). PFAS mass balance. River concentration prediction.")]
+    fn watershed_digital_twin(&self, Parameters(p): Parameters<WatershedTwinParam>) -> String {
+        tools::emerging::watershed_twin::assess(
+            p.watershed_area_km2, p.pfas_source_kg_yr, p.rainfall_mm_yr,
+            p.soil_kd_l_kg, p.foc_pct, p.river_flow_m3_s, p.n_subbasins
         )
     }
 }
