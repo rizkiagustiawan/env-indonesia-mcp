@@ -1864,6 +1864,52 @@ pub struct AsgmMercuryParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct HealthImpactAssessmentParam {
+    #[schemars(description = "Pollutant: PM2.5, NO2, SO2, O3")]
+    pub pollutant: String,
+    #[schemars(description = "Concentration ug/m3 (annual or 24h avg)")]
+    pub concentration_ug_m3: f64,
+    #[schemars(description = "Population exposed")]
+    pub population_exposed: f64,
+    #[schemars(description = "Background concentration ug/m3 (use WHO guideline if unknown: PM2.5=5)")]
+    pub background_conc_ug_m3: f64,
+    #[schemars(description = "Exposure duration years")]
+    pub exposure_years: f64,
+    #[schemars(description = "Value of one DALY in USD (WHO range 50000-150000)")]
+    pub valuation_usd_per_daly: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct RestorationCostParam {
+    #[schemars(description = "Restoration type: mangrove, peatland, river, mine, coral")]
+    pub restoration_type: String,
+    #[schemars(description = "Area in hectares (for river: pass km value; for coral: pass m2 value)")]
+    pub area_ha: f64,
+    #[schemars(description = "Degradation level: light, moderate, severe")]
+    pub degradation_level: String,
+    #[schemars(description = "Years since degradation")]
+    pub years_since_degradation: f64,
+    #[schemars(description = "Monitoring period years")]
+    pub monitoring_years: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ProblemSolutionImpactParam {
+    #[schemars(description = "Problem type: flood, fire, pollution_river, pollution_air, coastal_erosion, mining_impact")]
+    pub problem_type: String,
+    #[schemars(description = "Location name")]
+    pub location_name: String,
+    #[schemars(description = "Latitude")]
+    pub lat: f64,
+    #[schemars(description = "Longitude")]
+    pub lon: f64,
+    #[schemars(description = "Affected/study area hectares")]
+    pub area_ha: f64,
+    #[schemars(description = "Severity: low, moderate, high")]
+    pub severity: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ClimateVulnerabilityParam {
     #[schemars(description = "Temperature change °C (from climate_projection)")]
     pub temp_change_c: f64,
@@ -6375,6 +6421,29 @@ impl EnvIndonesiaServer {
             .filter_map(|s| s.trim().parse::<f64>().ok())
             .collect();
         validation::validate_model(&p.model_name, &predicted, &observed, &p.units)
+    }
+
+    #[tool(description = "Health Impact Assessment (HIA) — Air Pollution Burden. Concentration-Response Function (log-linear, WHO 2021) -> attributable deaths -> DALYs -> economic cost. RR=1.0615 per 10 ug/m3 PM2.5. Baseline mortality Indonesia 753/100k (World Bank 2023). Cases avoidable vs WHO guideline + PP 22/2021. Ref: WHO AQG 2021; SSPH 2024 meta; IHME 2023.")]
+    fn health_impact_assessment(&self, Parameters(p): Parameters<HealthImpactAssessmentParam>) -> String {
+        tools::calculators::health_impact_assessment::assess(
+            &p.pollutant, p.concentration_ug_m3, p.population_exposed,
+            p.background_conc_ug_m3, p.exposure_years, p.valuation_usd_per_daly
+        )
+    }
+
+    #[tool(description = "Environmental Restoration Cost — mangrove/peatland/river/mine/coral. Unit cost x area x difficulty + monitoring NPV + carbon benefit (BCR). Carbon price Rp465k/tCO2e (Perpres 98/2021 NEK). Sources: World Bank 2023 (mangrove), BRG 2017 (peat), Citarum Harum (river), Permen ESDM 26/2018 (mine), Coremap (coral). Returns capital, monitoring, total NPV, carbon value, BCR, payback.")]
+    fn restoration_cost(&self, Parameters(p): Parameters<RestorationCostParam>) -> String {
+        tools::calculators::restoration_cost::assess(
+            &p.restoration_type, p.area_ha, &p.degradation_level,
+            p.years_since_degradation, p.monitoring_years
+        )
+    }
+
+    #[tool(description = "Problem-Solution-Impact Orchestrator (End-to-End Workflow). SYNTHESIS framework: Diagnosis -> Solution -> Impact for 6 problem types (flood, fire, pollution_river, pollution_air, coastal_erosion, mining_impact). Inline simplified models + references to dedicated sub-tools (gaussian_plume, river_quality, bruun_rule, mine_impact, HIA, restoration_cost). NOT a substitute for dedicated calculators. Ref: PP 22/2021; WHO AQG 2021; Bruun 1962; Permen ESDM 26/2018.")]
+    fn problem_solution_impact(&self, Parameters(p): Parameters<ProblemSolutionImpactParam>) -> String {
+        tools::workflows::problem_solution_impact::orchestrate(
+            &p.problem_type, &p.location_name, p.lat, p.lon, p.area_ha, &p.severity
+        )
     }
 }
 

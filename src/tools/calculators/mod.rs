@@ -79,3 +79,5 @@ pub mod pesticide_runoff;
 pub mod tailings_management;
 pub mod awd_ghg;
 pub mod sanitation_impact;
+pub mod health_impact_assessment;
+pub mod restoration_cost;
