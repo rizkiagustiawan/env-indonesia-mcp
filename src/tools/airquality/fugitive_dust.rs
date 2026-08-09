@@ -28,7 +28,31 @@ pub fn assess(road_type: &str, silt_loading_g_m2: f64, silt_content_pct: f64, av
     out.push_str(&format!("  EF PM2.5: {:.2} g/VKT\n\n", ef_pm25));
     out.push_str(&format!("  >> Daily PM10: {:.1} g/day ({} veh x {:.0}m)\n", daily_pm10, vehicle_count, road_length_m));
     out.push_str(&format!("  >> Daily PM2.5: {:.1} g/day\n\n", daily_pm25));
-    out.push_str("  Control: watering (-70%), chemical suppressant (-90%), paving (-95%)\n");
-    out.push_str("\n  Ref: EPA AP-42 Ch.13; WRAP 2006\n");
+
+    // ─── PP 41/1999 / PP 22/2021 AMBIENT COMPLIANCE ───
+    out.push_str("─── STATUS KEPATUHAN (PP 22/2021 Lampiran VII — Udara Ambien) ───\n\n");
+    let daily_pm10_ug_m3 = daily_pm10 * 1e6 / (road_length_m * 10.0 * 10.0 * 10.0); // approx concentration in 10m×10m×10m volume
+    out.push_str(&format!("  PM10 ambien (est): {:.1} µg/m3 → ≤75 µg/m3 (24 jam): {}\n", daily_pm10_ug_m3, if daily_pm10_ug_m3 <= 75.0 {"✅"} else {"❌"}));
+    out.push_str(&format!("  PM2.5 ambien (est): {:.1} µg/m3 → ≤55 µg/m3 (24 jam): {}\n\n", daily_pm10_ug_m3 * (k_pm25/k_pm10), if daily_pm10_ug_m3 * (k_pm25/k_pm10) <= 55.0 {"✅"} else {"❌"}));
+
+    out.push_str("─── REKOMENDASI MITIGASI ───\n");
+    out.push_str("  1. Watering (penyiraman) — reduksi 70%\n");
+    out.push_str("  2. Chemical suppressant — reduksi 90%\n");
+    out.push_str("  3. Paving / concrete road — reduksi 95%\n");
+    out.push_str("  4. Speed limit ≤ 20 km/jam — reduksi 40%\n");
+    out.push_str("  5. Vegetative buffer di roadside\n\n");
+
+    out.push_str("─── PEMANTAUAN (RPL) ───\n");
+    out.push_str("  Parameter: PM10, PM2.5, TSP\n");
+    out.push_str("  Frekuensi: Bulanan (active road), seasonal (dry season peak)\n");
+    out.push_str("  Lokasi: Roadside (≤10m from edge) + receptor (50-100m)\n");
+    out.push_str("  Metode: High Volume Sampler (PM10), Beta Attenuation Monitor\n");
+
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  PP 22/2021 Lampiran VII (udara ambien); Pasal 124-131\n");
+    out.push_str("  Permen LH 5/2026: Perencanaan mutu udara\n");
+    out.push_str("  Amdalnet + OSS; Permen LH 6/2026 (sanksi)\n");
+
+    out.push_str("\n  Ref: EPA AP-42 Ch.13; WRAP 2006; PP 22/2021 Lampiran VII; Permen LH 5/2026\n");
     out
 }

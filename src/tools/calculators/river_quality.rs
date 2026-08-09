@@ -87,6 +87,36 @@ pub fn assess(
         out.push_str("\n  [OK] DO adequate (>5 mg/L)\n");
     }
 
-    out.push_str("\n  Ref: Chapra 2008; Streeter-Phelps 1925; QUAL2K\n");
+    // ─── PP 22/2021 COMPLIANCE FOOTER ───
+    out.push_str("\n─── STATUS KEPATUHAN (PP 22/2021 Lampiran VI) ───\n\n");
+    out.push_str("  BOD vs Baku Mutu:\n");
+    let bod_final = L0 * (-kr * (river_length_m / v.max(1e-6))).exp();
+    let do_final = saturation_do_mg_l - (kc * L0) / (ka - kr).max(1e-6) * ((-kr * river_length_m / v.max(1e-6)).exp() - (-ka * river_length_m / v.max(1e-6)).exp()) + D0 * (-ka * river_length_m / v.max(1e-6)).exp();
+    out.push_str(&format!("  BOD hilir: {:.1} mg/L → Kls I(≤2): {} | Kls II(≤3): {} | Kls III(≤6): {}\n",
+        bod_final, if bod_final <= 2.0 {"✅"} else {"❌"}, if bod_final <= 3.0 {"✅"} else {"❌"}, if bod_final <= 6.0 {"✅"} else {"❌"}));
+    out.push_str(&format!("  DO hilir: {:.1} mg/L → Kls I(≥6): {} | Kls II(≥4): {} | Kls III(≥3): {}\n\n",
+        do_final, if do_final >= 6.0 {"✅"} else {"❌"}, if do_final >= 4.0 {"✅"} else {"❌"}, if do_final >= 3.0 {"✅"} else {"❌"}));
+
+    out.push_str("─── REKOMENDASI MITIGASI ───\n");
+    if min_do < 4.0 {
+        out.push_str("  1. Reduksi beban BOD di sumber (IPAL komunitas/industri)\n");
+        out.push_str("  2. Aerasi sungai (cascade, fountain, aerator)\n");
+        out.push_str("  3. Tambah vegetasi riparian untuk shading + nutrient uptake\n");
+    } else {
+        out.push_str("  Pertahankan kualitas — monitoring rutin\n");
+    }
+
+    out.push_str("\n─── PEMANTAUAN (RPL) ───\n");
+    out.push_str("  Parameter: BOD, DO, COD, TSS, NH3-N, Total P, coliform\n");
+    out.push_str("  Frekuensi: Bulanan (sungai), Mingguan (effluent IPAL)\n");
+    out.push_str("  Lokasi: Minimal 3 titik (hulu, titik pelepasan, hilir)\n");
+    out.push_str("  Metode: SNI 6989 series; Standard Methods\n");
+
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  PP 22/2021 Pasal 124-131; Amdalnet + OSS\n");
+    out.push_str("  Permen LH 6/2026: Sanksi berbasis risiko (denda max Rp3M)\n");
+    out.push_str("  Persetujuan Lingkungan (PP 28/2025)\n");
+
+    out.push_str("\n  Ref: Chapra 2008; Streeter-Phelps 1925; QUAL2K; PP 22/2021 Lampiran VI; Permen LH 6/2026\n");
     out
 }

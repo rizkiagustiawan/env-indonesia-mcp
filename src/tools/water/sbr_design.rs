@@ -50,6 +50,22 @@ pub fn assess(
     else if fm < 0.05 { out.push_str("  [WARN] F/M < 0.05 — low loading\n"); }
     else { out.push_str("  [OK] F/M in range\n"); }
 
-    out.push_str("\n  Ref: Metcalf & Eddy 2004\n");
+    // ─── EFFLUENT COMPLIANCE ───
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN (Permen LH 11/2025) ───\n\n");
+    let bod_ok = target_bod_mg_l <= 30.0;
+    out.push_str(&format!("  BOD: {:.0} mg/L → ≤30 mg/L (domestik): {}\n", target_bod_mg_l, if bod_ok {"✅"} else {"❌"}));
+    let cod_eff = target_bod_mg_l * 2.0;
+    out.push_str(&format!("  COD: {:.0} mg/L → ≤100 mg/L: {}\n\n", cod_eff, if cod_eff <= 100.0 {"✅"} else {"❌"}));
+
+    out.push_str("─── PEMANTAUAN (RPL) ───\n");
+    out.push_str("  Parameter: BOD, COD, TSS, NH3-N, pH, coliform\n");
+    out.push_str("  Frekuensi: Bulanan (effluent)\n");
+
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  Permen LH 11/2025: Baku mutu air limbah domestik\n");
+    out.push_str("  PP 22/2021 Pasal 124-131; Amdalnet + OSS\n");
+    out.push_str("  Permen LH 6/2026: Sanksi berbasis risiko (denda max Rp3M)\n");
+
+    out.push_str("\n  Ref: Metcalf & Eddy 2004; Permen LH 11/2025; PP 22/2021\n");
     out
 }

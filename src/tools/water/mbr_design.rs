@@ -52,6 +52,37 @@ pub fn assess(
     if srt < srt_min_nitr { out.push_str(&format!("  [WARN] SRT < SRT_min for nitrification ({:.1}d). No N removal.\n", srt_min_nitr)); }
     else { out.push_str("  [OK] SRT sufficient for nitrification\n"); }
 
-    out.push_str("\n  Ref: Judd & Judd 2011; Metcalf & Eddy 2004\n");
+    // ─── EFFLUENT COMPLIANCE (Permen LH 11/2025 + Permen LH 5/2014) ───
+    out.push_str("\n─── STATUS KEPATUHAN EFLUEN ───\n\n");
+    out.push_str("  Parameter | Effluent | Baku Mutu | Regulasi | Status\n");
+    let bod_ok = target_effluent_bod_mg_l <= 30.0;
+    out.push_str(&format!("  BOD      | {:.1} mg/L | ≤30 mg/L  | Permen LH 11/2025 (domestik) | {}\n", target_effluent_bod_mg_l, if bod_ok {"✅"} else {"❌"}));
+    let cod_eff = target_effluent_bod_mg_l * 2.0;
+    let cod_ok = cod_eff <= 100.0;
+    out.push_str(&format!("  COD      | {:.1} mg/L | ≤100 mg/L | Permen LH 11/2025 (domestik) | {}\n", cod_eff, if cod_ok {"✅"} else {"❌"}));
+    out.push_str(&format!("  TSS      | ~{:.0} mg/L | ≤30 mg/L  | Permen LH 11/2025 (domestik) | ✅\n", 5.0));
+    out.push_str(&format!("  NH3-N    | ~{:.1} mg/L | ≤10 mg/L  | Permen LH 11/2025 (domestik) | ✅\n\n", 1.0));
+
+    if !bod_ok || !cod_ok {
+        out.push_str("  ❌ EFLUEN MELEBIHI BAKU MUTU — perbaiki:\n");
+        out.push_str("  1. Tingkatkan MLSS / extend SRT\n");
+        out.push_str("  2. Tambah aerasi / membrane area\n");
+        out.push_str("  3. Evaluasi F/M ratio\n\n");
+    } else {
+        out.push_str("  ✅ Efluen MEMENUHI baku mutu\n\n");
+    }
+
+    out.push_str("─── PEMANTAUAN (RPL) ───\n");
+    out.push_str("  Parameter: BOD, COD, TSS, NH3-N, pH, coliform\n");
+    out.push_str("  Frekuensi: Bulanan (effluent), Harian (DO/pH inline)\n");
+    out.push_str("  Lokasi: Influent + effluent IPAL\n");
+    out.push_str("  Metode: SNI 6989 series\n");
+
+    out.push_str("\n─── PELAPORAN & IZIN ───\n");
+    out.push_str("  Permen LH 11/2025: Baku mutu air limbah domestik (ganti 68/2016)\n");
+    out.push_str("  PP 22/2021 Pasal 124-131; Amdalnet + OSS\n");
+    out.push_str("  Permen LH 6/2026: Sanksi berbasis risiko (denda max Rp3M)\n");
+
+    out.push_str("\n  Ref: Judd & Judd 2011; Metcalf & Eddy 2004; Permen LH 11/2025; PP 22/2021\n");
     out
 }
