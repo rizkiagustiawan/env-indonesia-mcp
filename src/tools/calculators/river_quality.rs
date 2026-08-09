@@ -91,7 +91,7 @@ pub fn assess(
     out.push_str("\n─── STATUS KEPATUHAN (PP 22/2021 Lampiran VI) ───\n\n");
     out.push_str("  BOD vs Baku Mutu:\n");
     let bod_final = L0 * (-kr * (river_length_m / v.max(1e-6))).exp();
-    let do_final = saturation_do_mg_l - (kc * L0) / (ka - kr).max(1e-6) * ((-kr * river_length_m / v.max(1e-6)).exp() - (-ka * river_length_m / v.max(1e-6)).exp()) + D0 * (-ka * river_length_m / v.max(1e-6)).exp();
+    let do_final = saturation_do_mg_l - ((kc * L0) / (ka - kr).max(1e-6) * ((-kr * river_length_m / v.max(1e-6)).exp() - (-ka * river_length_m / v.max(1e-6)).exp()) + D0 * (-ka * river_length_m / v.max(1e-6)).exp());
     out.push_str(&format!("  BOD hilir: {:.1} mg/L → Kls I(≤2): {} | Kls II(≤3): {} | Kls III(≤6): {}\n",
         bod_final, if bod_final <= 2.0 {"✅"} else {"❌"}, if bod_final <= 3.0 {"✅"} else {"❌"}, if bod_final <= 6.0 {"✅"} else {"❌"}));
     out.push_str(&format!("  DO hilir: {:.1} mg/L → Kls I(≥6): {} | Kls II(≥4): {} | Kls III(≥3): {}\n\n",

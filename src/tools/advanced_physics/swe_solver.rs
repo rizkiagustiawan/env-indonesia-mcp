@@ -83,34 +83,43 @@ pub fn solve(
                 let z_b = dem[i][j-1];
                 let z_t = dem[i][j+1];
 
-                // X-direction fluxes (simplified HLL)
+                // X-direction HLL Riemann solver (Toro 2001)
+                // BUG FIX: previous code was central-differencing with dimensionally-broken
+                // gravity term and non-conservative momentum update. Replaced with proper HLL.
                 let h_l = h[i-1][j]; let h_c = h[i][j]; let h_r = h[i+1][j];
                 let u_l = if h_l > min_depth { hu[i-1][j]/h_l } else { 0.0 };
                 let u_c = if h_c > min_depth { hu[i][j]/h_c } else { 0.0 };
-                let _u_r = if h_r > min_depth { hu[i+1][j]/h_r } else { 0.0 };
+                let u_r = if h_r > min_depth { hu[i+1][j]/h_r } else { 0.0 };
 
-                let flux_x = dt / dx * (
-                    0.5 * (h_c * u_c + h_l * u_l) - 0.5 * (h_r * _u_r + h_c * u_c)
-                    + 0.5 * g * (h_l * h_l - h_r * h_r) / (2.0 * dx) * dt
-                );
+                // Left state at interface (i-1/2)
+                let (fhl, fhul) = hll_flux(h_l, u_l, h_c, u_c, g);
+                // Right state at interface (i+1/2)
+                let (fhr, fhur) = hll_flux(h_c, u_c, h_r, u_r, g);
 
-                // Y-direction fluxes
+                let flux_h_x = (fhr - fhl) / dx;
+                let flux_hu_x = (fhur - fhul) / dx;
+
+                // Y-direction HLL
                 let h_b = h[i][j-1]; let h_t = h[i][j+1];
                 let v_b = if h_b > min_depth { hv[i][j-1]/h_b } else { 0.0 };
                 let v_c = if h_c > min_depth { hv[i][j]/h_c } else { 0.0 };
                 let v_t = if h_t > min_depth { hv[i][j+1]/h_t } else { 0.0 };
 
-                let flux_y = dt / dx * (
-                    0.5 * (h_c * v_c + h_b * v_b) - 0.5 * (h_t * v_t + h_c * v_c)
-                );
+                let (fhb, fhvb) = hll_flux(h_b, v_b, h_c, v_c, g);
+                let (fht, fhvt) = hll_flux(h_c, v_c, h_t, v_t, g);
 
-                h_new[i][j] = (h_c + flux_x + flux_y).max(0.0);
+                let flux_h_y = (fht - fhb) / dx;
+                let flux_hv_y = (fhvt - fhvb) / dx;
 
-                // Gravity source term (slope)
-                let sx = -g * h_c * (z_r - z_l) / (2.0 * dx);
-                let sy = -g * h_c * (z_t - z_b) / (2.0 * dx);
-                hu_new[i][j] = hu[i][j] + sx * dt;
-                hv_new[i][j] = hv[i][j] + sy * dt;
+                // Conservative update: dU/dt + dF/dx + dG/dy = S
+                h_new[i][j] = (h_c - dt * (flux_h_x + flux_h_y)).max(0.0);
+
+                // Bed slope source term
+                let sx = -g * h_c * (dem[i+1][j] - dem[i-1][j]) / (2.0 * dx);
+                let sy = -g * h_c * (dem[i][j+1] - dem[i][j-1]) / (2.0 * dx);
+
+                hu_new[i][j] = hu[i][j] - dt * flux_hu_x + sx * dt;
+                hv_new[i][j] = hv[i][j] - dt * flux_hv_y + sy * dt;
 
                 // Manning friction
                 if h_new[i][j] > min_depth {
@@ -160,3 +169,58 @@ pub fn solve(
         summary,
     }
 }
+
+/// HLL approximate Riemann solver flux (Toro 2001).
+/// Returns (F_h, F_hu) = flux of mass and momentum for 1D SWE.
+/// Einfeldt wave speeds: SL = min(uL-cL, uR-cR), SR = max(uL+cL, uR+cR).
+fn hll_flux(hl: f64, ul: f64, hr: f64, ur: f64, g: f64) -> (f64, f64) {
+    let cl = (g * hl).sqrt();
+    let cr = (g * hr).sqrt();
+    let sl = (ul - cl).min(ur - cr);
+    let sr = (ul + cl).max(ur + cr);
+
+    // Left/right flux vectors: F = (h*u, h*u^2 + 0.5*g*h^2)
+    let fl_h = hl * ul;
+    let fl_hu = hl * ul * ul + 0.5 * g * hl * hl;
+    let fr_h = hr * ur;
+    let fr_hu = hr * ur * ur + 0.5 * g * hr * hr;
+
+    if sl >= 0.0 {
+        // Supercritical left-to-right: use left flux
+        (fl_h, fl_hu)
+    } else if sr <= 0.0 {
+        // Supercritical right-to-left: use right flux
+        (fr_h, fr_hu)
+    } else {
+        // Subcritical: HLL middle-state flux
+        let f_star_h = (sr * fl_h - sl * fr_h + sl * sr * (hr - hl)) / (sr - sl);
+        let f_star_hu = (sr * fl_hu - sl * fr_hu + sl * sr * (hr * ur - hl * ul)) / (sr - sl);
+        (f_star_h, f_star_hu)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::hll_flux;
+    // Self-check: HLL flux for still water (hL=hR=h, uL=uR=0) should give zero mass flux
+    // and hydrostatic pressure flux 0.5*g*h^2 (balanced by source in well-balanced scheme).
+    #[test]
+    fn hll_still_water() {
+        let g = 9.81_f64;
+        let (fh, fhu) = hll_flux(1.0, 0.0, 1.0, 0.0, g);
+        assert!(fh.abs() < 1e-10, "mass flux for still water must be 0, got {fh}");
+        assert!((fhu - 0.5 * g * 1.0 * 1.0).abs() < 1e-6, "momentum flux = 0.5gh^2 = {:.4}, got {fhu}", 0.5*g);
+    }
+
+    // Self-check: left-to-right supercritical flow (SL >= 0) uses left flux
+    #[test]
+    fn hll_supercritical_left() {
+        let g = 9.81_f64;
+        let h = 1.0; let u = 10.0; // both states supercritical left-to-right
+        let cl = (g * h).sqrt(); // 3.13
+        // SL = min(uL-cL, uR-cR) = min(10-3.13, 10-3.13) = 6.87 > 0 -> left flux
+        let (fh, fhu) = hll_flux(h, u, h, u, g);
+        assert!((fh - h * u).abs() < 1e-6, "supercritical left flux fh={fh} expected {}", h*u);
+    }
+}
+
