@@ -1,6 +1,7 @@
-/// Trickling Filter — NRC Equation
-/// E = 100 / (1 + 0.4432 × √(W/(V×F)))
+/// Trickling Filter — NRC Equation (SI units)
+/// E = 100 / (1 + 3.50 × √(W/(V×F)))  with W[kg BOD/day], V[m³]
 /// Ref: NRC (National Research Council, 1946); Metcalf & Eddy (2003)
+/// Note: original NRC uses 0.4432 with W[lb/day], V[1000 ft³]; SI constant = 3.50
 
 pub fn design(
     q_m3d: f64,
@@ -43,13 +44,13 @@ pub fn design(
     // Required efficiency
     let e_required = target_efficiency / 100.0;
 
-    // From NRC: E = 1 / (1 + 0.4432 × √(W/(V×F)))
-    // Solve for V: 0.4432 × √(W/(V×F)) = (1/E - 1)
-    // √(W/(V×F)) = (1/E - 1) / 0.4432
-    // W/(V×F) = ((1/E - 1) / 0.4432)²
-    // V = W / (F × ((1/E - 1) / 0.4432)²)
+    // From NRC (SI): E = 1 / (1 + 3.50 × √(W/(V×F)))
+    // Solve for V: 3.50 × √(W/(V×F)) = (1/E - 1)
+    // √(W/(V×F)) = (1/E - 1) / 3.50
+    // W/(V×F) = ((1/E - 1) / 3.50)²
+    // V = W / (F × ((1/E - 1) / 3.50)²)
 
-    let ratio = (1.0 / e_required - 1.0) / 0.4432;
+    let ratio = (1.0 / e_required - 1.0) / 3.50;
     let v_required = w / (f * ratio * ratio);
 
     // Dimensions
@@ -57,7 +58,7 @@ pub fn design(
     let diameter = (4.0 * area / std::f64::consts::PI).sqrt();
 
     // Actual efficiency check
-    let e_actual = 1.0 / (1.0 + 0.4432 * (w / (v_required * f)).sqrt());
+    let e_actual = 1.0 / (1.0 + 3.50 * (w / (v_required * f)).sqrt());
 
     // Hydraulic loading rate
     let q_total = q_m3d * (1.0 + r); // including recirculation
@@ -122,4 +123,16 @@ pub fn design(
     out.push_str("  Parameter: BOD, TSS, pH\n");
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::design;
+
+    #[test]
+    fn nrc_si_constant_volume() {
+        // Q=1000, BOD 200->100 (50%), W=200 kg/day, F=1: v = W/(F*((1/E-1)/3.5)^2) = 2450 m3
+        let result = design(1000.0, 200.0, 100.0, 2.0, 0.0);
+        assert!(result.contains("Volume filter = 2450.0"), "NRC SI constant wrong:\n{result}");
+    }
 }

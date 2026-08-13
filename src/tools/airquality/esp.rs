@@ -32,13 +32,13 @@ pub fn design(
     // ═══ Migration Velocity (particle-type dependent) ═══
     out.push_str("-- Migration Velocity --\n\n");
 
-    // Dielectric: w = 2*eps0*E^2*d / (12*mu)
-    // Conductive: w = eps0*E^2*d / (6*mu)  (2x faster — field distortion)
+    // Dielectric: w = eps0*E^2*d / (6*mu)
+    // Conductive: w = 2*eps0*E^2*d / (6*mu)  (2x faster — field charging)
     let (w_migration, type_factor) = if particle_type.to_lowercase().contains("conduc") {
-        let w = eps0 * E_v_m * E_v_m * d_p / (6.0 * mu_g);
+        let w = 2.0 * eps0 * E_v_m * E_v_m * d_p / (6.0 * mu_g);
         (w, 2.0) // 2x factor vs dielectric
     } else {
-        let w = 2.0 * eps0 * E_v_m * E_v_m * d_p / (12.0 * mu_g);
+        let w = eps0 * E_v_m * E_v_m * d_p / (6.0 * mu_g);
         (w, 1.0) // standard dielectric
     };
     let w_cm_s = w_migration * 100.0;
@@ -149,9 +149,9 @@ pub fn design(
     for &d in &sizes {
         let d_m = d * 1e-6;
         let w_d = if particle_type.to_lowercase().contains("conduc") {
-            eps0 * E_v_m * E_v_m * d_m / (6.0 * mu_g) * efficiency_derate
+            2.0 * eps0 * E_v_m * E_v_m * d_m / (6.0 * mu_g) * efficiency_derate
         } else {
-            2.0 * eps0 * E_v_m * E_v_m * d_m / (12.0 * mu_g) * efficiency_derate
+            eps0 * E_v_m * E_v_m * d_m / (6.0 * mu_g) * efficiency_derate
         };
         let eta_d = 1.0 - (-w_d * a_required / gas_flow_m3_s).exp();
         // Log-normal weight (simplified — mass fraction at each size)
@@ -183,4 +183,18 @@ pub fn design(
     out.push_str("  • For design: pilot ESP test + EPA Method 5 sizing\n");
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::design;
+
+    #[test]
+    fn conductive_faster_than_dielectric() {
+        // dielectric w = eps0*E^2*d/(6mu) ≈ 0.0147 m/s; conductive = 2x ≈ 0.0293 m/s
+        let diel = design(10.0, 2000.0, 99.0, 3.0, 2.0, "dielectric", 1e6);
+        let cond = design(10.0, 2000.0, 99.0, 3.0, 2.0, "conductive", 1e6);
+        assert!(diel.contains("Migration velocity: 0.0147"), "dielectric w wrong:\n{diel}");
+        assert!(cond.contains("Migration velocity: 0.0294"), "conductive w should be 2x dielectric:\n{cond}");
+    }
 }

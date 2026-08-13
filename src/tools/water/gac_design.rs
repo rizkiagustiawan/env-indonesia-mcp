@@ -69,7 +69,8 @@ pub fn design(
     // ═══ Carbon Usage Rate (CUR) ═══
     out.push_str("── Carbon Usage Rate (CUR) ──\n\n");
 
-    let cur_kg_day = flow_m3_day * (c_influent_mg_l - c_target_mg_l) / (q_capacity * 1000.0).max(1e-10);
+    // Q[m³/day]×ΔC[mg/L] = Q×ΔC×1000 [mg/day] ÷ q[mg/g] ÷ 1000 = Q×ΔC/q [kg/day]
+    let cur_kg_day = flow_m3_day * (c_influent_mg_l - c_target_mg_l) / q_capacity.max(1e-10);
     let annual_carbon_kg = cur_kg_day * 365.0;
 
     out.push_str(&format!("  ► CUR: {:.2} kg/day ({:.0} kg/year)\n\n", cur_kg_day, annual_carbon_kg));
@@ -112,4 +113,16 @@ pub fn design(
     out.push_str("  • For design: RSSCT (rapid small-scale column test) recommended\n");
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::design;
+
+    #[test]
+    fn carbon_usage_rate_units() {
+        // Q=1000 m3/day, dC=100 mg/L, q=20 mg/g -> CUR = 1000*100/20 = 5000 kg/day
+        let result = design("tce", 110.0, 10.0, 1000.0, 20.0, 0.0, 10.0);
+        assert!(result.contains("CUR: 5000.00"), "CUR should be 5000 kg/day, got:\n{result}");
+    }
 }

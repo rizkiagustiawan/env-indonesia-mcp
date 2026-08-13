@@ -40,7 +40,8 @@ pub fn descriptive(data_json: &str) -> String {
     let (skewness, kurtosis) = if std > f64::EPSILON {
         // Degenerate constant series have no defined standardized moments.
         let m3 = data.iter().map(|x| ((x - mean) / std).powi(3)).sum::<f64>() / n as f64;
-        let skewness = m3 * (n * (n - 1)) as f64 / (n - 2).max(1) as f64;
+        // Adjusted Fisher-Pearson: G1 = n²·m3 / ((n-1)(n-2))  (scipy bias=False convention)
+        let skewness = m3 * (n as f64).powi(2) / ((n - 1) as f64 * (n - 2).max(1) as f64);
 
         // Kurtosis (excess, Fisher's)
         let m4 = data.iter().map(|x| ((x - mean) / std).powi(4)).sum::<f64>() / n as f64;
@@ -515,5 +516,13 @@ mod tests {
 
         assert!(result.starts_with("ERROR [E102]:"));
         assert!(result.contains("panjang series"));
+    }
+
+    #[test]
+    fn skewness_fisher_pearson_adjusted() {
+        // [1,2,100]: adjusted Fisher-Pearson skewness ≈ 1.73 (buggy n(n-1)/(n-2) factor gave ≈ 2.31)
+        let result = descriptive("[1.0, 2.0, 100.0]");
+        assert!(result.contains("Skewness = 1.73"), "skewness wrong:\n{result}");
+        assert!(!result.contains("Skewness = 2.30"), "buggy n(n-1)/(n-2) factor present:\n{result}");
     }
 }

@@ -16,8 +16,12 @@ try:
     catch = grid.view('catch')
     import numpy as np
     area_pixels = np.sum(catch > 0)
-    res = grid.affine[0]
-    area_km2 = area_pixels * (res * 111.32)**2
+    res_x = abs(grid.affine[0]); res_y = abs(grid.affine[4])
+    if grid.crs is not None and grid.crs.is_geographic:
+        km_per_deg_lon = 111.32 * np.cos(np.radians(grid.affine.yoff))
+        area_km2 = area_pixels * (res_x * km_per_deg_lon) * (res_y * 111.32)
+    else:
+        area_km2 = area_pixels * (res_x / 1000.0) * (res_y / 1000.0)
     print(f'SUCCESS: Watershed delineated. Area={{area_km2:.2f}} km². Output: {}')
 except Exception as e:
     print(f'ERROR: {{e}}')

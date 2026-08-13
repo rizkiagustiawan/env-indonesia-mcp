@@ -33,11 +33,11 @@ pub fn calculate(compound: &str, concentration_mgl: f64, temperature_c: f64) -> 
     let t_k = temperature_c + 273.15;
     let kh_t = kh_25 * (delta_h_r * (1.0 / 298.15 - 1.0 / t_k)).exp();
 
-    // Convert concentration mg/L to mol/m³
-    let _c_mol_m3 = concentration_mgl / mw * 1000.0; // mg/L → g/m³ → mol/m³
+    // Convert concentration mg/L to mol/m³ (1 mg/L ≡ 1 g/m³, so g/m³ ÷ g/mol = mol/m³)
+    let _c_mol_m3 = concentration_mgl / mw;
 
-    // Partial pressure
-    let p_atm = kh_t * (concentration_mgl / mw / 1000.0); // mol/L × atm·m³/mol × 1000 L/m³
+    // Partial pressure: p = KH × C with C in mol/m³ (KH units = atm·m³/mol)
+    let p_atm = kh_t * (concentration_mgl / mw);
 
     // Dimensionless Henry's constant Hcc = KH / (R × T)
     let r = 8.205e-5; // atm·m³/(mol·K)
@@ -83,4 +83,17 @@ pub fn calculate(compound: &str, concentration_mgl: f64, temperature_c: f64) -> 
     out.push_str("  NH₃          : 5.7e-4\n");
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::calculate;
+
+    #[test]
+    fn partial_pressure_mol_per_m3_units() {
+        // 1 mg/L benzene (MW 78.11, KH 5.55e-3): p = KH × (1/78.11) ≈ 7.1e-5 atm (mol/m³)
+        let result = calculate("benzene", 1.0, 25.0);
+        assert!(result.contains("e-5"), "p should be ~7e-5 atm, got:\n{result}");
+        assert!(!result.contains("e-8"), "p is 1000x too small (mol/L vs mol/m3):\n{result}");
+    }
 }

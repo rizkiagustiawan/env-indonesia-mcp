@@ -34,10 +34,8 @@ pub fn assess(
     let d_air = 0.1; // m2/day typical for VOCs in air
     let d_eff = d_air * theta_a.powf(10.0/3.0) / n.powi(2).max(1e-15);
 
-    // Q_soil = building ventilation rate through soil
-    // Q_soil = (ACH/3600) * A_b * H_b * (1/24) converted to m3/day
-    // Simplified: Q_soil = A_b * H_b * ACH / 24 (m3/day)
-    let q_soil = A_b * H_b * ACH / 24.0;
+    // Q_soil = building ventilation rate (m3/day) = ACH[1/hr] × V[m³] × 24[hr/day]
+    let q_soil = A_b * H_b * ACH * 24.0;
 
     // Attenuation coefficient (J&E 1991):
     // alpha = (D_eff * A_b * L_crack) / (Q_soil * L_T + D_eff * A_b * L_crack * (L_T/L_crack))
@@ -75,4 +73,16 @@ pub fn assess(
 
     out.push_str("\n  Ref: Johnson & Ettinger 1991; EPA 2017 (J&E model)\n");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::assess;
+
+    #[test]
+    fn ventilation_rate_units() {
+        // V=100×3=300 m3, ACH=0.5/hr -> Q = 300*0.5*24 = 3600 m3/day (not /24)
+        let result = assess(1000.0, 0.4, 0.1, 0.3, 2.0, 100.0, 3.0, 0.5, 0.01, 0.05);
+        assert!(result.contains("Q_soil (ventilation): 3600.00"), "ACH conversion wrong:\n{result}");
+    }
 }

@@ -27,7 +27,7 @@ pub fn assess(alkalinity_mg_l_caco3: f64, ph: f64, temp_c: f64) -> String {
     let ct = alk / (alpha1 + 2.0 * alpha2).max(1e-15); // total carbonate
 
     // Buffer intensity (Stumm & Morgan)
-    let beta = 2.303 * (h + oh + ct * (alpha0 * alpha1 + 4.0 * alpha1 * alpha2 + alpha0 * alpha2));
+    let beta = 2.303 * (h + oh + ct * (alpha0 * alpha1 + 4.0 * alpha0 * alpha2 + alpha1 * alpha2));
 
     out.push_str(&format!("Alkalinity: {:.1} mg/L CaCO3 ({:.4} eq/L)\n", alkalinity_mg_l_caco3, alk));
     out.push_str(&format!("pH: {:.1}, Temp: {:.0}C\n\n", ph, temp_c));
@@ -64,6 +64,14 @@ mod tests {
         let f35 = (-(-7.3 / r) * (1.0 / 308.15 - 1.0 / t_ref)).exp();
         // Change should be modest (few %), not 10x
         assert!(f35 > 0.5 && f35 < 2.0, "van't Hoff factor at 35C={f35} should be near 1");
+    }
+
+    // At pH ~ pKa2 (10.3), alpha2 is large. The 4x coefficient must sit on alpha0*alpha2,
+    // NOT alpha1*alpha2. Correct beta ≈ 0.0012; swapped cross-terms give ≈ 0.0036.
+    #[test]
+    fn buffer_intensity_cross_terms_correct_order() {
+        let result = super::assess(100.0, 10.3, 25.0);
+        assert!(result.contains("beta: 0.0012"), "buffer intensity cross-terms swapped:\n{result}");
     }
 }
 

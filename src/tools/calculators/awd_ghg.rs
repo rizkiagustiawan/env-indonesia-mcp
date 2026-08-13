@@ -148,7 +148,8 @@ pub fn assess(
     out.push_str("-- Phase 3: CF vs AWD Comparison --\n\n");
 
     let cf_ch4 = india_bef_ch4 * season_factor * 1.0 * 1.0 * growing_season_days * 28.0;
-    let cf_n2o = 0.001 * n_fertilizer_kg_ha * 1.0 * 1.0 * 265.0;
+    // Baseline CF N2O: EF1FR(0.004) × N × 44/28 × GWP265 (matches Phase 2 structure)
+    let cf_n2o = ef1_fr * n_fertilizer_kg_ha * 44.0 / 28.0 * 265.0;
     let cf_gwp = cf_ch4 + cf_n2o + co2_total;
 
     let ch4_reduction = (1.0 - ch4_co2eq / cf_ch4) * 100.0;

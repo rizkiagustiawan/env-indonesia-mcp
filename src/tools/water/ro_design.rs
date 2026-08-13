@@ -143,9 +143,9 @@ pub fn design(
     // E = dP / (R * eta) where dP in bar -> kPa -> J/m3 -> kWh/m3
     // E (kWh/m3) = dP(kPa) / (R * eta * 3600)
     let pump_eff = 0.85;
-    let energy_kwh_m3 = feed_pressure_bar * 100.0 / (recovery * pump_eff * 3600.0 / 1000.0);
-    // Simpler: E = P(bar) * 100 / (recovery * eta) / 3.6 (kWh/m3)
-    let energy_kwh_m3_v2 = feed_pressure_bar * 100.0 / (recovery * pump_eff) / 3.6;
+    // E[kWh/m³] = P[bar]×1e5 / (R·η·3.6e6) = P[bar]×100 / (R·η·3600)
+    let energy_kwh_m3 = feed_pressure_bar * 100.0 / (recovery * pump_eff * 3600.0);
+    let energy_kwh_m3_v2 = feed_pressure_bar * 100.0 / (recovery * pump_eff) / 3600.0;
     let daily_energy = energy_kwh_m3_v2 * permeate_flow;
 
     out.push_str("-- Energy Consumption --\n\n");
@@ -176,4 +176,16 @@ pub fn design(
     out.push_str("  • For design: use ROSA/DOW WLM software\n");
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::design;
+
+    #[test]
+    fn specific_energy_units() {
+        // P=50 bar, R=0.12, eta=0.85 -> E = 50*100/(0.12*0.85*3600) = 13.62 kWh/m3
+        let result = design(1000.0, 10.0, 50.0, 5.0, 0.1, 1000.0, 25.0);
+        assert!(result.contains("Specific energy: 13.62"), "energy should be ~13.6 kWh/m3, got:\n{result}");
+    }
 }

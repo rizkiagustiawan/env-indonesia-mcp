@@ -12,9 +12,14 @@ pub fn transform(x: f64, y: f64, from_epsg: &str, to_epsg: &str) -> String {
             let result = String::from_utf8_lossy(&o.stdout).trim().to_string();
             if result.contains(',') {
                 let parts: Vec<&str> = result.split(',').collect();
-                format!("=== Coordinate Transform ===\nInput: ({:.6}, {:.6}) [{}]\nOutput: ({}, {}) [{}]\n\nUTM Zone Info: {}\n",
-                    x, y, from_epsg, parts[0], parts[1], to_epsg,
-                    utm_zone_from_lon(y, x)) // (lat=y, lon=x) for WGS84
+                // UTM zone only meaningful when source CRS is geographic WGS84 (x=lon, y=lat)
+                let zone_info = if from_epsg.to_uppercase().contains("4326") {
+                    format!("\n\nUTM Zone Info: {}", utm_zone_from_lon(y, x))
+                } else {
+                    String::new()
+                };
+                format!("=== Coordinate Transform ===\nInput: ({:.6}, {:.6}) [{}]\nOutput: ({}, {}) [{}]{}\n",
+                    x, y, from_epsg, parts[0], parts[1], to_epsg, zone_info)
             } else {
                 format!(
                     "ERROR: Transform failed: {}",
@@ -55,9 +60,9 @@ pub fn utm_to_wgs84(easting: f64, northing: f64, epsg: &str) -> String {
 
 /// Indonesia TM-3 zones (EPSG:23830-23845)
 pub fn get_tm3_zone(lon: f64) -> String {
-    // TM-3 zones: central meridians at 90, 93, 96, ..., 138, 141
+    // TM-3 zones: EPSG 23830 = CM 93°E, 23831 = 96°E, ..., 23845 = 138°E
     let cm = ((lon - 88.5) / 3.0).floor() as i32 * 3 + 90;
-    let zone_num = (cm - 90) / 3;
+    let zone_num = (cm - 93) / 3;
     let epsg = 23830 + zone_num;
     format!("Indonesia TM-3: CM {}°E (EPSG:{})", cm, epsg)
 }
