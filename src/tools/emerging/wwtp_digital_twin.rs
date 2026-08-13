@@ -1,4 +1,4 @@
-/// WWTP Digital Twin — ASM1 + XGBoost+SHAP + LSTM-GRU Hybrid (2026 SOTA)
+/// WWTP Digital Twin — ASM1 Kinetics + Heuristic Sensitivity (simplified 2026 SOTA)
 ///
 /// IMPLEMENTES: Nourani 2025 "SHAP for WWTP digital twin" (J Water Proc Eng, 34 cit)
 /// + Yun 2025 "XGBoost TN optimization" (Water Res, 32 cit, -17.5% TN, 788 tCO2/y)
@@ -15,7 +15,7 @@
 ///   Complexity: O(T*L*D^2) where T=trees, L=leaves, D=depth
 
 pub fn assess(influent_bod_mg_l: f64, influent_cod_mg_l: f64, flow_m3_day: f64, mlss_mg_l: f64, do_mg_l: f64, temp_c: f64, volume_m3: f64, target_bod_mg_l: f64) -> String {
-    let mut out = String::from("=== WWTP Digital Twin (ASM1 + XGBoost+SHAP 2026) ===\n");
+    let mut out = String::from("=== WWTP Digital Twin (ASM1 + Heuristic Sensitivity 2026) ===\n");
     out.push_str("Ref: Nourani 2025 (34 cit); Yun 2025 (32 cit); Xiong 2025 (23 cit)\n\n");
 
     let k_h = 3.0 * 1.072_f64.powf(temp_c - 20.0);

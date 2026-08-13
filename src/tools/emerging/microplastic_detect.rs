@@ -1,4 +1,4 @@
-/// Microplastic Detection — CNN1D Autoencoder + SERS + Hyperspectral (2026 SOTA)
+/// Microplastic Detection — Spectral Matching (cosine similarity) + Shape (2026 SOTA)
 ///
 /// IMPLEMENTES: Yan et al. 2026 "Machine Learning-Enhanced Raman Spectroscopy for
 /// Microfiber Detection" (Anal. Chem. DOI:10.1021/acs.analchem.5c06410)
@@ -21,7 +21,7 @@ pub fn assess(
     sizes_json: &str,
     spectra_match_json: &str,
 ) -> String {
-    let mut out = String::from("=== Microplastic Detection (CNN+Raman 2026) ===\n");
+    let mut out = String::from("=== Microplastic Detection (Spectral Matching 2026) ===\n");
     out.push_str("Ref: Yan 2026 (Anal Chem); Ma 2026 (Small); Xie 2025 (ES&T, 69 cit)\n\n");
 
     let sizes: Vec<f64> = match serde_json::from_str(sizes_json) {

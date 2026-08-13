@@ -2146,6 +2146,34 @@ pub struct EnkfParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FireDangerRatingParam {
+    pub kbdi_yesterday: f64,
+    pub max_temp_c: f64,
+    pub mean_annual_precip_mm: f64,
+    pub daily_precip_mm: f64,
+    pub is_peatland: bool,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SourceApportionmentParam {
+    pub pm25_total_ug_m3: f64,
+    pub so4_ug_m3: f64,
+    pub no3_ug_m3: f64,
+    pub ec_ug_m3: f64,
+    pub oc_ug_m3: f64,
+    pub crustal_ug_m3: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct DstpPlumeParam {
+    pub discharge_depth_m: f64,
+    pub tailings_volume_m3_day: f64,
+    pub solid_fraction_pct: f64,
+    pub ocean_current_speed_m_s: f64,
+    pub settling_velocity_mm_s: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct FireSpreadParam {
     #[schemars(description = "Anderson fuel model 1-13 (1=short grass, 4=chaparral, 10=timber)")]
     pub fuel_model: u8,
@@ -5069,7 +5097,7 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(
-        description = "Constructed Wetland Design (k-C* model). FWS/HSSF sizing. BOD/TSS/NH4N. Ref: Kadlec & Knight 1996."
+        description = "Constructed Wetland Design (volumetric first-order model). FWS/HSSF sizing. BOD/TSS/NH4N. Ref: Reed et al. 1995; Kadlec & Knight 1996."
     )]
     fn constructed_wetland(&self, Parameters(p): Parameters<ConstructedWetlandParam>) -> String {
         tools::water::constructed_wetland::design(
@@ -5858,6 +5886,28 @@ impl EnvIndonesiaServer {
         )
     }
 
+    #[tool(description = "Fire Danger Rating System (FDRS) — Keetch-Byram Drought Index (KBDI). Early warning untuk prediksi risiko karhutla hutan dan gambut. Ref: Keetch & Byram (1968); BMKG FDRS.")]
+    fn fire_danger_rating(&self, Parameters(p): Parameters<FireDangerRatingParam>) -> String {
+        tools::advanced_physics::fire_danger_rating::calculate(
+            p.kbdi_yesterday, p.max_temp_c, p.mean_annual_precip_mm, p.daily_precip_mm, p.is_peatland
+        )
+    }
+
+    #[tool(description = "Source Apportionment PM2.5 (CMB). Memisahkan kontribusi PLTU, Kendaraan, Pembakaran, dan Debu berdasarkan chemical signature (SO4, NO3, EC, OC). Ref: EPA CMB 8.2; Vital Strategies (2025).")]
+    fn pm_source_apportionment(&self, Parameters(p): Parameters<SourceApportionmentParam>) -> String {
+        tools::airquality::source_apportionment::assess(
+            p.pm25_total_ug_m3, p.so4_ug_m3, p.no3_ug_m3, p.ec_ug_m3, p.oc_ug_m3, p.crustal_ug_m3
+        )
+    }
+
+    #[tool(description = "Deep-Sea Tailings Placement (DSTP) Plume Dispersion. Menghitung dispersi tailing di laut dalam untuk industri nikel. Ref: Shimmield et al. 2010; Reichelt-Brushett 2012.")]
+    fn dstp_plume_dispersion(&self, Parameters(p): Parameters<DstpPlumeParam>) -> String {
+        tools::ocean_modeling::dstp_plume::assess(
+            p.discharge_depth_m, p.tailings_volume_m3_day, p.solid_fraction_pct,
+            p.ocean_current_speed_m_s, p.settling_velocity_mm_s
+        )
+    }
+
     #[tool(description = "Aerial Wildfire Suppression Optimizer. Two-stage gradient-based intervention design through 3-state CA model. Water vs retardant physics. Fleet config from Matei 2026. Ref: Matei et al. 2026 (arXiv:2606.13633). For BNPB/Manggala Agni operations.")]
     fn fire_suppression_optimizer(&self, Parameters(p): Parameters<FireSuppressionParam>) -> String {
         tools::advanced_physics::fire_suppression::assess(
@@ -6229,7 +6279,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "PFAS Electrochemical Oxidation (CF2-Unzipping). BDD/Ti4O7/SnO2 electrodes. EE/O formula. DRE 95-99.9%.")]
+    #[tool(description = "PFAS Electrochemical Oxidation (CF2-Unzipping). BDD/Ti4O7/SnO2 electrodes. EE/O formula. Literature DRE 95-99.9% (NOT tool output).")]
     fn pfas_electrochemical_oxidation(&self, Parameters(p): Parameters<PfasElectrochemParam>) -> String {
         tools::emerging::pfas_electrochem::assess(
             &p.pfas_type, p.conc_mg_l, p.volume_m3, &p.electrode_type,
@@ -6237,7 +6287,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "PFAS Supercritical Water Oxidation (SCWO). T>374C, P>22.1MPa. DRE>99.99%. Autothermal at COD>120g/L.")]
+    #[tool(description = "PFAS Supercritical Water Oxidation (SCWO). T>374C, P>22.1MPa. Empirical DRE estimate. Autothermal at COD>120g/L.")]
     fn pfas_scwo_design(&self, Parameters(p): Parameters<PfasScwoParam>) -> String {
         tools::emerging::pfas_scwo::assess(
             p.pfas_conc_ppb, p.feed_flow_m3_day, p.cod_g_l,
@@ -6267,7 +6317,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "Nano-Treatment Design (MOF). PCN-999 1090 mg/g, TA@MOF-808 2500 mg/g. Langmuir + pseudo-2nd-order.")]
+    #[tool(description = "Nano-Treatment Design (MOF). Literature qmax: PCN-999 1090 mg/g, TA@MOF-808 2500 mg/g. Langmuir + pseudo-2nd-order.")]
     fn nano_treatment_design(&self, Parameters(p): Parameters<NanoTreatmentParam>) -> String {
         tools::emerging::nano_treatment::assess(
             &p.contaminant, p.conc_mg_l, p.volume_m3, &p.nanomaterial, p.dose_g, p.contact_time_min
@@ -6319,7 +6369,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "WWTP Digital Twin (ASM1 simplified). Monod kinetics + mass balance + aeration optimization.")]
+    #[tool(description = "WWTP Digital Twin (ASM1 Kinetics + Heuristic Sensitivity simplified). Monod kinetics + mass balance + aeration optimization. Literature refs: Nourani 2025; Yun 2025; Xiong 2025.")]
     fn wwtp_digital_twin(&self, Parameters(p): Parameters<WwtpDigitalTwinParam>) -> String {
         tools::emerging::wwtp_digital_twin::assess(
             p.influent_bod_mg_l, p.influent_cod_mg_l, p.flow_m3_day,
@@ -6327,7 +6377,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "Microplastic AI Detection. Spectral matching (cosine similarity) + shape classification.")]
+    #[tool(description = "Microplastic AI Detection (Spectral matching via cosine similarity + shape classification). Literature refs: Yan 2026; Ma 2026; Nayani 2026.")]
     fn microplastic_detect(&self, Parameters(p): Parameters<MicroplasticDetectParam>) -> String {
         tools::emerging::microplastic_detect::assess(
             &p.sample_id, p.particle_count, &p.sizes_json, &p.spectra_match_json
@@ -6358,7 +6408,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "Watershed Digital Twin (SWAT+MODFLOW simplified). PFAS mass balance. River concentration prediction.")]
+    #[tool(description = "Watershed Digital Twin (Screening Mass-Balance PFAS). PFAS mass balance. River concentration prediction. Literature ref: Zhang 2025.")]
     fn watershed_digital_twin(&self, Parameters(p): Parameters<WatershedTwinParam>) -> String {
         tools::emerging::watershed_twin::assess(
             p.watershed_area_km2, p.pfas_source_kg_yr, p.rainfall_mm_yr,
