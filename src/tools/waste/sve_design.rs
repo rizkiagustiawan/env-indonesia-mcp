@@ -35,7 +35,8 @@ pub fn design(
     // ═══ Airflow Rate (Radial Flow) ═══
     out.push_str("── Airflow Rate (Radial Steady-State) ──\n\n");
 
-    // Q = 2π × k_air × H × (P_w² - P_atm²) / (μ × P_atm × ln(R_w/R_i))
+    // Q = π × k_air × H × (P_atm² - P_w²) / (μ × P_atm × ln(R_i/R_w))
+    // (compressible gas: ½ from P² integration cancels the 2π radial area)
     // For initial estimate, assume R_i = 10 m, R_w = 0.05 m
     let r_well = 0.05; // well radius
     let r_influence = 10.0; // initial estimate
@@ -44,7 +45,7 @@ pub fn design(
     let p_atm_sq = p_atm_pa * p_atm_pa;
     let ln_ratio = (r_influence as f64 / r_well as f64).ln();
 
-    let q_air_m3_s = 2.0 * std::f64::consts::PI * k_air_m2 * screen_length_m
+    let q_air_m3_s = std::f64::consts::PI * k_air_m2 * screen_length_m
         * (p_w_sq - p_atm_sq).abs() / (mu_air * p_atm_pa * ln_ratio).max(1e-15);
     let q_air_m3_min = q_air_m3_s * 60.0;
     let q_air_m3_hr = q_air_m3_s * 3600.0;

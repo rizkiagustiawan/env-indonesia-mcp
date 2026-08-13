@@ -32,9 +32,9 @@ pub fn calculate(
     // Speed correction
     let speed_corr = 33.0 * (v + 40.0 + 500.0 / v).log10() - 68.8;
 
-    // Heavy vehicle correction
+    // Heavy vehicle correction (CoRTN): 10·log10(1 + 5P/V), P = % heavy vehicles
     let hv_corr = if heavy_vehicle_pct > 0.0 {
-        0.8 * (1.0 + heavy_vehicle_pct / 100.0 * 4.0).log10() * 10.0
+        10.0 * (1.0 + 5.0 * heavy_vehicle_pct / v).log10()
     } else {
         0.0
     };
@@ -190,4 +190,17 @@ pub fn calculate(
 
     out.push_str("\n══════════════════════════════════════════════\n");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::calculate;
+
+    #[test]
+    fn cortn_heavy_vehicle_correction() {
+        // P=20%, V=50 → 10·log10(1 + 5·20/50) = 10·log10(3) ≈ +4.8 dB (was 8·log10(1.8) ≈ +2.0)
+        let result = calculate(1000.0, 50.0, 100.0, 20.0, 0.0, "hard", None);
+        assert!(result.contains("+4.8"), "CoRTN heavy-vehicle correction wrong:\n{result}");
+        assert!(!result.contains("kendaraan berat          = +2.0"), "old buggy hv factor present:\n{result}");
+    }
 }

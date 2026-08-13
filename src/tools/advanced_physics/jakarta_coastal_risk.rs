@@ -56,14 +56,14 @@ pub fn assess(
     // Baseline year ~ 2014 (center of 1995-2014).
     let slr_2050 = 0.24; // m
     let slr_2100 = 0.56; // m
-    let slr_m = if years <= 36.0 {
+    let slr_m = if years <= 24.0 {
         // 2026 -> 2050 is 24 years; linear from 0 in 2014 to 0.24 in 2050
         // rate = 0.24 / (2050-2014) = 0.24/36 = 0.00667 m/yr
         // by year 2026+years: slr = rate * (2026 + years - 2014)
         0.00667 * (12.0 + years)
     } else {
         // beyond 2050: interpolate 2050->2100
-        let beyond = years - 36.0;
+        let beyond = years - 24.0;
         slr_2050 + (slr_2100 - slr_2050) * (beyond / 50.0).min(1.0)
     };
     out.push_str("2. SEA LEVEL RISE (IPCC AR6 SSP245 median):\n");
@@ -221,5 +221,13 @@ mod tests {
     fn critical_risk_classification() {
         let res = assess(-6.2, 106.8, 75.0, 1000.0, 1.0, 1.0, 30);
         assert!(res.contains("CRITICAL") || res.contains("HIGH"), "expected high/critical risk");
+    }
+
+    // Self-check: SLR monotonic past 2050 (was discontinuous: dropped from 0.32m to 0.246m at years>36)
+    #[test]
+    fn slr_monotonic_past_2050() {
+        let res = assess(-6.2, 106.8, 75.0, 500.0, 5.0, 3.0, 37);
+        // years=37 (>24): 0.24 + 0.32·13/50 = 0.323 m
+        assert!(res.contains("0.323"), "SLR by +37yr should be ~0.323 m:\n{}", res);
     }
 }

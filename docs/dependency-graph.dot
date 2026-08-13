@@ -1,0 +1,212 @@
+// env-indonesia-mcp dependency graph
+// Generated from codebase knowledge graph (4675 nodes / 9821 edges) + Cargo.toml + requirements.txt
+digraph env_indonesia_mcp {
+  rankdir=LR;
+  bgcolor="white";
+  splines=ortho;
+  nodesep=0.5;
+  ranksep=1.0;
+  fontname="Helvetica";
+  node [fontname="Helvetica", fontsize=11];
+
+  // ================= RUST CORE =================
+  subgraph cluster_core {
+    label="Rust Core (src/)";
+    style=filled; fillcolor="#eef2fb"; color="#4a69bd";
+    main      [label="main.rs\n(entry)", shape=box, style=filled, fillcolor="#c9d6ff"];
+    server    [label="server.rs\n(332 MCP tools)", shape=box, style=filled, fillcolor="#c9d6ff"];
+    result    [label="result_contract.rs\n(shared type)", shape=box, style=filled, fillcolor="#c9d6ff"];
+    amdalpipe [label="amdal_pipeline.rs", shape=box, style=filled, fillcolor="#c9d6ff"];
+    indonesia [label="indonesia.rs", shape=box, style=filled, fillcolor="#c9d6ff"];
+    validation[label="validation/\n(metrics + validate_model)", shape=box, style=filled, fillcolor="#c9d6ff"];
+  }
+
+  // ================= TOOL MODULES =================
+  subgraph cluster_tools {
+    label="Tool Modules (src/tools/)";
+    style=filled; fillcolor="#eafaf1"; color="#27ae60";
+    calc    [label="calculators\n(82 files)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    water   [label="water\n(31)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    compliance [label="compliance\n(30)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    satellite [label="satellite\n(34)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    emerging [label="emerging\n(20)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    gis     [label="gis\n(31)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    data    [label="data\n(15)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    advphys [label="advanced_physics\n(14)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    airq    [label="airquality\n(13)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    esg     [label="esg\n(11)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    biodiv  [label="biodiversity\n(10)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    oceanm  [label="ocean_modeling\n(9)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    waste   [label="waste\n(8)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    processing [label="processing\n(8)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    datasrc [label="datasources\n(12)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    noise   [label="noise\n(7)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    radiation [label="radiation\n(6)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    ocean   [label="ocean\n(5)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    workflows [label="workflows\n(4)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    amdal   [label="amdal\n(4)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    wrappers [label="wrappers\n(2)", shape=box, style=filled, fillcolor="#d5f5e3"];
+    physval [label="physics_validator.rs", shape=box, style=filled, fillcolor="#d5f5e3"];
+  }
+
+  // ================= PYTHON BRIDGES =================
+  subgraph cluster_python {
+    label="Python Bridges (subprocess / GEE)";
+    style=filled; fillcolor="#fef9e7"; color="#e67e22";
+    provenance [label="gis/provenance.py\n(shared result type)", shape=box, style=filled, fillcolor="#fdebd0"];
+    demnas  [label="datasources/demnas_engine.py\n(DEMNAS 8m)", shape=box, style=filled, fillcolor="#fdebd0"];
+    raster  [label="gis/raster_engine.py", shape=box, style=filled, fillcolor="#fdebd0"];
+    landcover [label="gis/landcover_engine.py", shape=box, style=filled, fillcolor="#fdebd0"];
+    spatial [label="gis/spatial_engine.py", shape=box, style=filled, fillcolor="#fdebd0"];
+    viewshed [label="gis/viewshed_engine.py", shape=box, style=filled, fillcolor="#fdebd0"];
+    satengines [label="satellite/*_engine.py\n(sar, methane, hyperspectral,\ntimelapse, satellite_query)", shape=box, style=filled, fillcolor="#fdebd0"];
+    orchestrator [label="orchestrators\n(amdal_map_generator,\nmaster_pipeline, super_amdal_pipeline)", shape=box, style=filled, fillcolor="#fdebd0"];
+    captcha [label="datasources/captcha_client.py", shape=box, style=filled, fillcolor="#fdebd0"];
+  }
+
+  // ================= EXTERNAL RUST CRATES =================
+  subgraph cluster_crates {
+    label="External Rust Crates (Cargo.toml)";
+    style=filled; fillcolor="#f5f5f5"; color="#95a5a6";
+    node [shape=ellipse, style=filled, fillcolor="#ecf0f1", fontsize=9];
+    rmcp [label="rmcp 2.0"];
+    tokio [label="tokio"];
+    reqwest [label="reqwest 0.12"];
+    serde [label="serde"];
+    serde_json [label="serde_json"];
+    geo [label="geo 0.29"];
+    geojson [label="geojson"];
+    chrono [label="chrono"];
+    anyhow [label="anyhow"];
+    tracing [label="tracing"];
+    uuid [label="uuid"];
+    schemars [label="schemars"];
+    rayon [label="rayon"];
+    plotters [label="plotters"];
+    lazy_static [label="lazy_static"];
+  }
+
+  // ================= EXTERNAL PYTHON PACKAGES =================
+  subgraph cluster_pyreq {
+    label="External Python Packages (requirements.txt)";
+    style=filled; fillcolor="#f5f5f5"; color="#95a5a6";
+    node [shape=ellipse, style=filled, fillcolor="#ecf0f1", fontsize=9];
+    numpy [label="numpy"];
+    matplotlib [label="matplotlib"];
+    fpdf2 [label="fpdf2"];
+    geopandas [label="geopandas"];
+    shapely [label="shapely"];
+    contextily [label="contextily"];
+    rasterio [label="rasterio"];
+    requests [label="requests"];
+    gee [label="earthengine-api"];
+    imageio [label="imageio"];
+    pillow [label="Pillow"];
+    dateutil [label="python-dateutil"];
+  }
+
+  // ================= EDGES =================
+  // entry -> core
+  main -> server;
+  main -> amdalpipe;
+  server -> result;
+  server -> validation;
+
+  // server registers every tool module
+  server -> calc;
+  server -> water;
+  server -> compliance;
+  server -> satellite;
+  server -> emerging;
+  server -> gis;
+  server -> data;
+  server -> advphys;
+  server -> airq;
+  server -> esg;
+  server -> biodiv;
+  server -> oceanm;
+  server -> waste;
+  server -> processing;
+  server -> datasrc;
+  server -> noise;
+  server -> radiation;
+  server -> ocean;
+  server -> workflows;
+  server -> amdal;
+  server -> wrappers;
+  server -> physval;
+
+  // intra-core
+  amdalpipe -> esg;
+  data -> indonesia;
+  ocean -> indonesia;
+
+  // cross-module (from knowledge graph)
+  workflows -> calc [label="orchestrates", style=dashed];
+  workflows -> emerging [label="orchestrates", style=dashed];
+  workflows -> oceanm [label="orchestrates", style=dashed];
+  workflows -> airq [label="orchestrates", style=dashed];
+
+  // rust -> python bridges (subprocess)
+  gis -> raster;
+  gis -> landcover;
+  gis -> spatial;
+  gis -> viewshed;
+  satellite -> satengines;
+  datasrc -> demnas;
+  processing -> raster [style=dashed];
+  amdal -> orchestrator;
+
+  // python internal
+  raster -> provenance;
+  landcover -> provenance;
+  spatial -> provenance;
+  viewshed -> provenance;
+  satengines -> provenance;
+  demnas -> captcha;
+  demnas -> provenance;
+  orchestrator -> spatial;
+  orchestrator -> satengines;
+  orchestrator -> raster;
+  orchestrator -> landcover;
+
+  // external crates (used by core + tools)
+  server -> rmcp;
+  server -> tokio;
+  server -> reqwest;
+  server -> serde;
+  server -> serde_json;
+  server -> schemars;
+  server -> tracing;
+  main -> anyhow;
+  main -> tracing;
+  gis -> geo;
+  gis -> geojson;
+  data -> reqwest;
+  satellite -> reqwest;
+  satellite -> chrono;
+  amdalpipe -> rayon;
+  amdalpipe -> plotters;
+  amdal -> plotters;
+  calc -> plotters [style=dashed];
+  server -> uuid;
+  server -> lazy_static;
+
+  // python packages
+  raster -> rasterio;
+  raster -> numpy;
+  landcover -> numpy;
+  landcover -> matplotlib;
+  spatial -> geopandas;
+  spatial -> shapely;
+  viewshed -> rasterio;
+  viewshed -> numpy;
+  satengines -> gee;
+  demnas -> requests;
+  orchestrator -> fpdf2;
+  orchestrator -> matplotlib;
+  orchestrator -> contextily;
+  satengines -> imageio;
+  satengines -> pillow;
+  raster -> dateutil;
+}

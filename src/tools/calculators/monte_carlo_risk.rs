@@ -70,7 +70,7 @@ pub fn simulate(
         _ => (2.0, 1.3),
     };
 
-    let at_days = 365.0 * 70.0; 
+    let at_cancer_days = 365.0 * 70.0; // lifetime averaging time (cancer only)
 
     // We store the 95th percentile HQ and ILCR for *each* outer loop.
     let mut hq_p95s = Vec::with_capacity(n_outer);
@@ -97,12 +97,15 @@ pub fn simulate(
             let dt = rng.normal(dt_mean, dt_std).max(1.0);
             let ir = rng.lognormal(ir_median, ir_gsd).max(0.001);
 
-            let intake = c * ir * fe * dt / (bw * at_days);
-            
-            let hq = if rfd_mgkgd > 0.0 { intake / rfd_mgkgd } else { 0.0 };
+            // Non-cancer HQ: AT = ED×365 (ED cancels) → ADD = C·IR·EF/(BW·365)
+            let intake_nc = c * ir * fe / (bw * 365.0);
+            // Cancer ILCR: AT = 70 yr × 365 (lifetime)
+            let intake_c = c * ir * fe * dt / (bw * at_cancer_days);
+
+            let hq = if rfd_mgkgd > 0.0 { intake_nc / rfd_mgkgd } else { 0.0 };
             inner_hq.push(hq);
-            
-            let ilcr = intake * csf_mgkgd;
+
+            let ilcr = intake_c * csf_mgkgd;
             inner_ilcr.push(ilcr);
         }
 

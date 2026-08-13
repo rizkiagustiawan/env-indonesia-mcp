@@ -16,8 +16,18 @@ pub fn assess(
     let nh4_mol = nh4_mg_l / 18.04 / 1000.0; // NH4 MW=18.04
     let po4_mol = po4_mg_l / 94.97 / 1000.0; // PO4 MW=94.97
 
-    // IAP (Ion Activity Product)
-    let iap = mg_mol * nh4_mol * po4_mol;
+    // IAP (Ion Activity Product) with pH speciation:
+    // Ksp = 10^-13.26 is activity-based for Mg²⁺ + NH4⁺ + PO4³⁻.
+    // Must use free-ion fractions, not total concentrations (PO4 is mostly HPO4²⁻ at pH 7-9).
+    let h = 10.0_f64.powf(-ph);
+    let ka1 = 10.0_f64.powf(-2.15);
+    let ka2 = 10.0_f64.powf(-7.20);
+    let ka3 = 10.0_f64.powf(-12.35);
+    let h2 = h * h;
+    let frac_po4 = ka1 * ka2 * ka3 / (h2 * h + ka1 * h2 + ka1 * ka2 * h + ka1 * ka2 * ka3);
+    let ka_nh4 = 10.0_f64.powf(-9.25);
+    let frac_nh4 = h / (h + ka_nh4);
+    let iap = mg_mol * (nh4_mol * frac_nh4) * (po4_mol * frac_po4);
 
     // Supersaturation ratio
     let omega = iap / ksp;
@@ -52,4 +62,19 @@ pub fn assess(
 
     out.push_str("\n  Ref: Bhuiyan et al. 2007; Doyle & Parsons 2002; Wu et al. 2022\n");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::assess;
+
+    #[test]
+    fn supersaturation_depends_on_ph() {
+        // 1 mM each Mg/NH4/PO4. pH 7: PO4 mostly HPO4²⁻ → undersaturated;
+        // pH 10: PO4³⁻ fraction much higher → supersaturated. Must be pH-dependent.
+        let low = assess(24.31, 18.04, 94.97, 7.0, 25.0);
+        let high = assess(24.31, 18.04, 94.97, 10.0, 25.0);
+        assert!(!low.contains("Supersaturated"), "pH 7 should be undersaturated:\n{low}");
+        assert!(high.contains("Supersaturated"), "pH 10 should be supersaturated:\n{high}");
+    }
 }

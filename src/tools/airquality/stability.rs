@@ -17,16 +17,18 @@ pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: 
 
     let class = if is_night {
         if cloud_cover_eighths >= 4 {
+            // overcast night: LESS stable (clouds trap longwave) — Turner 1970
             if wind_speed_ms < 2.0 {
-                'F'
-            } else if wind_speed_ms < 3.0 {
-                'F'
-            } else if wind_speed_ms < 5.0 {
                 'E'
+            } else if wind_speed_ms < 3.0 {
+                'E'
+            } else if wind_speed_ms < 5.0 {
+                'D'
             } else {
                 'D'
             }
         } else {
+            // clear night: MORE stable
             if wind_speed_ms < 2.0 {
                 'F'
             } else if wind_speed_ms < 3.0 {
@@ -72,6 +74,21 @@ pub fn estimate(wind_speed_ms: f64, solar_radiation: &str, cloud_cover_eighths: 
     ));
     out.push_str(&format!("Kelas Stabilitas: {} — {}\n", class, desc));
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::estimate;
+
+    #[test]
+    fn overcast_night_less_stable_than_clear() {
+        // Overcast (≥4/8) night, 1.5 m/s → E (was F, duplicated clear branch)
+        let overcast = estimate(1.5, "night", 6);
+        assert!(overcast.contains("Kelas Stabilitas: E"), "overcast night should be E:\n{overcast}");
+        // Clear (≤3/8) night, 1.5 m/s → F
+        let clear = estimate(1.5, "night", 2);
+        assert!(clear.contains("Kelas Stabilitas: F"), "clear night should be F:\n{clear}");
+    }
 }
 
 pub fn get_sigma(class: char, x_m: f64) -> (f64, f64) {

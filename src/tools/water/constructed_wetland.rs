@@ -1,6 +1,6 @@
-/// Constructed Wetland — k-C* Model
+/// Constructed Wetland — Volumetric First-Order Model (with C* background)
 /// Ce = C* + (Ci - C*) × exp(-k × t_hyd)
-/// Ref: Kadlec & Wallace (2009), Treatment Wetlands 2nd Ed. Values originally from Kadlec & Knight (1996).
+/// Ref: Reed, Crites & Middlebrooks (1995) volumetric k; C* background from Kadlec & Knight (1996).
 
 pub fn design(
     q_m3d: f64,
@@ -11,7 +11,7 @@ pub fn design(
     wetland_type: &str,
 ) -> String {
     let mut out = String::from("=== Desain Constructed Wetland (k-C* Model) ===\n");
-    out.push_str("Ref: Kadlec & Wallace (2009), Treatment Wetlands 2nd Ed.\n\n");
+    out.push_str("Ref: Reed, Crites & Middlebrooks (1995); C* from Kadlec & Knight (1996)\n\n");
 
     if q_m3d <= 0.0 {
         return "ERROR [E102]: Parameter harus > 0.".into();

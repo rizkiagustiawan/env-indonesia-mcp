@@ -64,9 +64,10 @@ pub fn assess(
     // ═══ Phase 2: InVEST 4-Pool Carbon Storage ═══
     out.push_str("-- Phase 2: InVEST 4-Pool Carbon Storage (Stanford) --\n\n");
 
-    let c_above = agb_per_tree_kg * tree_density_ha / 1000.0; // ton/ha
-    let c_below = c_above * bgb_ratio; // ton/ha
-    let c_soil = soil_carbon_ton_ha; // ton/ha (user input)
+    let carbon_fraction = 0.47; // IPCC 2006 default: t C / t dry biomass (Kauffman & Donato 2012)
+    let c_above = agb_per_tree_kg * tree_density_ha / 1000.0 * carbon_fraction; // ton C/ha
+    let c_below = c_above * bgb_ratio; // ton C/ha
+    let c_soil = soil_carbon_ton_ha; // ton C/ha (user input, already carbon)
     let c_dead = (c_above * 0.05).max(2.0); // ~5% of AGB, min 2 ton/ha (litter+deadwood)
     let total_carbon_ha = c_above + c_below + c_soil + c_dead;
 

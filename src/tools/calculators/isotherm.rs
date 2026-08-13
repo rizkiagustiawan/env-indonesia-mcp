@@ -60,7 +60,7 @@ pub fn calculate(
             // Mass of adsorbent needed
             if volume_l > 0.0 && c0 > ce {
                 let mass_removed = (c0 - ce) * volume_l / 1000.0; // mg → g
-                let adsorbent_g = mass_removed / qe;
+                let adsorbent_g = (c0 - ce) * volume_l / qe; // mg ÷ (mg/g) = g
                 out.push_str(&format!("\nMassa adsorben diperlukan:\n  Volume air = {:.1} L\n  C₀ = {:.2} mg/L\n  Massa kontaminan = {:.2} g\n  Adsorben = {:.2} g ({:.3} kg)\n",
                     volume_l, c0, mass_removed, adsorbent_g, adsorbent_g / 1000.0));
             }
@@ -114,7 +114,7 @@ pub fn calculate(
             // Mass of adsorbent
             if volume_l > 0.0 && c0 > ce {
                 let mass_removed = (c0 - ce) * volume_l / 1000.0;
-                let adsorbent_g = mass_removed / qe;
+                let adsorbent_g = (c0 - ce) * volume_l / qe; // mg ÷ (mg/g) = g
                 out.push_str(&format!("\nMassa adsorben diperlukan:\n  Volume air = {:.1} L\n  C₀ = {:.2} mg/L\n  Massa kontaminan = {:.2} g\n  Adsorben = {:.2} g ({:.3} kg)\n",
                     volume_l, c0, mass_removed, adsorbent_g, adsorbent_g / 1000.0));
             }
@@ -128,4 +128,16 @@ pub fn calculate(
     }
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::calculate;
+
+    #[test]
+    fn langmuir_adsorbent_mass_units() {
+        // qmax=11, KL=1, Ce=10 -> qe = 110/11 = 10 mg/g; C0=100, V=1000 -> 90000 mg / 10 = 9000 g
+        let result = calculate("langmuir", 10.0, 0.0, 1.0, 11.0, 1.0, 1000.0, 100.0);
+        assert!(result.contains("Adsorben = 9000.00"), "adsorbent 1000x off (g vs mg/g):\n{result}");
+    }
 }

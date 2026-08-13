@@ -124,7 +124,7 @@ pub fn solve(
                 // Manning friction
                 if h_new[i][j] > min_depth {
                     let u_mag = ((hu_new[i][j]/h_new[i][j]).powi(2) + (hv_new[i][j]/h_new[i][j]).powi(2)).sqrt();
-                    let friction = g * params.manning_n * params.manning_n * u_mag / h_new[i][j].powf(1.0/3.0);
+                    let friction = g * params.manning_n * params.manning_n * u_mag / h_new[i][j].powf(4.0/3.0);
                     let factor = 1.0 / (1.0 + dt * friction);
                     hu_new[i][j] *= factor;
                     hv_new[i][j] *= factor;

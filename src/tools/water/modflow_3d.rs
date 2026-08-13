@@ -206,7 +206,7 @@ fn fallback_theis(out: &mut String, pumping: f64, hk: f64, sy: f64, duration: u3
     // Theis (1935) analytical solution for drawdown
     // s = (Q / (4πT)) × W(u), where u = (r²S) / (4Tt)
     let T = hk * 10.0 * cell_size; // transmissivity = K × aquifer thickness (approx 10m × cell)
-    let S = sy * cell_size * cell_size; // storativity = Sy × area
+    let S = sy; // storativity = specific yield (dimensionless, unconfined)
     let t = duration as f64 * 86400.0; // seconds
     let r = cell_size; // distance = 1 cell
 

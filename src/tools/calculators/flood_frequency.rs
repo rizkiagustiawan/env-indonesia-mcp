@@ -64,7 +64,7 @@ pub fn log_pearson_iii(data: &[f64], return_period: f64) -> String {
         z + (z * z - 1.0) * k + (1.0 / 3.0) * (z.powi(3) - 6.0 * z) * k * k
             - (z * z - 1.0) * k.powi(3)
             + z * k.powi(4)
-            + (1.0 / 3.0) * k.powi(5)
+            - (1.0 / 3.0) * k.powi(5)
     };
 
     let log_qt = y_bar + kt * sy;

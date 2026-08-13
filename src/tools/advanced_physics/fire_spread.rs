@@ -76,8 +76,12 @@ pub fn assess(
     out.push_str("Here: simplified homogeneous parameters from Anderson fuel model\n\n");
 
     // Rothermel base spread rate
-    let q_ig = effective_heating + 250.0 * (moisture_pct / 100.0);
-    let epsilon = effective_heating / (effective_heating + 250.0 * (moisture_pct / 100.0)).max(1.0);
+    let mf = moisture_pct / 100.0;
+    // Rothermel (1972): Q_ig (heat of preignition) = Q_dry + 1116·Mf [BTU/lb] rises with moisture;
+    // ε (effective heating number, exp(-138/σ)) is moisture-INDEPENDENT. Prior code made ε·Q_ig
+    // cancel, removing moisture dependence from the spread rate entirely.
+    let epsilon = effective_heating / heat_of_preignition.max(1.0);
+    let q_ig = heat_of_preignition + 1116.0 * mf;
     let rate_no_wind = (reaction_intensity * propagating_ratio) /
         (bulk_density * epsilon * q_ig).max(1.0);
 

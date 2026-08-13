@@ -91,11 +91,11 @@ pub fn screen(material: &str, activity_bq_g: f64) -> String {
         "DIBEBASKAN (EXEMPT) — Aktivitas di bawah tingkat pembebasan"
     };
 
-    // Dose estimate: annual effective dose from 2000 hr/yr occupational exposure
-    // Simplified: external dose ≈ activity × 0.001 mSv/yr per Bq/g (rough factor)
-    // Inhalation: additional factor for dust
-    let external_dose = activity_bq_g * 0.001 * 2000.0 / 2000.0; // normalized
-    let inhalation_dose = activity_bq_g * 0.005; // dust inhalation contribution
+    // Dose estimate: ORDER-OF-MAGNITUDE placeholder only. No authoritative bulk-NORM
+    // dose-conversion factor (mSv/yr per Bq/g) exists; these figures are indicative, NOT for
+    // compliance. The clearance screening above (PerKa BAPETEN 4/2013) is the regulatory basis.
+    let external_dose = activity_bq_g * 0.001; // placeholder external dose
+    let inhalation_dose = activity_bq_g * 0.005; // placeholder inhalation contribution
     let total_annual_dose = external_dose + inhalation_dose;
 
     let mut result = String::new();

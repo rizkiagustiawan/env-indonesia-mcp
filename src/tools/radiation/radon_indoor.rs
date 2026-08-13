@@ -53,10 +53,12 @@ pub fn calculate(
     let indoor_radon = entry_rate_bq_s / ((lambda_v + lambda_rn) * room_volume);
 
     // Annual effective dose (mSv/year)
-    // Dose conversion: 1 Bq/m³ → ~0.017 mSv/year (UNSCEAR, 7000 hr/yr indoor, F=0.4, DCF=9 nSv/(Bq·h/m³))
+    // WHO 2009 / UNSCEAR: 9 nSv/(Bq·h·m³) applies to equilibrium-equivalent concentration (EEC);
+    // EEC = F × C_Rn with F = 0.4 indoors. 100 Bq/m³ ≈ 2.5 mSv/yr.
     let occupancy_hours = 7000.0; // indoor hours per year
-    let dose_conversion = 9e-6; // mSv per (Bq/m³ × hour)
-    let annual_dose_msv = indoor_radon * occupancy_hours * dose_conversion;
+    let equilibrium_factor = 0.4; // F (radon progeny vs radon gas, WHO 2009)
+    let dose_conversion = 9e-6; // mSv per (Bq/m³ EEC × hour)
+    let annual_dose_msv = indoor_radon * equilibrium_factor * occupancy_hours * dose_conversion;
 
     // Compliance
     let who_compliant = indoor_radon <= 100.0;

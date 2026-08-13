@@ -57,7 +57,7 @@ pub fn calculate(scope1_json: &str, scope2_json: &str, scope3_json: &str) -> Str
             "lpg_kg" | "lpg_cooking_kg" => Some((2.98, "IPCC 2006: 2.98 kgCO2/kg")),
             "coal_ton" | "batubara_ton" => Some((2460.0, "IPCC 2006: 2.46 tCO2/ton")),
             "fugitive_ch4_kg" | "methane_kg" => Some((28.0, "GWP100 CH4: 28 kgCO2e/kg")),
-            "refrigerant_kg" | "hfc_kg" => Some((1430.0, "HFC-134a GWP100: 1430")),
+            "refrigerant_kg" | "hfc_kg" => Some((1300.0, "HFC-134a GWP100 (AR5): 1300")),
             // Scope 2 - electricity
             "grid_electricity_kwh" | "electricity_kwh" | "listrik_kwh" => {
                 Some((0.794, "PLN Grid EF 2023: 0.794 kgCO2/kWh"))

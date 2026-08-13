@@ -128,10 +128,9 @@ pub fn trajectory(
     let mass_released_g = pm_emission_rate_g_s * total_s;
     // Puff volume (m^3)
     let puff_volume = (2.0 * std::f64::consts::PI).powf(1.5) * sigma_h * sigma_h * sigma_z;
-    // Centerline ground-level concentration with stack height reflection (Seinfeld 2016)
-    // C = M / V * [exp(-H^2/(2*sigma_z^2)) + exp(-H^2/(2*sigma_z^2))]  (image source for ground reflection)
-    let height_term = (-stack_height_m.powi(2) / (2.0 * sigma_z.powi(2))).exp()
-        + (-(stack_height_m + 2.0 * h_mix_m).powi(2) / (2.0 * sigma_z.powi(2))).exp();
+    // Ground-level concentration with image source (Turner 1994; Seinfeld & Pandis 2016):
+    // C ∝ exp(-H²/2σz²) + exp(-H²/2σz²) = 2·exp(-H²/2σz²)
+    let height_term = 2.0 * (-stack_height_m.powi(2) / (2.0 * sigma_z.powi(2))).exp();
     // Deposition scavenging factor: exp(-v_dep * t / H_mix)
     let dep_factor = (-v_dep_m_s * total_s / h_mix_m).exp();
     let conc_g_m3 = mass_released_g / puff_volume * height_term * dep_factor;

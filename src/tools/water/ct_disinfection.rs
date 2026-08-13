@@ -18,10 +18,16 @@ pub fn calculate(
         return "ERROR [E102]: Parameter harus > 0.".into();
     }
 
-    let ct_achieved = concentration_mgl * contact_time_min;
-
     let disinfectant_lower = disinfectant.to_lowercase();
     let pathogen_lower = target_pathogen.to_lowercase();
+
+    // Chemical disinfectant: CT = C(mg/L) × t(min).
+    // UV: dose = intensity(mW/cm²) × t(s); input time is minutes → ×60.
+    let ct_achieved = if disinfectant_lower == "uv" {
+        concentration_mgl * contact_time_min * 60.0
+    } else {
+        concentration_mgl * contact_time_min
+    };
 
     // CT tables per EPA GDR (pH 7, 25°C)
     // [1-log, 2-log, 3-log, 4-log]
@@ -46,7 +52,7 @@ pub fn calculate(
 
     if disinfectant_lower == "uv" {
         out.push_str(&format!(
-            "Dosis UV = {:.1} mJ/cm² (konsentrasi × waktu sebagai dosis)\n\n",
+            "Dosis UV = {:.1} mJ/cm² (intensitas mW/cm² × waktu detik)\n\n",
             ct_achieved
         ));
     } else {
@@ -116,4 +122,16 @@ pub fn calculate(
     }
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::calculate;
+
+    #[test]
+    fn uv_dose_uses_seconds() {
+        // UV intensity 40 mW/cm² × 1 min = 40 × 60 = 2400 mJ/cm² (not 40)
+        let result = calculate("uv", 40.0, 1.0, "virus");
+        assert!(result.contains("Dosis UV = 2400.0"), "UV dose missing x60 (min→s):\n{result}");
+    }
 }

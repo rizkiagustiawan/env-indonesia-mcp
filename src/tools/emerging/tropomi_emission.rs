@@ -1,6 +1,6 @@
 /// TROPOMI Satellite Emission Monitoring
 /// Ref: ESA/Copernicus Sentinel-5P; Remote Sensing of Environment 2026
-/// Formula: E = (ΔVCD × A × U) / τ
+/// Formula: E = ΔVCD × A / τ  (box mass-balance, Beirle et al. 2011)
 pub fn assess(facility_lat: f64, facility_lon: f64, pollutant: &str, vcd_molec_cm2: f64, background_vcd: f64, wind_speed_ms: f64, area_m2: f64) -> String {
     let mut out = String::from("=== TROPOMI Satellite Emission Monitoring ===\n");
     out.push_str("Ref: ESA Sentinel-5P; Remote Sensing of Environment 2026\n\n");
@@ -17,7 +17,7 @@ pub fn assess(facility_lat: f64, facility_lon: f64, pollutant: &str, vcd_molec_c
         "NO2" => 46.0, "SO2" => 64.0, "CH4" => 16.0, "CO" => 28.0, _ => 46.0,
     };
     let emission_mol_s = if lifetime_s > 0.0 {
-        delta_vcd * 1e4 * area_m2 * wind_speed_ms / (lifetime_s * avogadro)
+        delta_vcd * 1e4 * area_m2 / (lifetime_s * avogadro)
     } else { 0.0 };
     let emission_kg_hr = emission_mol_s * mol_mass * 3.6;
     out.push_str(&format!("Facility: ({:.4}, {:.4})\n", facility_lat, facility_lon));

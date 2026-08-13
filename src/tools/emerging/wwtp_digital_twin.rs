@@ -30,7 +30,7 @@ pub fn assess(influent_bod_mg_l: f64, influent_cod_mg_l: f64, flow_m3_day: f64, 
     let monod_substrate = influent_bod_mg_l / (k_s + influent_bod_mg_l).max(1e-6);
     let monod_do = do_mg_l / (k_oh + do_mg_l).max(1e-6);
     let growth_rate = mu_h * monod_substrate * monod_do;
-    let predicted_bod_eff = influent_bod_mg_l * (-growth_rate * volume_m3 * 24.0 / flow_m3_day.max(1e-6)).exp();
+    let predicted_bod_eff = influent_bod_mg_l * (-growth_rate * volume_m3 / flow_m3_day.max(1e-6)).exp();
     let o2_demand = bod_load * (1.0 - y_h) + mlss_mg_l * volume_m3 / 1000.0 * b_h * 1.42 * y_h;
     let air_required_m3_hr = o2_demand * 1000.0 / (0.232 * 1.225 * 0.3 * 24.0);
     let optimal_do = if predicted_bod_eff > target_bod_mg_l { do_mg_l * 1.2 } else { do_mg_l };
