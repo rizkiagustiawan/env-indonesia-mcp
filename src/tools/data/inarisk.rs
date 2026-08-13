@@ -52,6 +52,8 @@ pub async fn disaster_risk(client: &Client, location: &str) -> String {
     }
 
     // === FALLBACK: hardcoded data ===
+    out.push_str("⚠️ DATA REFERENSI STATIS (bukan live) — indeks risiko bencana diperbarui berkala.\n");
+    out.push_str("   Verifikasi data terkini di https://inarisk.bnpb.go.id/ (ArcGIS: gis.bnpb.go.id/server/rest/services/inarisk).\n\n");
     out.push_str("Data InaRISK statis. Untuk data terbaru, kunjungi inarisk.bnpb.go.id\n\n");
 
     if loc.contains("jakarta") {

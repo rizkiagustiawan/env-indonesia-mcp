@@ -2,7 +2,7 @@
 //! Includes: SRT/MCRT design, F/M ratio, sludge production, oxygen demand,
 //! secondary clarifier sizing, return sludge ratio.
 //! Ref: Metcalf & Eddy (2014) Wastewater Engineering 5th Ed, Chapter 8
-//! Ref: PermenLHK 68/2016 (Baku Mutu Air Limbah Domestik)
+//! Ref: PermenLHK 11/2025 (Baku Mutu Air Limbah Domestik)
 
 /// Complete activated sludge design
 pub fn design(
@@ -86,7 +86,7 @@ pub fn design(
 
     format!(
         "=== DESAIN ACTIVATED SLUDGE (IPAL) ===\n\
-         Ref: Metcalf & Eddy (2014), PermenLHK 68/2016\n\n\
+         Ref: Metcalf & Eddy (2014), PermenLHK 11/2025\n\n\
          INFLUENT:\n  Q = {:.1} m³/hari\n  BOD = {:.0} mg/L\n  COD = {:.0} mg/L\n  TSS = {:.0} mg/L\n  TN = {:.0} mg/L\n  Suhu = {:.1}°C\n\n\
          TARGET EFFLUEN:\n  BOD = {:.0} mg/L\n  BOD removal = {:.1}%\n\n\
          PARAMETER DESAIN:\n  SRT minimum = {:.1} hari\n  SRT desain = {:.1} hari (SF=2x)\n  HRT = {:.2} hari ({:.1} jam)\n  F/M = {:.3} kg BOD/kg MLVSS/hari{}\n  MLSS = {:.0} mg/L\n  MLVSS = {:.0} mg/L\n  Y_obs = {:.3} g VSS/g BOD\n\n\

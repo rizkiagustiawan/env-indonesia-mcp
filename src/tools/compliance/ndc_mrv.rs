@@ -87,9 +87,9 @@ pub fn assess(
     let gap = current_emissions_gg_co2e - target_year;
     let gap_pct = (gap / target_year) * 100.0;
 
-    out.push_str(&format!("  Target {} ({}= = {:.0} Gg CO2e\n", year, label, target_year as u64));
+    out.push_str(&format!("  Target {} ({}) = {:.0} Gg CO2e\n", year, label, target_year as u64));
     out.push_str(&format!("  Emisi saat ini = {:.0} Gg CO2e\n", current_emissions_gg_co2e as u64));
-    out.push_str(&format!("  Gap = {:.0} Gg CO2e ({:.1}%\n\n", gap as i64, gap_pct));
+    out.push_str(&format!("  Gap = {:.0} Gg CO2e ({:.1}%)\n\n", gap as i64, gap_pct));
 
     if gap > 0.0 {
         out.push_str(&format!("  ❌ MELEBIHI target NDC — perlu reduksi {:.0} Gg CO2e\n", gap as u64));

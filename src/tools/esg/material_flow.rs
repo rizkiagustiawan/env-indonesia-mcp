@@ -186,6 +186,6 @@ pub fn analyze(inputs_json: &str, outputs_json: &str, stock_change: f64) -> Stri
         out.push_str("  • Lakukan audit material untuk identifikasi aliran hilang\n");
         out.push_str("  • Periksa emisi gas / penguapan yang tidak terukur\n");
     }
-    out.push_str("  • Terapkan cleaner production (PP 27/2012)\n");
+    out.push_str("  • Terapkan cleaner production (UU 32/2009 PPLH)\n");
     out
 }

@@ -69,6 +69,8 @@ pub async fn status(client: &Client) -> String {
     }
 
     // === FALLBACK: hardcoded data ===
+    out.push_str("⚠️ DATA REFERENSI STATIS (bukan live) — status gunung api berubah cepat.\n");
+    out.push_str("   Verifikasi status terkini di https://magma.vsi.esdm.go.id/ sebelum digunakan untuk keputusan keselamatan.\n\n");
     out.push_str("Indonesia memiliki 127 gunung api aktif. Berikut status yang menonjol:\n\n");
 
     out.push_str("LEVEL IV (AWAS - Sangat Berbahaya)\n");

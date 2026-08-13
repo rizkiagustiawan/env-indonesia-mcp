@@ -156,7 +156,7 @@ pub fn apportion(
     if conc_mg_l > class2 {
         out.push_str(&format!("  BOD {:.2} mg/L exceeds PP 22/2021 Kelas II (3 mg/L):\n", conc_mg_l));
         out.push_str("  1. Prioritize dominant source reduction (see above).\n");
-        out.push_str("  2. For point sources: enforce IPAL (PermenLHK 68/2016 for domestik,\n");
+        out.push_str("  2. For point sources: enforce IPAL (PermenLHK 11/2025 for domestik,\n");
         out.push_str("     PP 22/2021 for industri). Effluent BOD <= 30 mg/L (standar).\n");
         out.push_str("  3. For diffuse: riparian buffer, constructed wetland, agricultural BMP.\n");
         out.push_str("  4. Continuous water quality monitoring (SPKLH / SNI 6989 series).\n");

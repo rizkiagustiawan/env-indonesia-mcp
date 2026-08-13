@@ -166,6 +166,7 @@ pub async fn statistics(client: &Client, keyword: &str) -> String {
     }
 
     // === FALLBACK: hardcoded data ===
+    out.push_str("⚠️ DATA REFERENSI STATIS (bukan live) — untuk data terbaru set BPS_API_KEY.\n\n");
     out.push_str(&format!(
         "Data Referensi Utama (BPS 2023-2025, {}):\n",
         province_name

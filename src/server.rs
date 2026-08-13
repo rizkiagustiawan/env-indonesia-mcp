@@ -4542,7 +4542,7 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(
-        description = "Baku Mutu Air Limbah Domestik. Ref: PermenLHK 68/2016. pH/BOD/COD/TSS/oil/ammonia/coliform."
+        description = "Baku Mutu Air Limbah Domestik. Ref: PermenLHK 11/2025. pH/BOD/COD/TSS/oil/ammonia/coliform/detergen."
     )]
     fn baku_mutu_domestik(&self, Parameters(p): Parameters<BakuMutuDomestikParam>) -> String {
         tools::compliance::baku_mutu_domestik::check(&p.parameter, p.concentration)
@@ -4570,7 +4570,7 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(
-        description = "ISPU Calculator (Indeks Standar Pencemar Udara). Ref: PermenLHK 73/2019. Breakpoint interpolation."
+        description = "ISPU Calculator (Indeks Standar Pencemar Udara). Ref: PermenLHK P.14/2020. Breakpoint interpolation."
     )]
     fn ispu_calculator(&self, Parameters(p): Parameters<IspuParam>) -> String {
         tools::compliance::ispu::calculate(p.pm10, p.pm25, p.so2, p.co, p.o3, p.no2)
@@ -4603,7 +4603,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "Daya Tampung Beban Pencemaran. Ref: PP 82/2001. Mass balance sungai.")]
+    #[tool(description = "Daya Tampung Beban Pencemaran. Ref: PP 22/2021. Mass balance sungai.")]
     fn daya_tampung(&self, Parameters(p): Parameters<DayaTampungParam>) -> String {
         tools::compliance::daya_tampung::calculate(
             p.q_river_m3s,
@@ -4622,7 +4622,7 @@ impl EnvIndonesiaServer {
         tools::compliance::ghg_inventory::calculate(&p.sector, &p.activity, p.amount)
     }
 
-    #[tool(description = "IKLH Sub-Indices: IKA/IKU/IKTL/IKAL. Ref: PermenLHK P.14/2020.")]
+    #[tool(description = "IKLH Sub-Indices: IKA/IKU/IKTL/IKAL. Ref: PermenLHK P.27/2021.")]
     fn iklh_sub_indices(&self, Parameters(p): Parameters<IklhSubParam>) -> String {
         match p.sub_type.to_lowercase().as_str() {
             "ika" => {

@@ -44,7 +44,7 @@ pub fn calculate(
     };
 
     let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Daya Tampung Beban Pencemaran\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str("Ref: PP No. 82 Tahun 2001\n\n");
+    out.push_str("Ref: PP No. 22 Tahun 2021\n\n");
     out.push_str(&format!("Parameter        : {}\n", parameter));
     out.push_str(&format!("Debit Sungai (Q) : {:.4} m³/s\n", q_river_m3s));
     out.push_str(&format!("C Hulu           : {:.2} mg/L\n", c_upstream_mgl));

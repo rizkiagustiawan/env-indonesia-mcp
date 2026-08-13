@@ -27,7 +27,9 @@ pub async fn deforestation_alerts(client: &Client) -> String {
         Err(e) => out.push_str(&format!("Connection error: {}\n", e)),
     }
 
-    out.push_str("\n--- Indonesia Forest Statistics (Reference Data) ---\n");
+    out.push_str("\n--- Indonesia Forest Statistics (Reference Data, BUKAN live) ---\n");
+    out.push_str("Catatan: endpoint di atas mengembalikan metadata dataset GFW, bukan data alert deforestasi aktual.\n");
+    out.push_str("Untuk alert terkini gunakan GFW analysis API (data-api.globalforestwatch.org) atau dashboard resmi.\n");
     out.push_str("Country: Indonesia\n");
     out.push_str("Total forest area (2000): ~160 million hectares\n");
     out.push_str("Tree cover loss 2001-2024: ~32 million hectares\n");

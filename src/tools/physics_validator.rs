@@ -1,7 +1,7 @@
 use rmcp::schemars::{self, JsonSchema};
 /// Physics-Informed Validator Engine untuk Environmental Engineering Indonesia
 /// Berdasarkan: USDA TR-55, FAO-56, RUSLE (Renard 1997), Streeter-Phelps (1925),
-/// PP 22/2021, PermenLHK 68/2016, KepMenLH 48/1996, CERC SPM 1984, APHA Standards
+/// PP 22/2021, PermenLHK 11/2025, KepMenLH 48/1996, CERC SPM 1984, APHA Standards
 ///
 /// Modul ini adalah "jantung" Physics-Informed Agent (PINN).
 /// Semua output LLM yang menyangkut data lingkungan WAJIB divalidasi di sini.
@@ -409,7 +409,7 @@ pub fn validate(p: ValidatorParam) -> String {
     // ========== FORMAT OUTPUT ==========
     let mut out = String::from("=== PHYSICS-INFORMED VALIDATOR ENGINE ===\n");
     out.push_str("Referensi: USDA TR-55, FAO-56, RUSLE, Streeter-Phelps,\n");
-    out.push_str("PP 22/2021, PermenLHK 68/2016, KepMenLH 48/1996\n\n");
+    out.push_str("PP 22/2021, PermenLHK 11/2025, KepMenLH 48/1996\n\n");
 
     if errors.is_empty() && warnings.is_empty() {
         out.push_str(

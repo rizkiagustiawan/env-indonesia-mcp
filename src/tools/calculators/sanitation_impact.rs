@@ -226,7 +226,7 @@ pub fn assess(
     out.push_str("  - PP 22/2021 Lampiran VI (water quality coliform)\n");
     out.push_str("  - Permenkes 3/2023 (Sanitasi Total Berbasis Masyarakat / STBM)\n");
     out.push_str("  - Permenkes 49/2023 (penyelenggaraan sanitasi hunian)\n");
-    out.push_str("  - PermenLHK 68/2016 (baku mutu air limbah domestik — coliform 3000/100mL)\n");
+    out.push_str("  - PermenLHK 11/2025 (baku mutu air limbah domestik — coliform 3000/100mL)\n");
     out.push_str("  - UU 17/2019 (Sistem Kesehatan Nasional — sanitasi)\n");
     out.push_str("  - SDG 6.2 (sanitation for all, end BABS by 2030)\n\n");
 

@@ -61,7 +61,7 @@ pub fn design(q_m3d: f64, s0_mgl: f64, s_target_mgl: f64, temp_c: f64) -> String
     out.push_str(&format!("OPERASIONAL:\n  Kebutuhan O₂ = {:.1} kg/hari\n  Produksi lumpur (Yobs) = {:.3}\n  Lumpur = {:.1} kg VSS/hari\n\n", o2_demand, y_obs, sludge_kg));
 
     // Cek baku mutu
-    out.push_str("BAKU MUTU (PermenLHK 68/2016 — Limbah Domestik):\n");
+    out.push_str("BAKU MUTU (PermenLHK 11/2025 — Limbah Domestik):\n");
     out.push_str(&format!(
         "  BOD effluent {:.0} mg/L {} (maks 30 mg/L)\n",
         s_target_mgl,

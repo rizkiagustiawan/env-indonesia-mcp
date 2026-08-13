@@ -1,7 +1,7 @@
 //! Wastewater Treatment Train — Multi-Stage Mass Balance
 //! Simulates sequential treatment: Screening → Grit → Primary → Biological → Clarifier → Disinfection
 //! Each stage has typical removal efficiencies per parameter.
-//! Ref: Metcalf & Eddy (2014), PermenLHK 68/2016
+//! Ref: Metcalf & Eddy (2014), PermenLHK 11/2025
 
 pub fn simulate(
     q_m3d: f64,
@@ -155,7 +155,7 @@ pub fn simulate(
 
     let mut result = format!(
         "=== SIMULASI TREATMENT TRAIN ===\n\
-         Ref: Metcalf & Eddy (2014), PermenLHK 68/2016\n\
+         Ref: Metcalf & Eddy (2014), PermenLHK 11/2025\n\
          Q = {:.1} m³/hari\n\n\
          {:>20} {:>8} {:>8} {:>8} {:>8} {:>8} {:>12}\n\
          {:>20} {:>8} {:>8} {:>8} {:>8} {:>8} {:>12}\n",
@@ -197,9 +197,9 @@ pub fn simulate(
         ));
     }
 
-    // Compliance check (PermenLHK 68/2016)
+    // Compliance check (PermenLHK 11/2025)
     result.push_str(&format!(
-        "\n=== CEK BAKU MUTU (PermenLHK 68/2016) ===\n\
+        "\n=== CEK BAKU MUTU (PermenLHK 11/2025) ===\n\
          BOD: {:.1} mg/L {} (BM: 30 mg/L)\n\
          COD: {:.1} mg/L {} (BM: 100 mg/L)\n\
          TSS: {:.1} mg/L {} (BM: 30 mg/L)\n\
