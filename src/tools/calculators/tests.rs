@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn test_rusle() {
-    let res = rusle::calculate(1000.0, 0.2, 1.5, 0.1, 1.0);
+    let res = rusle::calculate(Some(1000.0), None, 0.2, 1.5, 0.1, 1.0);
     assert!(res.contains("30.00")); // 1000 * 0.2 * 1.5 * 0.1 * 1.0 = 30
     assert!(!res.contains("ERROR"));
 }

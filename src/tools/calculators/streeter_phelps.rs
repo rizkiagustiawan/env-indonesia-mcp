@@ -15,18 +15,25 @@ pub fn calculate(
     out.push_str("Ref: Streeter & Phelps (1925), Ohio River Study\n\n");
 
     if k1 <= 0.0 || k2 <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return "ERROR [E102]: Parameter kinetika (k1, k2) harus > 0.".into();
     }
     if (k2 - k1).abs() < 1e-10 {
-        return format!("ERROR: k2 ({:.3}) = k1 ({:.3}). Division by zero.", k2, k1);
+        return format!("ERROR: k2 ({:.3}) = k1 ({:.3}). Division by zero pada persamaan logaritmik.", k2, k1);
     }
     if l0 <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return "ERROR [E102]: BOD Ultimate (L0) harus > 0.".into();
+    }
+    if d0 < 0.0 {
+        return "ERROR [E102]: Defisit awal (D0) tidak boleh negatif. Jika lewat tersaturasi, air mengandung alga yang tidak dicover model analitik murni.".into();
     }
 
     // Temperature correction if provided
     let (k1_eff, k2_eff) = match temp_c {
         Some(t) => {
+            if t < 0.0 || t > 45.0 {
+                return format!("ERROR [E103]: Suhu {:.1}°C di luar ambang batas fisika fluida permukaan yang masuk akal (0 - 45°C). Rumus Arrhenius akan gagal (exponential blowup).", t);
+            }
+            // Standard Arrhenius temp-correction
             let k1_t = k1 * 1.047_f64.powf(t - 20.0);
             let k2_t = k2 * 1.024_f64.powf(t - 20.0);
             out.push_str(&format!("Koreksi suhu: T = {:.1}°C\n", t));

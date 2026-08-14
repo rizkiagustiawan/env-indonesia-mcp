@@ -177,7 +177,7 @@ fn run_rust_calc(calc: RustCalc, params: &PipelineParams) -> (String, Option<Pat
             (out, None)
         }
         RustCalc::Rusle => {
-            let out = tools::calculators::rusle::calculate(150.0, 0.3, 2.5, 0.1, 0.5);
+            let out = tools::calculators::rusle::calculate(Some(150.0), None, 0.3, 2.5, 0.1, 0.5);
             (out, None)
         }
         RustCalc::StreeterPhelps => {

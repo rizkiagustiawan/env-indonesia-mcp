@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
             match tool_name.as_str() {
                 "rusle_erosion" => {
                     let p: server::RusleParam = serde_json::from_str(tool_args)?;
-                    let res = tools::calculators::rusle::calculate(p.r, p.k, p.ls, p.c, p.p);
+                    let res = tools::calculators::rusle::calculate(p.r_input, p.rain_mm_yr, p.k, p.ls, p.c, p.p);
                     println!("{}", res);
                 },
                 "gaussian_plume" => {

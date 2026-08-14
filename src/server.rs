@@ -13,7 +13,8 @@ pub use crate::tools::physics_validator::ValidatorParam;
 // Calculator & Compliance Params
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct RusleParam {
-    pub r: f64,
+    pub r_input: Option<f64>,
+    pub rain_mm_yr: Option<f64>,
     pub k: f64,
     pub ls: f64,
     pub c: f64,
@@ -921,9 +922,18 @@ pub struct MangroveExtentParam {
 
 // ====== GOD TIER PHASE 2: Water Engineering Params ======
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum DisinfectantType {
+    Chlorine,
+    Ozone,
+    Uv,
+    Chloramine,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct CtDisinfectionParam {
     #[schemars(description = "Disinfektan: chlorine/ozone/uv/chloramine")]
-    pub disinfectant: String,
+    pub disinfectant: DisinfectantType,
     #[schemars(description = "Konsentrasi (mg/L) atau dosis UV (mJ/cm²)")]
     pub concentration_mgl: f64,
     #[schemars(description = "Waktu kontak (menit)")]
@@ -2342,6 +2352,13 @@ pub struct ScrubberParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum ParticleType {
+    Dielectric,
+    Conductive,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct EspParam {
     #[schemars(description = "Gas flow m3/s")]
     pub gas_flow_m3_s: f64,
@@ -2351,11 +2368,11 @@ pub struct EspParam {
     pub target_efficiency_pct: f64,
     #[schemars(description = "Field strength kV/cm (3-8 typical)")]
     pub field_strength_kv_cm: f64,
-    #[schemars(description = "Particle diameter um (mass median diameter)")]
+    #[schemars(description = "Particle diameter um")]
     pub particle_diameter_um: f64,
-    #[schemars(description = "Particle type: 'dielectric' or 'conductive' (affects migration velocity 2x)")]
-    pub particle_type: String,
-    #[schemars(description = "Particle resistivity ohm·cm (1e7=low, 1e10=high back-corona, 1e11=severe)")]
+    #[schemars(description = "Particle type: dielectric/conductive")]
+    pub particle_type: ParticleType,
+    #[schemars(description = "Particle resistivity ohm.cm")]
     pub resistivity_ohm_cm: f64,
 }
 
@@ -3778,10 +3795,10 @@ impl EnvIndonesiaServer {
     // =======================================
 
     #[tool(
-        description = "RUSLE Soil Erosion: A = R × K × LS × C × P (ton/ha/tahun). Ref: USDA Handbook 703."
+        description = "RUSLE Soil Loss Equation. A = R x K x LS x C x P. Includes Lenvain's empirical formula for Indonesia."
     )]
     fn rusle_erosion(&self, Parameters(p): Parameters<RusleParam>) -> String {
-        tools::calculators::rusle::calculate(p.r, p.k, p.ls, p.c, p.p)
+        tools::calculators::rusle::calculate(p.r_input, p.rain_mm_yr, p.k, p.ls, p.c, p.p)
     }
 
     #[tool(description = "SCS-CN Runoff: Q = (P-0.2S)²/(P+0.8S). Ref: USDA TR-55.")]
@@ -5005,11 +5022,17 @@ impl EnvIndonesiaServer {
     // =====================================================
 
     #[tool(
-        description = "CT Disinfection Calculator. Ref: EPA GDR. Chlorine/ozone/UV/chloramine vs Giardia/virus/crypto."
+        description = "CT Disinfection Calculator. Ref: EPA Guidance Manual. chlorine/ozone/uv/chloramine."
     )]
     fn ct_disinfection(&self, Parameters(p): Parameters<CtDisinfectionParam>) -> String {
+        let disinfectant_str = match p.disinfectant {
+            DisinfectantType::Chlorine => "chlorine",
+            DisinfectantType::Ozone => "ozone",
+            DisinfectantType::Uv => "uv",
+            DisinfectantType::Chloramine => "chloramine",
+        };
         tools::water::ct_disinfection::calculate(
-            &p.disinfectant,
+            disinfectant_str,
             p.concentration_mgl,
             p.contact_time_min,
             &p.target_pathogen,
@@ -5979,10 +6002,14 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Electrostatic Precipitator (ESP) Design. Deutsch-Anderson migration (conductive vs dielectric), back-corona resistivity check, size-integrated efficiency. Ref: Vallero 2019; White 1963.")]
     fn electrostatic_precipitator(&self, Parameters(p): Parameters<EspParam>) -> String {
+        let pt_str = match p.particle_type {
+            ParticleType::Dielectric => "dielectric",
+            ParticleType::Conductive => "conductive",
+        };
         tools::airquality::esp::design(
             p.gas_flow_m3_s, p.particle_density_kg_m3, p.target_efficiency_pct,
             p.field_strength_kv_cm, p.particle_diameter_um,
-            &p.particle_type, p.resistivity_ohm_cm
+            pt_str, p.resistivity_ohm_cm
         )
     }
 

@@ -17,10 +17,10 @@ pub fn check(industry: &str, parameter: &str, concentration: f64) -> String {
     // (industry_key, parameter) -> limit in mg/Nm³ (opacity in %)
     // Ref: PermenLHK 15/2019 (nilai baku mutu per industri)
     let limit: Option<(f64, &str)> = match (ind.as_str(), par.as_str()) {
-        // PLTU Batubara
+        // PLTU Batubara (Generalized/strictest limit, >100MW post-2019)
         ("pltu_batubara" | "pltu", "TSP") => Some((50.0, "mg/Nm³")),
         ("pltu_batubara" | "pltu", "SO2") => Some((200.0, "mg/Nm³")),
-        ("pltu_batubara" | "pltu", "NO2") => Some((200.0, "mg/Nm³")),
+        ("pltu_batubara" | "pltu", "NOX") => Some((200.0, "mg/Nm³")), // Changed from NO2 to NOx per PermenLHK 15/2019
         ("pltu_batubara" | "pltu", "OPACITY") => Some((10.0, "%")),
         // Semen
         ("semen" | "cement", "TSP") => Some((50.0, "mg/Nm³")),

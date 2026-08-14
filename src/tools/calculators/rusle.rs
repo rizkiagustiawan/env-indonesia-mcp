@@ -1,13 +1,24 @@
 /// RUSLE: Revised Universal Soil Loss Equation (Renard et al., 1997)
 /// A = R × K × LS × C × P (ton/ha/tahun)
 
-pub fn calculate(r: f64, k: f64, ls: f64, c: f64, p: f64) -> String {
+pub fn calculate(r_input: Option<f64>, rain_mm_yr: Option<f64>, k: f64, ls: f64, c: f64, p: f64) -> String {
     let mut out = String::from("=== RUSLE Soil Erosion Calculator ===\n");
-    out.push_str("Ref: USDA Agriculture Handbook 703 (Renard et al., 1997)\n\n");
+    out.push_str("Ref: USDA (Renard et al. 1997); Indonesia Lenvain (1975) / Bols (1978)\n\n");
+
+    // Lenvain empirical R-Factor for Indonesia: R = 2.21 * P^1.36
+    let r = if let Some(r_val) = r_input {
+        r_val
+    } else if let Some(rain) = rain_mm_yr {
+        let calc_r = 2.21 * rain.powf(1.36);
+        out.push_str(&format!("  [Auto] Faktor R dikalkulasi via persamaan Lenvain (Tropis):\n  R = 2.21 * {:.1}^1.36 = {:.1} MJ·mm/(ha·hr·yr)\n\n", rain, calc_r));
+        calc_r
+    } else {
+        return "ERROR: Harus menyediakan input Faktor R langsung atau Curah Hujan Tahunan (rain_mm_yr) untuk kalibrasi Lenvain.".into();
+    };
 
     // Validate
     if r < 0.0 {
-        return format!("ERROR [E102]: Parameter tidak boleh negatif. {}", r);
+        return format!("ERROR [E102]: Parameter tidak boleh negatif. R={}", r);
     }
     if k < 0.0 || k > 1.0 {
         return format!("ERROR: K-erodibility ({}) harus 0-1.", k);
