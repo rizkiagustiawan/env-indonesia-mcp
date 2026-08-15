@@ -12,3 +12,4 @@ pub mod fire_spread;
 pub mod fire_suppression;
 pub mod jakarta_coastal_risk;
 pub mod fire_danger_rating;
+pub mod peatland_subsidence;

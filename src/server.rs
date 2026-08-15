@@ -9,6 +9,8 @@ use rmcp::{
 
 use crate::tools;
 pub use crate::tools::physics_validator::ValidatorParam;
+use crate::tools::advanced_physics::peatland_subsidence::{calculate_peatland_subsidence, PeatlandSubsidenceParam};
+use crate::tools::waste::hpal_tailings::{evaluate_hpal_tailings, HpalTailingsParam};
 
 // Calculator & Compliance Params
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -3926,10 +3928,7 @@ impl EnvIndonesiaServer {
         tools::calculators::wastewater::design(p.q_m3d, p.bod_influent, p.bod_target, p.temp_c)
     }
 
-    #[tool(description = "Peatland Subsidence & CO2 Emission. Ref: Hooijer 2012.")]
-    fn peatland_subsidence(&self, Parameters(p): Parameters<PeatlandParam>) -> String {
-        tools::calculators::peatland::calculate(p.water_table_depth_cm, p.area_ha, p.years)
-    }
+    // (Peatland Subsidence moved to the advanced_physics implementation below)
 
     #[tool(description = "Mangrove NDMI (Gao 1996). Band: Sentinel-2 B8A & B11.")]
     fn mangrove_ndmi(&self, Parameters(p): Parameters<MangroveNdmiParam>) -> String {
@@ -6560,6 +6559,16 @@ impl EnvIndonesiaServer {
         tools::workflows::problem_solution_impact::orchestrate(
             &p.problem_type, &p.location_name, p.lat, p.lon, p.area_ha, &p.severity
         )
+    }
+
+    #[tool(description = "Peatland Subsidence & Carbon Emission Model (Tropical Peat). Calculates structural sinking (subsidence, cm) and CO2 oxidation (t/ha) caused by peat drainage. Uses Hooijer et al. (2012) tropical peat relationship. Checks strict compliance with Indonesia's PP 71/2014 & PP 57/2016 (max GWL -0.4m / 40cm below surface). Critical for resolving peatland hydrology, carbon tracking, and flood risk (rob).")]
+    fn peatland_subsidence(&self, Parameters(p): Parameters<PeatlandSubsidenceParam>) -> String {
+        calculate_peatland_subsidence(&p)
+    }
+
+    #[tool(description = "HPAL Nickel Tailings ESG Compliance Tool. Evaluates high-pressure acid leach slurry parameters (pH, Cr6+, Ni, Co, Mn) against Indonesian regulations (PP 101/2014 TCLP & B3 Limits) and IFC Performance Standards. Compares Dry Stack Tailings (DST) vs Deep Sea Tailings Placement (DSTP). Critical for auditing Morowali, Obi, Weda Bay EV Battery supply chains.")]
+    fn hpal_tailings(&self, Parameters(p): Parameters<HpalTailingsParam>) -> String {
+        evaluate_hpal_tailings(&p)
     }
 }
 

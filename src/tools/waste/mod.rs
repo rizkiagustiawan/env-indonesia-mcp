@@ -6,3 +6,4 @@ pub mod tclp;
 pub mod waste_compatibility;
 pub mod sve_design;
 pub mod phreeqc_leaching;
+pub mod hpal_tailings;

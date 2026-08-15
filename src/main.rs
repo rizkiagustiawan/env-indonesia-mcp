@@ -91,6 +91,16 @@ async fn main() -> Result<()> {
                     let res = tools::calculators::rusle::calculate(p.r_input, p.rain_mm_yr, p.k, p.ls, p.c, p.p);
                     println!("{}", res);
                 },
+                "peatland_subsidence" => {
+                    let p: tools::advanced_physics::peatland_subsidence::PeatlandSubsidenceParam = serde_json::from_str(tool_args)?;
+                    let res = tools::advanced_physics::peatland_subsidence::calculate_peatland_subsidence(&p);
+                    println!("{}", res);
+                },
+                "hpal_tailings" => {
+                    let p: tools::waste::hpal_tailings::HpalTailingsParam = serde_json::from_str(tool_args)?;
+                    let res = tools::waste::hpal_tailings::evaluate_hpal_tailings(&p);
+                    println!("{}", res);
+                },
                 "aermod_generator" => {
                     let p: server::AermodGeneratorParam = serde_json::from_str(tool_args)?;
                     let res = tools::airquality::aermod_generator::generate_aermod_inp(
