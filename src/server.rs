@@ -2184,6 +2184,29 @@ pub struct DstpPlumeParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct AermodGeneratorParam {
+    pub project_name: String,
+    pub source_lat: f64,
+    pub source_lon: f64,
+    pub stack_height_m: f64,
+    pub stack_diameter_m: f64,
+    pub exit_velocity_m_s: f64,
+    pub exit_temp_k: f64,
+    pub emission_rate_g_s: f64,
+    pub pollutant_id: String,
+    pub is_rural: bool,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct PhreeqcLeachingParam {
+    pub waste_type: String,
+    pub solid_mass_g: f64,
+    pub water_volume_l: f64,
+    pub target_ph: f64,
+    pub initial_metals_mg_kg: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct FireSpreadParam {
     #[schemars(description = "Anderson fuel model 1-13 (1=short grass, 4=chaparral, 10=timber)")]
     pub fuel_model: u8,
@@ -5895,6 +5918,22 @@ impl EnvIndonesiaServer {
         tools::advanced_physics::enkf::assimilate(
             &p.model_states_json, &p.observations_json,
             p.ensemble_size.unwrap_or(50), p.noise_std
+        )
+    }
+
+    #[tool(description = "AERMOD Pro-Justitia Input Generator (Tier 3). Menghasilkan file .inp standar EPA/KLHK untuk pemodelan dispersi PLTU/Smelter.")]
+    fn aermod_generator(&self, Parameters(p): Parameters<AermodGeneratorParam>) -> String {
+        tools::airquality::aermod_generator::generate_aermod_inp(
+            &p.project_name, p.source_lat, p.source_lon, p.stack_height_m,
+            p.stack_diameter_m, p.exit_velocity_m_s, p.exit_temp_k,
+            p.emission_rate_g_s, &p.pollutant_id, p.is_rural
+        )
+    }
+
+    #[tool(description = "PHREEQC Geochemical Leaching Generator (Tier 3). Menghasilkan script termodinamika USGS untuk prediksi pelindian logam berat (Tailing Nikel/B3) berdasar pH.")]
+    fn phreeqc_leaching(&self, Parameters(p): Parameters<PhreeqcLeachingParam>) -> String {
+        tools::waste::phreeqc_leaching::generate_phreeqc_script(
+            &p.waste_type, p.solid_mass_g, p.water_volume_l, p.target_ph, &p.initial_metals_mg_kg
         )
     }
 

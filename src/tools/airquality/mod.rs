@@ -10,3 +10,4 @@ pub mod stack_height;
 pub mod fugitive_dust;
 pub mod haze_trajectory;
 pub mod source_apportionment;
+pub mod aermod_generator;

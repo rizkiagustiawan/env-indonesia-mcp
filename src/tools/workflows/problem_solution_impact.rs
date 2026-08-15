@@ -479,7 +479,7 @@ fn mining_workflow(out: &mut String, area_ha: f64, sev: f64) {
         deforestation_ha / area_ha * 100.0
     ));
     out.push_str(&format!("  Heavy metal risk      : {}\n", heavy_metal_risk));
-    out.push_str("  Real tools: mine_impact (Leopold matrix), acid_mine_drainage (ABA),\n");
+    out.push_str("  Real tools: mine_impact, acid_mine_drainage, phreeqc_leaching (Tier-3 thermodynamic), dstp_plume_dispersion,\n");
     out.push_str("              mine_reclamation, tailings_management, asgm_mercury\n\n");
 
     out.push_str("PHASE 2 - SOLUTION\n");
