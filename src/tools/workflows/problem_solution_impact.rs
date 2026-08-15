@@ -19,9 +19,9 @@ pub fn orchestrate(
     out.push_str("===============================================================\n");
     out.push_str("  ENVIRONMENTAL INVESTIGATION SOP (Orchestrator Workflow)\n");
     out.push_str("===============================================================\n");
-    out.push_str("PERHATIAN KEPADA AI AGENT:\n");
-    out.push_str("JANGAN MENGARANG ANGKA! Ikuti langkah-langkah saintifik di bawah ini\n");
-    out.push_str("dengan memanggil tool MCP yang disarankan secara berurutan.\n\n");
+    out.push_str("PERHATIAN KEPADA AI AGENT (MANAGER_AMDAL):\n");
+    out.push_str("JANGAN MENGARANG ANGKA! Delegasikan langkah-langkah saintifik di bawah ini\n");
+    out.push_str("kepada spesialis yang tepat (gis_expert, physics_modeler, chem_toxicologist, esg_auditor).\n\n");
 
     out.push_str("Konteks Investigasi:\n");
     out.push_str(&format!("  Isu Lingkungan : {}\n", problem_type.to_uppercase()));
