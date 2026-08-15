@@ -322,7 +322,30 @@ pub fn assess(
     out.push_str("     setting C0=WHO guideline gives 'avoidable' estimate.\n");
     out.push_str("  9. Exchange rate Rp16,500/USD is an assumption (BI 2024-2025 range 15,500-16,800).\n");
     out.push_str(" 10. Valuation USD/DALY is normative, not measured - use sensitivity analysis.\n");
-    out.push_str("===============================================================\n");
+    out.push_str("===============================================================\n\n");
+
+    // JSON Payload for LLM Chaining
+    let payload = crate::result_contract::ScientificResult::new(
+        "Economic_Health_Cost",
+        cost_usd,
+        "USD"
+    )
+    .with_status(crate::result_contract::ResultStatus::ValidWithAssumptions)
+    .with_claim(crate::result_contract::Claim::new(
+        "Attributable Deaths",
+        &format!("{}", deaths)
+    ))
+    .with_claim(crate::result_contract::Claim::new(
+        "DALYs Lost",
+        &format!("{}", dalys)
+    ));
+    
+    if let Ok(json_str) = serde_json::to_string(&payload) {
+        out.push_str("--- JSON PAYLOAD ---\n");
+        out.push_str(&json_str);
+        out.push_str("\n");
+    }
+
     out
 }
 

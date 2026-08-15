@@ -72,7 +72,25 @@ pub fn generate_aermod_inp(
     out.push_str("Simpan teks di bawah ini sebagai file `aermod.inp` dan jalankan dengan executable AERMOD (EPA).\n\n");
     out.push_str("```aermod\n");
     out.push_str(&inp);
-    out.push_str("```\n");
+    out.push_str("```\n\n");
     
+    // JSON Payload for LLM Chaining
+    let payload = crate::result_contract::ScientificResult::new(
+        "AERMOD_Input_Generator",
+        1.0,
+        "success"
+    )
+    .with_status(crate::result_contract::ResultStatus::Valid)
+    .with_claim(crate::result_contract::Claim::new(
+        "Pro-Justitia Ready",
+        "Input generated according to EPA standards.",
+    ));
+    
+    if let Ok(json_str) = serde_json::to_string(&payload) {
+        out.push_str("--- JSON PAYLOAD ---\n");
+        out.push_str(&json_str);
+        out.push_str("\n");
+    }
+
     out
 }

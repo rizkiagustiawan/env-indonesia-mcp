@@ -91,6 +91,22 @@ async fn main() -> Result<()> {
                     let res = tools::calculators::rusle::calculate(p.r_input, p.rain_mm_yr, p.k, p.ls, p.c, p.p);
                     println!("{}", res);
                 },
+                "aermod_generator" => {
+                    let p: server::AermodGeneratorParam = serde_json::from_str(tool_args)?;
+                    let res = tools::airquality::aermod_generator::generate_aermod_inp(
+                        &p.project_name, p.source_lat, p.source_lon, p.stack_height_m,
+                        p.stack_diameter_m, p.exit_velocity_m_s, p.exit_temp_k,
+                        p.emission_rate_g_s, &p.pollutant_id, p.is_rural
+                    );
+                    println!("{}", res);
+                },
+                "phreeqc_leaching" => {
+                    let p: server::PhreeqcLeachingParam = serde_json::from_str(tool_args)?;
+                    let res = tools::waste::phreeqc_leaching::generate_phreeqc_script(
+                        &p.waste_type, p.solid_mass_g, p.water_volume_l, p.target_ph, &p.initial_metals_mg_kg
+                    );
+                    println!("{}", res);
+                },
                 "gaussian_plume" => {
                     let p: server::GaussianParam = serde_json::from_str(tool_args)?;
                     let res = tools::calculators::gaussian_plume::calculate(p.emission_gs, p.wind_ms, p.stack_height_m, p.distance_m, &p.stability_class);
