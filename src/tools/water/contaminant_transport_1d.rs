@@ -122,3 +122,139 @@ mod tests {
     }
 }
 
+
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+/// 1D Advection-Dispersion-Reaction (ADR) Parameter Set with Non-Linear Sorption.
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct AdrSorptionParam {
+    #[schemars(description = "Groundwater velocity (m/day)")]
+    pub velocity_m_day: f64,
+    #[schemars(description = "Hydrodynamic dispersion (m2/day)")]
+    pub dispersion_m2_day: f64,
+    #[schemars(description = "First-order decay rate (1/day)")]
+    pub decay_rate_day: f64,
+    #[schemars(description = "Soil bulk density ρb (kg/L or g/cm3, typical 1.2-1.6)")]
+    pub bulk_density_kg_l: f64,
+    #[schemars(description = "Effective porosity θ (0.1-0.5)")]
+    pub porosity: f64,
+    #[schemars(description = "Sorption model: 'linear', 'freundlich', or 'langmuir'")]
+    pub sorption_model: String,
+    #[schemars(description = "Sorption param 1: Kd (linear), Kf (freundlich), or b (langmuir binding const)")]
+    pub param_k: f64,
+    #[schemars(description = "Sorption param 2: n (freundlich exponent), or Smax (langmuir max capacity). Ignored for linear.")]
+    pub param_n_or_smax: f64,
+    #[schemars(description = "Continuous source concentration at x=0 (mg/L)")]
+    pub source_conc_mg_l: f64,
+    #[schemars(description = "Domain length (m)")]
+    pub length_m: f64,
+    #[schemars(description = "Simulation time (days)")]
+    pub time_days: f64,
+    #[schemars(description = "Spatial step dx (m, default 1.0)")]
+    pub dx_m: f64,
+}
+
+fn retardation_factor(c: f64, p: &AdrSorptionParam) -> f64 {
+    let rho_theta = p.bulk_density_kg_l / p.porosity.max(1e-6);
+    if c <= 1e-9 {
+        // Limit for c->0 to avoid singularity in Freundlich if n<1
+        return match p.sorption_model.to_lowercase().as_str() {
+            "linear" => 1.0 + rho_theta * p.param_k,
+            "freundlich" => {
+                if p.param_n_or_smax < 1.0 { 1.0 + rho_theta * p.param_k * p.param_n_or_smax * 1e-9_f64.powf(p.param_n_or_smax - 1.0) }
+                else { 1.0 }
+            },
+            "langmuir" => 1.0 + rho_theta * p.param_n_or_smax * p.param_k, // (1+bC)^2 -> 1
+            _ => 1.0,
+        };
+    }
+    match p.sorption_model.to_lowercase().as_str() {
+        "linear" => 1.0 + rho_theta * p.param_k,
+        "freundlich" => 1.0 + rho_theta * p.param_k * p.param_n_or_smax * c.powf(p.param_n_or_smax - 1.0),
+        "langmuir" => {
+            let denom = 1.0 + p.param_k * c;
+            1.0 + rho_theta * p.param_n_or_smax * p.param_k / (denom * denom)
+        },
+        _ => 1.0, // default no sorption
+    }
+}
+
+pub fn solve_adr_sorption(p: &AdrSorptionParam) -> String {
+    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  ADR Non-Linear Sorption Solver (1D)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    out.push_str("Ref: Zheng & Bennett 2002; Langmuir 1918; Freundlich 1909\n\n");
+
+    let dx = p.dx_m.max(0.1);
+    let nx = (p.length_m / dx).ceil() as usize + 1;
+    let mut c = vec![0.0; nx];
+    c[0] = p.source_conc_mg_l; // Dirichlet BC at x=0
+
+    // Courant-Friedrichs-Lewy (CFL) limits for explicit scheme
+    // max dt for advection: dx / v
+    // max dt for dispersion: 0.5 * dx^2 / D
+    let dt_adv = if p.velocity_m_day > 0.0 { dx / p.velocity_m_day } else { f64::INFINITY };
+    let dt_disp = if p.dispersion_m2_day > 0.0 { 0.5 * dx * dx / p.dispersion_m2_day } else { f64::INFINITY };
+    let dt = (0.5 * dt_adv).min(0.5 * dt_disp).min(p.time_days / 10.0).max(1e-6);
+    let n_steps = (p.time_days / dt).ceil() as usize;
+    let actual_dt = p.time_days / n_steps as f64;
+
+    for _ in 0..n_steps {
+        let mut c_new = c.clone();
+        for i in 1..nx-1 {
+            let r = retardation_factor(c[i], p);
+            // Upwind for advection
+            let adv = p.velocity_m_day * (c[i] - c[i-1]) / dx;
+            // Central for dispersion
+            let disp = p.dispersion_m2_day * (c[i+1] - 2.0 * c[i] + c[i-1]) / (dx * dx);
+            // Decay
+            let dec = p.decay_rate_day * c[i];
+            
+            let dc_dt = (disp - adv) / r - dec;
+            c_new[i] = c[i] + actual_dt * dc_dt;
+            c_new[i] = c_new[i].max(0.0); // positivity preservation
+        }
+        // Outlet Neumann BC (dC/dx = 0)
+        c_new[nx-1] = c_new[nx-2];
+        c = c_new;
+    }
+
+    out.push_str(&format!("Model Sorpsi     : {}\n", p.sorption_model.to_uppercase()));
+    out.push_str(&format!("Velocity (v)     : {:.3} m/hari\n", p.velocity_m_day));
+    out.push_str(&format!("Dispersion (D)   : {:.3} m²/hari\n", p.dispersion_m2_day));
+    out.push_str(&format!("Grid Resolusi    : dx = {:.2} m, dt = {:.4} hari ({} steps)\n\n", dx, actual_dt, n_steps));
+
+    out.push_str("Profil Konsentrasi Akhir (mg/L):\n");
+    let step_print = (nx / 10).max(1);
+    for i in (0..nx).step_by(step_print) {
+        let x = i as f64 * dx;
+        let r_val = retardation_factor(c[i], p);
+        out.push_str(&format!("  x = {:5.1} m | C = {:8.4} mg/L | R(C) = {:6.2}\n", x, c[i], r_val));
+    }
+    
+    // Check receptor hit
+    if c[nx-1] > 1e-4 {
+        out.push_str(&format!("\n⚠️ KONTAMINAN MENCAPAI RESEPTOR (x={:.1}m) dengan konsentrasi {:.4} mg/L\n", p.length_m, c[nx-1]));
+    } else {
+        out.push_str(&format!("\n✅ Kontaminan belum mencapai ujung domain (x={:.1}m).\n", p.length_m));
+    }
+
+    out
+}
+
+#[cfg(test)]
+mod adr_tests {
+    use super::{solve_adr_sorption, AdrSorptionParam};
+
+    #[test]
+    fn test_langmuir_retardation() {
+        let p = AdrSorptionParam {
+            velocity_m_day: 1.0, dispersion_m2_day: 0.1, decay_rate_day: 0.0,
+            bulk_density_kg_l: 1.5, porosity: 0.3,
+            sorption_model: "langmuir".into(), param_k: 0.5, param_n_or_smax: 10.0,
+            source_conc_mg_l: 100.0, length_m: 50.0, time_days: 10.0, dx_m: 1.0,
+        };
+        let out = solve_adr_sorption(&p);
+        assert!(out.contains("LANGMUIR"));
+        assert!(out.contains("R(C) ="));
+    }
+}

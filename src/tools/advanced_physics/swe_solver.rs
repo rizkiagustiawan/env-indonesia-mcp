@@ -10,6 +10,7 @@ pub struct SweParams {
     pub manning_n: f64,
     pub duration_s: f64,
     pub dt_max: f64,
+    pub second_order: bool,
 }
 
 pub struct SweResult {
@@ -71,35 +72,69 @@ pub fn solve(
         // Flux computation with HLLC + hydrostatic reconstruction (Audusse et al. 2004).
         // This is a WELL-BALANCED scheme: it preserves the lake-at-rest state
         // (h+z=const, u=v=0) to machine precision, unlike a naive bed-slope source.
+        // With second_order=true, MUSCL slope reconstruction (minmod) is applied to the
+        // WATER SURFACE elevation η = h+z (and discharge q), NOT the depth h, so the
+        // well-balanced property is preserved under 2nd-order reconstruction.
         let mut h_new = h.clone();
         let mut hu_new = hu.clone();
         let mut hv_new = hv.clone();
+
+        // Precompute water surface elevation η = h + z and (optionally) MUSCL slopes.
+        let mut eta = vec![vec![0.0_f64; ny]; nx];
+        for i in 0..nx {
+            for j in 0..ny {
+                eta[i][j] = h[i][j] + dem[i][j];
+            }
+        }
+        let mut slope_eta_x = vec![vec![0.0_f64; ny]; nx];
+        let mut slope_eta_y = vec![vec![0.0_f64; ny]; nx];
+        let mut slope_qx = vec![vec![0.0_f64; ny]; nx];
+        let mut slope_qy = vec![vec![0.0_f64; ny]; nx];
+        if params.second_order {
+            for i in 1..nx - 1 {
+                for j in 1..ny - 1 {
+                    slope_eta_x[i][j] = minmod(eta[i][j] - eta[i - 1][j], eta[i + 1][j] - eta[i][j]);
+                    slope_eta_y[i][j] = minmod(eta[i][j] - eta[i][j - 1], eta[i][j + 1] - eta[i][j]);
+                    slope_qx[i][j] = minmod(hu[i][j] - hu[i - 1][j], hu[i + 1][j] - hu[i][j]);
+                    slope_qy[i][j] = minmod(hv[i][j] - hv[i][j - 1], hv[i][j + 1] - hv[i][j]);
+                }
+            }
+        }
 
         for i in 1..nx-1 {
             for j in 1..ny-1 {
                 if h[i][j] < min_depth && h[i-1][j] < min_depth && h[i+1][j] < min_depth { continue; }
 
                 let z_c = dem[i][j];
+                let eta_c = eta[i][j];
 
-                // X-direction (interfaces i-1/2 and i+1/2)
+                // ---- X-direction (interfaces i-1/2 and i+1/2) ----
                 let z_l = dem[i-1][j];
                 let z_r = dem[i+1][j];
-                let h_l = h[i-1][j]; let h_c = h[i][j]; let h_r = h[i+1][j];
-                let u_l = if h_l > min_depth { hu[i-1][j]/h_l } else { 0.0 };
-                let u_c = if h_c > min_depth { hu[i][j]/h_c } else { 0.0 };
-                let u_r = if h_r > min_depth { hu[i+1][j]/h_r } else { 0.0 };
 
-                // Left interface (i-1/2): hydrostatic reconstruction
+                // Left interface (i-1/2): reconstructed η and q.
+                let eta_ll = eta[i-1][j] + 0.5 * slope_eta_x[i-1][j]; // cell i-1 right face
+                let eta_lr = eta_c - 0.5 * slope_eta_x[i][j];          // cell i left face
+                let q_ll = hu[i-1][j] + 0.5 * slope_qx[i-1][j];
+                let q_lr = hu[i][j] - 0.5 * slope_qx[i][j];
                 let z_star_l = z_l.max(z_c);
-                let hl_star_l = (h_l + z_l - z_star_l).max(0.0); // left cell reconstructed depth
-                let hr_star_l = (h_c + z_c - z_star_l).max(0.0); // this cell reconstructed depth
-                let (fhl, fhul) = hllc_flux(hl_star_l, u_l, hr_star_l, u_c, g);
+                let hl_star_l = (eta_ll - z_star_l).max(0.0);
+                let hr_star_l = (eta_lr - z_star_l).max(0.0);
+                let u_l = if hl_star_l > min_depth { q_ll / hl_star_l } else { 0.0 };
+                let u_cl = if hr_star_l > min_depth { q_lr / hr_star_l } else { 0.0 };
+                let (fhl, fhul) = hllc_flux(hl_star_l, u_l, hr_star_l, u_cl, g);
 
-                // Right interface (i+1/2)
+                // Right interface (i+1/2).
+                let eta_rl = eta_c + 0.5 * slope_eta_x[i][j];          // cell i right face
+                let eta_rr = eta[i+1][j] - 0.5 * slope_eta_x[i+1][j];  // cell i+1 left face
+                let q_rl = hu[i][j] + 0.5 * slope_qx[i][j];
+                let q_rr = hu[i+1][j] - 0.5 * slope_qx[i+1][j];
                 let z_star_r = z_c.max(z_r);
-                let hl_star_r = (h_c + z_c - z_star_r).max(0.0); // this cell reconstructed depth
-                let hr_star_r = (h_r + z_r - z_star_r).max(0.0);
-                let (fhr, fhur) = hllc_flux(hl_star_r, u_c, hr_star_r, u_r, g);
+                let hl_star_r = (eta_rl - z_star_r).max(0.0);
+                let hr_star_r = (eta_rr - z_star_r).max(0.0);
+                let u_cr = if hl_star_r > min_depth { q_rl / hl_star_r } else { 0.0 };
+                let u_r = if hr_star_r > min_depth { q_rr / hr_star_r } else { 0.0 };
+                let (fhr, fhur) = hllc_flux(hl_star_r, u_cr, hr_star_r, u_r, g);
 
                 let flux_h_x = (fhr - fhl) / dx;
                 let flux_hu_x = (fhur - fhul) / dx;
@@ -107,23 +142,31 @@ pub fn solve(
                 // Bed-slope source (Audusse 2004): S = g/2 * [ h*_{i+1/2,L}^2 - h*_{i-1/2,R}^2 ]
                 let sx = 0.5 * g * (hl_star_r * hl_star_r - hr_star_l * hr_star_l) / dx;
 
-                // Y-direction (interfaces j-1/2 and j+1/2)
+                // ---- Y-direction (interfaces j-1/2 and j+1/2) ----
                 let z_b = dem[i][j-1];
                 let z_t = dem[i][j+1];
-                let h_b = h[i][j-1]; let h_t = h[i][j+1];
-                let v_b = if h_b > min_depth { hv[i][j-1]/h_b } else { 0.0 };
-                let v_c = if h_c > min_depth { hv[i][j]/h_c } else { 0.0 };
-                let v_t = if h_t > min_depth { hv[i][j+1]/h_t } else { 0.0 };
 
+                let eta_bb = eta[i][j-1] + 0.5 * slope_eta_y[i][j-1];
+                let eta_bt = eta_c - 0.5 * slope_eta_y[i][j];
+                let q_bb = hv[i][j-1] + 0.5 * slope_qy[i][j-1];
+                let q_bt = hv[i][j] - 0.5 * slope_qy[i][j];
                 let z_star_b = z_b.max(z_c);
-                let hl_star_b = (h_b + z_b - z_star_b).max(0.0);
-                let hr_star_b = (h_c + z_c - z_star_b).max(0.0);
-                let (fhb, fhvb) = hllc_flux(hl_star_b, v_b, hr_star_b, v_c, g);
+                let hl_star_b = (eta_bb - z_star_b).max(0.0);
+                let hr_star_b = (eta_bt - z_star_b).max(0.0);
+                let v_b = if hl_star_b > min_depth { q_bb / hl_star_b } else { 0.0 };
+                let v_cb = if hr_star_b > min_depth { q_bt / hr_star_b } else { 0.0 };
+                let (fhb, fhvb) = hllc_flux(hl_star_b, v_b, hr_star_b, v_cb, g);
 
+                let eta_tb = eta_c + 0.5 * slope_eta_y[i][j];
+                let eta_tt = eta[i][j+1] - 0.5 * slope_eta_y[i][j+1];
+                let q_tb = hv[i][j] + 0.5 * slope_qy[i][j];
+                let q_tt = hv[i][j+1] - 0.5 * slope_qy[i][j+1];
                 let z_star_t = z_c.max(z_t);
-                let hl_star_t = (h_c + z_c - z_star_t).max(0.0);
-                let hr_star_t = (h_t + z_t - z_star_t).max(0.0);
-                let (fht, fhvt) = hllc_flux(hl_star_t, v_c, hr_star_t, v_t, g);
+                let hl_star_t = (eta_tb - z_star_t).max(0.0);
+                let hr_star_t = (eta_tt - z_star_t).max(0.0);
+                let v_ct = if hl_star_t > min_depth { q_tb / hl_star_t } else { 0.0 };
+                let v_t = if hr_star_t > min_depth { q_tt / hr_star_t } else { 0.0 };
+                let (fht, fhvt) = hllc_flux(hl_star_t, v_ct, hr_star_t, v_t, g);
 
                 let flux_h_y = (fht - fhb) / dx;
                 let flux_hv_y = (fhvt - fhvb) / dx;
@@ -131,7 +174,7 @@ pub fn solve(
                 let sy = 0.5 * g * (hl_star_t * hl_star_t - hr_star_b * hr_star_b) / dx;
 
                 // Conservative update
-                h_new[i][j] = (h_c - dt * (flux_h_x + flux_h_y)).max(0.0);
+                h_new[i][j] = (eta_c - dem[i][j] - dt * (flux_h_x + flux_h_y)).max(0.0);
                 hu_new[i][j] = hu[i][j] - dt * flux_hu_x + dt * sx;
                 hv_new[i][j] = hv[i][j] - dt * flux_hv_y + dt * sy;
 
@@ -168,7 +211,8 @@ pub fn solve(
     let flooded_area = flooded as f64 * dx * dx;
 
     let summary = format!(
-        "=== 2D SWE Solver Result ===\nRef: Toro (2001); Audusse et al. 2004 (hydrostatic reconstruction)\nSolver: HLLC + Well-Balanced (hydrostatic reconstruction)\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\n",
+        "=== 2D SWE Solver Result ===\nRef: Toro (2001); Audusse et al. 2004 (hydrostatic reconstruction)\nSolver: HLLC + Well-Balanced{} (hydrostatic reconstruction)\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\n",
+        if params.second_order { " + MUSCL 2nd-order (η-limiting)" } else { "" },
         nx, ny, dx, params.manning_n, params.duration_s, params.duration_s / 3600.0,
         step, max_depth, flooded, nx * ny,
         100.0 * flooded as f64 / (nx * ny) as f64,
@@ -181,6 +225,18 @@ pub fn solve(
         total_cells: nx * ny,
         flooded_area_m2: flooded_area,
         summary,
+    }
+}
+
+/// minmod slope limiter: returns 0 if a and b have opposite signs, else the
+/// one with smaller magnitude (TVD, prevents spurious oscillations).
+fn minmod(a: f64, b: f64) -> f64 {
+    if a * b <= 0.0 {
+        0.0
+    } else if a.abs() < b.abs() {
+        a
+    } else {
+        b
     }
 }
 
@@ -333,3 +389,38 @@ mod tests {
     }
 }
 
+
+#[cfg(test)]
+mod muscl_tests {
+    use super::{minmod, solve, SweParams, SweResult};
+
+    #[test]
+    fn minmod_limiter_behavior() {
+        // Same sign → smaller magnitude.
+        assert_eq!(minmod(2.0, 3.0), 2.0);
+        assert_eq!(minmod(-2.0, -3.0), -2.0);
+        // Opposite sign → 0 (no oscillation).
+        assert_eq!(minmod(2.0, -3.0), 0.0);
+        // Zero → 0.
+        assert_eq!(minmod(0.0, 5.0), 0.0);
+    }
+
+    #[test]
+    fn second_order_solve_runs_stable() {
+        // Uneven bed + inflow; second-order MUSCL must not produce NaN.
+        let nx = 20; let ny = 20;
+        let mut dem = vec![vec![0.0; ny]; nx];
+        for i in 0..nx {
+            for j in 0..ny {
+                dem[i][j] = ((i as f64 - 10.0) * 0.05).abs() + ((j as f64 - 10.0) * 0.03).abs();
+            }
+        }
+        let params = SweParams {
+            nx, ny, dx: 10.0, manning_n: 0.03, duration_s: 60.0, dt_max: 1.0,
+            second_order: true,
+        };
+        let res: SweResult = solve(&dem, &params, 5.0, 2, 10, 3);
+        assert!(res.max_depth.is_finite());
+        assert!(res.summary.contains("MUSCL 2nd-order"));
+    }
+}

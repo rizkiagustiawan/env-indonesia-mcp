@@ -14,6 +14,9 @@ use crate::tools::advanced_physics::groundwater_pde::RichardsParam;
 use crate::tools::airquality::stability::MoninObukhovParam;
 use crate::tools::calculators::land_subsidence::ConsolidationParam;
 use crate::tools::airquality::source_apportionment::PmfParam;
+use crate::tools::advanced_physics::uq::{GlueParam, DreamParam};
+use crate::tools::water::contaminant_transport_1d::AdrSorptionParam;
+use crate::tools::advanced_physics::coupled_swe_richards::CoupledParam;
 use crate::tools::waste::hpal_tailings::{evaluate_hpal_tailings, HpalTailingsParam};
 
 // Calculator & Compliance Params
@@ -6116,6 +6119,21 @@ impl EnvIndonesiaServer {
         )
     }
 
+    #[tool(
+        description = "ADR (Advection-Dispersion-Reaction) 1D Solver with Non-Linear Sorption. Finite difference solver handling concentration-dependent retardation R(C). Supports 'linear' (Kd), 'freundlich' (Kf, n), and 'langmuir' (b, Smax) sorption isotherms. Ref: Zheng & Bennett 2002. Computes the spatial profile of concentration and dynamic retardation."
+    )]
+    fn adr_nonlinear_sorption(&self, Parameters(p): Parameters<AdrSorptionParam>) -> String {
+        tools::water::contaminant_transport_1d::solve_adr_sorption(&p)
+    }
+
+    #[tool(
+        description = "Coupled SWE-Richards Model. Integrates surface water (Shallow Water Equations) and groundwater (Richards PDE) using Head-Flux Switching Boundary Condition. Handles dynamic infiltration and exfiltration between surface and subsurface. Ref: MIKE SHE."
+    )]
+    fn coupled_swe_richards(&self, Parameters(p): Parameters<CoupledParam>) -> String {
+        tools::advanced_physics::coupled_swe_richards::solve_coupled(&p)
+    }
+
+
     #[tool(description = "Contaminant Transport 2D (Domenico). Analytical solution for 2D advection-dispersion from finite source. Includes transverse dispersion. Ref: Domenico 1987; Devlin 2012.")]
     fn contaminant_transport_2d(&self, Parameters(p): Parameters<ContaminantTransport2DParam>) -> String {
         tools::water::contaminant_transport_2d::assess(
@@ -6601,6 +6619,20 @@ impl EnvIndonesiaServer {
     #[tool(description = "HPAL Nickel Tailings ESG Compliance Tool. Evaluates high-pressure acid leach slurry parameters (pH, Cr6+, Ni, Co, Mn) against Indonesian regulations (PP 101/2014 TCLP & B3 Limits) and IFC Performance Standards. Compares Dry Stack Tailings (DST) vs Deep Sea Tailings Placement (DSTP). Critical for auditing Morowali, Obi, Weda Bay EV Battery supply chains.")]
     fn hpal_tailings(&self, Parameters(p): Parameters<HpalTailingsParam>) -> String {
         evaluate_hpal_tailings(&p)
+    }
+
+    #[tool(
+        description = "GLUE uncertainty estimation (Beven & Binley 1992). Generalized Likelihood Uncertainty Estimation using Nash-Sutcliffe informal likelihood: computes likelihood per parameter set, rejects non-behavioral sets below a threshold, and reports weighted 5%-95% prediction quantile bounds (equifinality). Input: model predictions [sets][outputs] and observed [outputs] as JSON. Use to attach uncertainty bands to deterministic environmental model output."
+    )]
+    fn glue_uncertainty(&self, Parameters(p): Parameters<GlueParam>) -> String {
+        tools::advanced_physics::uq::glue(&p)
+    }
+
+    #[tool(
+        description = "DREAM-MCMC posterior inference (Vrugt et al. 2009). DiffeRential Evolution Adaptive Metropolis sampler for Bayesian calibration of a linear model y = X·θ with Gaussian likelihood. Uses DE proposal with jump rate γ=2.38/√(2δd*), δ=3 pairs, crossover CR∈{1/3,2/3,1}, p_g=0.2, and reports posterior mean + 5-95% credible intervals and Gelman-Rubin R-hat convergence. Input: design matrix X, observations y, noise σ, prior bounds. Use for formal parameter uncertainty quantification of environmental models."
+    )]
+    fn dream_mcmc(&self, Parameters(p): Parameters<DreamParam>) -> String {
+        tools::advanced_physics::uq::dream(&p)
     }
 }
 
