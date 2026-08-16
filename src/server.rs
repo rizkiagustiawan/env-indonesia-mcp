@@ -10,6 +10,10 @@ use rmcp::{
 use crate::tools;
 pub use crate::tools::physics_validator::ValidatorParam;
 use crate::tools::advanced_physics::peatland_subsidence::{calculate_peatland_subsidence, PeatlandSubsidenceParam};
+use crate::tools::advanced_physics::groundwater_pde::RichardsParam;
+use crate::tools::airquality::stability::MoninObukhovParam;
+use crate::tools::calculators::land_subsidence::ConsolidationParam;
+use crate::tools::airquality::source_apportionment::PmfParam;
 use crate::tools::waste::hpal_tailings::{evaluate_hpal_tailings, HpalTailingsParam};
 
 // Calculator & Compliance Params
@@ -4050,6 +4054,13 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(
+        description = "Time-dependent 1D consolidation settlement (Terzaghi 1943 + Biot α poroelasticity). Computes ultimate settlement Sc, degree of consolidation U(t) via the Terzaghi series, time factor Tv, settlement at time t, and time to U=50%/90%. Handles single/double drainage and Biot coefficient α. Ref: Terzaghi 1943; Biot 1941. Use for Jakarta/Semarang/Pekalongan land subsidence timelines from groundwater extraction."
+    )]
+    fn land_subsidence_time(&self, Parameters(p): Parameters<ConsolidationParam>) -> String {
+        tools::calculators::land_subsidence::calculate_consolidation(&p)
+    }
+
+    #[tool(
         description = "Thermal Pollution mixing zone. Suhu campuran sungai + buangan PLTU. Baku mutu: ΔT maks 3°C."
     )]
     fn thermal_pollution(&self, Parameters(p): Parameters<ThermalParam>) -> String {
@@ -4216,6 +4227,13 @@ impl EnvIndonesiaServer {
             &p.solar_radiation,
             p.cloud_cover_eighths,
         )
+    }
+
+    #[tool(
+        description = "Monin-Obukhov Similarity Theory. Computes the Obukhov length L, stability parameter ζ=z/L, Businger-Dyer similarity functions φm/φh, and continuous eddy diffusivities Km/Kh from friction velocity u*, surface heat flux, and temperature. Ref: Monin & Obukhov 1954; Dyer 1974. Use for continuous (non-discrete) atmospheric stability and AERMOD-grade eddy diffusivity parameterization."
+    )]
+    fn monin_obukhov(&self, Parameters(p): Parameters<MoninObukhovParam>) -> String {
+        tools::airquality::stability::monin_obukhov(&p)
     }
 
     #[tool(
@@ -4407,6 +4425,13 @@ impl EnvIndonesiaServer {
             p.time_steps,
             p.dt_seconds,
         )
+    }
+
+    #[tool(
+        description = "Richards Equation 1D infiltration solver (van Genuchten–Mualem). Solves the mixed-form Richards PDE with the modified-Picard scheme (Celia et al. 1990) for variably-saturated flow in the unsaturated zone. Input: θr, θs, α(1/m), n, Ks(m/s), column depth, pressure heads. Returns water-content profile, wetting-front depth, mass balance, and top flux. Ref: van Genuchten 1980; Mualem 1976. Use for infiltration, recharge, slope-stability antecedent moisture, and peatland TMAT."
+    )]
+    fn richards_infiltration(&self, Parameters(p): Parameters<RichardsParam>) -> String {
+        tools::advanced_physics::groundwater_pde::solve_richards_1d(&p)
     }
 
     #[tool(
@@ -5959,6 +5984,13 @@ impl EnvIndonesiaServer {
         tools::airquality::source_apportionment::assess(
             p.pm25_total_ug_m3, p.so4_ug_m3, p.no3_ug_m3, p.ec_ug_m3, p.oc_ug_m3, p.crustal_ug_m3
         )
+    }
+
+    #[tool(
+        description = "PMF (Positive Matrix Factorization) source apportionment. Decomposes a concentration matrix X = G·F + E via weighted non-negative matrix factorization (multiplicative ALS) into factor contributions G and source profiles F, minimising Q = Σ((X-GF)/σ)². Input: X and σ as JSON 2D arrays, number of factors, iterations. Returns factor profiles, per-sample contributions, Q and Q/Qexp. Ref: Paatero & Tapper 1994; EPA PMF 5.0. Use for data-driven (non-CMB) PM2.5 source identification."
+    )]
+    fn pmf_source_apportionment(&self, Parameters(p): Parameters<PmfParam>) -> String {
+        tools::airquality::source_apportionment::pmf_apportionment(&p)
     }
 
     #[tool(description = "Deep-Sea Tailings Placement (DSTP) Plume Dispersion. Menghitung dispersi tailing di laut dalam untuk industri nikel. Ref: Shimmield et al. 2010; Reichelt-Brushett 2012.")]

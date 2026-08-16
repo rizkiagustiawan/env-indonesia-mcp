@@ -68,7 +68,9 @@ pub fn solve(
             }
         }
 
-        // Flux computation (HLL) - X direction
+        // Flux computation with HLLC + hydrostatic reconstruction (Audusse et al. 2004).
+        // This is a WELL-BALANCED scheme: it preserves the lake-at-rest state
+        // (h+z=const, u=v=0) to machine precision, unlike a naive bed-slope source.
         let mut h_new = h.clone();
         let mut hu_new = hu.clone();
         let mut hv_new = hv.clone();
@@ -77,51 +79,63 @@ pub fn solve(
             for j in 1..ny-1 {
                 if h[i][j] < min_depth && h[i-1][j] < min_depth && h[i+1][j] < min_depth { continue; }
 
-                let _z_c = dem[i][j];
+                let z_c = dem[i][j];
+
+                // X-direction (interfaces i-1/2 and i+1/2)
                 let z_l = dem[i-1][j];
                 let z_r = dem[i+1][j];
-                let z_b = dem[i][j-1];
-                let z_t = dem[i][j+1];
-
-                // X-direction HLL Riemann solver (Toro 2001)
-                // BUG FIX: previous code was central-differencing with dimensionally-broken
-                // gravity term and non-conservative momentum update. Replaced with proper HLL.
                 let h_l = h[i-1][j]; let h_c = h[i][j]; let h_r = h[i+1][j];
                 let u_l = if h_l > min_depth { hu[i-1][j]/h_l } else { 0.0 };
                 let u_c = if h_c > min_depth { hu[i][j]/h_c } else { 0.0 };
                 let u_r = if h_r > min_depth { hu[i+1][j]/h_r } else { 0.0 };
 
-                // Left state at interface (i-1/2)
-                let (fhl, fhul) = hll_flux(h_l, u_l, h_c, u_c, g);
-                // Right state at interface (i+1/2)
-                let (fhr, fhur) = hll_flux(h_c, u_c, h_r, u_r, g);
+                // Left interface (i-1/2): hydrostatic reconstruction
+                let z_star_l = z_l.max(z_c);
+                let hl_star_l = (h_l + z_l - z_star_l).max(0.0); // left cell reconstructed depth
+                let hr_star_l = (h_c + z_c - z_star_l).max(0.0); // this cell reconstructed depth
+                let (fhl, fhul) = hllc_flux(hl_star_l, u_l, hr_star_l, u_c, g);
+
+                // Right interface (i+1/2)
+                let z_star_r = z_c.max(z_r);
+                let hl_star_r = (h_c + z_c - z_star_r).max(0.0); // this cell reconstructed depth
+                let hr_star_r = (h_r + z_r - z_star_r).max(0.0);
+                let (fhr, fhur) = hllc_flux(hl_star_r, u_c, hr_star_r, u_r, g);
 
                 let flux_h_x = (fhr - fhl) / dx;
                 let flux_hu_x = (fhur - fhul) / dx;
 
-                // Y-direction HLL
+                // Bed-slope source (Audusse 2004): S = g/2 * [ h*_{i+1/2,L}^2 - h*_{i-1/2,R}^2 ]
+                let sx = 0.5 * g * (hl_star_r * hl_star_r - hr_star_l * hr_star_l) / dx;
+
+                // Y-direction (interfaces j-1/2 and j+1/2)
+                let z_b = dem[i][j-1];
+                let z_t = dem[i][j+1];
                 let h_b = h[i][j-1]; let h_t = h[i][j+1];
                 let v_b = if h_b > min_depth { hv[i][j-1]/h_b } else { 0.0 };
                 let v_c = if h_c > min_depth { hv[i][j]/h_c } else { 0.0 };
                 let v_t = if h_t > min_depth { hv[i][j+1]/h_t } else { 0.0 };
 
-                let (fhb, fhvb) = hll_flux(h_b, v_b, h_c, v_c, g);
-                let (fht, fhvt) = hll_flux(h_c, v_c, h_t, v_t, g);
+                let z_star_b = z_b.max(z_c);
+                let hl_star_b = (h_b + z_b - z_star_b).max(0.0);
+                let hr_star_b = (h_c + z_c - z_star_b).max(0.0);
+                let (fhb, fhvb) = hllc_flux(hl_star_b, v_b, hr_star_b, v_c, g);
+
+                let z_star_t = z_c.max(z_t);
+                let hl_star_t = (h_c + z_c - z_star_t).max(0.0);
+                let hr_star_t = (h_t + z_t - z_star_t).max(0.0);
+                let (fht, fhvt) = hllc_flux(hl_star_t, v_c, hr_star_t, v_t, g);
 
                 let flux_h_y = (fht - fhb) / dx;
                 let flux_hv_y = (fhvt - fhvb) / dx;
 
-                // Conservative update: dU/dt + dF/dx + dG/dy = S
+                let sy = 0.5 * g * (hl_star_t * hl_star_t - hr_star_b * hr_star_b) / dx;
+
+                // Conservative update
                 h_new[i][j] = (h_c - dt * (flux_h_x + flux_h_y)).max(0.0);
+                hu_new[i][j] = hu[i][j] - dt * flux_hu_x + dt * sx;
+                hv_new[i][j] = hv[i][j] - dt * flux_hv_y + dt * sy;
 
-                // Bed slope source term
-                let sx = -g * h_c * (dem[i+1][j] - dem[i-1][j]) / (2.0 * dx);
-                let sy = -g * h_c * (dem[i][j+1] - dem[i][j-1]) / (2.0 * dx);
-
-                hu_new[i][j] = hu[i][j] - dt * flux_hu_x + sx * dt;
-                hv_new[i][j] = hv[i][j] - dt * flux_hv_y + sy * dt;
-
-                // Manning friction
+                // Manning friction (semi-implicit)
                 if h_new[i][j] > min_depth {
                     let u_mag = ((hu_new[i][j]/h_new[i][j]).powi(2) + (hv_new[i][j]/h_new[i][j]).powi(2)).sqrt();
                     let friction = g * params.manning_n * params.manning_n * u_mag / h_new[i][j].powf(4.0/3.0);
@@ -154,7 +168,7 @@ pub fn solve(
     let flooded_area = flooded as f64 * dx * dx;
 
     let summary = format!(
-        "=== 2D SWE Solver Result ===\nRef: Toro (2001), Saint-Venant Equations\nSolver: HLL Approximate Riemann\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\n",
+        "=== 2D SWE Solver Result ===\nRef: Toro (2001); Audusse et al. 2004 (hydrostatic reconstruction)\nSolver: HLLC + Well-Balanced (hydrostatic reconstruction)\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\n",
         nx, ny, dx, params.manning_n, params.duration_s, params.duration_s / 3600.0,
         step, max_depth, flooded, nx * ny,
         100.0 * flooded as f64 / (nx * ny) as f64,
@@ -199,9 +213,51 @@ fn hll_flux(hl: f64, ul: f64, hr: f64, ur: f64, g: f64) -> (f64, f64) {
     }
 }
 
+/// HLLC (contact-wave-resolving) approximate Riemann solver flux (Toro 2001).
+/// Resolves the middle contact wave S_*, giving sharper profiles than HLL.
+/// Falls back to HLL for dry-bed states (h ~ 0) to avoid division by zero.
+fn hllc_flux(hl: f64, ul: f64, hr: f64, ur: f64, g: f64) -> (f64, f64) {
+    let eps = 1e-9;
+    if hl < eps && hr < eps {
+        return (0.0, 0.0);
+    }
+    if hl < eps || hr < eps {
+        return hll_flux(hl, ul, hr, ur, g); // dry bed: HLL (no contact wave)
+    }
+    let cl = (g * hl).sqrt();
+    let cr = (g * hr).sqrt();
+    let sl = (ul - cl).min(ur - cr);
+    let sr = (ul + cl).max(ur + cr);
+
+    let fl_h = hl * ul;
+    let fl_hu = hl * ul * ul + 0.5 * g * hl * hl;
+    let fr_h = hr * ur;
+    let fr_hu = hr * ur * ur + 0.5 * g * hr * hr;
+
+    // Middle (star) wave speed (Toro 2001): S_L weights the right state, S_R the left.
+    let denom = hr * (ur - sr) - hl * (ul - sl);
+    let s_star = if denom.abs() < 1e-12 {
+        0.5 * (sl + sr)
+    } else {
+        (sl * hr * (ur - sr) - sr * hl * (ul - sl)) / denom
+    };
+
+    if sl >= 0.0 {
+        (fl_h, fl_hu)
+    } else if s_star >= 0.0 {
+        let h_star = hl * (ul - sl) / (s_star - sl);
+        (fl_h + sl * (h_star - hl), fl_hu + sl * (h_star * s_star - hl * ul))
+    } else if sr >= 0.0 {
+        let h_star = hr * (ur - sr) / (s_star - sr);
+        (fr_h + sr * (h_star - hr), fr_hu + sr * (h_star * s_star - hr * ur))
+    } else {
+        (fr_h, fr_hu)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::hll_flux;
+    use super::{hll_flux, hllc_flux};
     // Self-check: HLL flux for still water (hL=hR=h, uL=uR=0) should give zero mass flux
     // and hydrostatic pressure flux 0.5*g*h^2 (balanced by source in well-balanced scheme).
     #[test]
@@ -217,10 +273,63 @@ mod tests {
     fn hll_supercritical_left() {
         let g = 9.81_f64;
         let h = 1.0; let u = 10.0; // both states supercritical left-to-right
-        let cl = (g * h).sqrt(); // 3.13
-        // SL = min(uL-cL, uR-cR) = min(10-3.13, 10-3.13) = 6.87 > 0 -> left flux
-        let (fh, fhu) = hll_flux(h, u, h, u, g);
+        let (fh, _fhu) = hll_flux(h, u, h, u, g);
         assert!((fh - h * u).abs() < 1e-6, "supercritical left flux fh={fh} expected {}", h*u);
+    }
+
+    #[test]
+    fn hllc_still_water_flux() {
+        let g = 9.81_f64;
+        let (fh, fhu) = hllc_flux(1.0, 0.0, 1.0, 0.0, g);
+        assert!(fh.abs() < 1e-10);
+        assert!((fhu - 0.5 * g).abs() < 1e-9);
+    }
+
+    #[test]
+    fn hllc_dam_break_positive_flux() {
+        let g = 9.81_f64;
+        // Dam break: high water left (1.0m) → low water right (0.1m), both at rest.
+        // Flow must be rightward (positive mass flux) for both HLL and HLLC.
+        let (fh_hllc, fhu_hllc) = hllc_flux(1.0, 0.0, 0.1, 0.0, g);
+        let (fh_hll, fhu_hll) = hll_flux(1.0, 0.0, 0.1, 0.0, g);
+        assert!(fh_hllc.is_finite() && fh_hllc > 0.0, "HLLC mass flux must be positive");
+        assert!(fhu_hllc.is_finite());
+        assert!(fh_hll.is_finite() && fh_hll > 0.0, "HLL mass flux must be positive");
+        assert!(fhu_hll.is_finite());
+    }
+
+    // KEY well-balancing test: for lake-at-rest (h+z=const, u=0) the Audusse
+    // hydrostatic-reconstruction source term must EXACTLY cancel the flux difference,
+    // so no spurious momentum is generated over uneven topography.
+    #[test]
+    fn well_balanced_lake_at_rest() {
+        let g = 9.81_f64;
+        let eta = 3.0_f64; // flat water surface
+        let (zl, zc, zr) = (0.0_f64, 1.0_f64, 2.0_f64);
+        let (hl, hc, hr) = (eta - zl, eta - zc, eta - zr);
+
+        // Left interface (i-1/2)
+        let z_star_l = zl.max(zc);
+        let hl_star_l = (hl + zl - z_star_l).max(0.0);
+        let hr_star_l = (hc + zc - z_star_l).max(0.0);
+        let (_fl_h, fl_hu) = hllc_flux(hl_star_l, 0.0, hr_star_l, 0.0, g);
+
+        // Right interface (i+1/2)
+        let z_star_r = zc.max(zr);
+        let hl_star_r = (hc + zc - z_star_r).max(0.0);
+        let hr_star_r = (hr + zr - z_star_r).max(0.0);
+        let (_fr_h, fr_hu) = hllc_flux(hl_star_r, 0.0, hr_star_r, 0.0, g);
+
+        let dx = 1.0;
+        let flux_hu_x = (fr_hu - fl_hu) / dx;
+        let sx = 0.5 * g * (hl_star_r * hl_star_r - hr_star_l * hr_star_l) / dx;
+
+        // Net momentum update: -dt*flux_hu_x + dt*sx must be zero.
+        assert!(
+            (-flux_hu_x + sx).abs() < 1e-9,
+            "NOT well-balanced: flux={} source={} net={}",
+            flux_hu_x, sx, -flux_hu_x + sx
+        );
     }
 }
 
