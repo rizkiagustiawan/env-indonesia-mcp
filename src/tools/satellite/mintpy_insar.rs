@@ -163,12 +163,14 @@ print(json.dumps({'error': 'No velocity file found. Run SBAS pipeline first.'}))
 
             // Known subsidence for Indonesia cities (literature values)
             out.push_str("═══ KNOWN SUBSIDENCE (Indonesia, 2026 literature) ═══\n\n");
-            out.push_str("Ref: Widiarso 2026 (Semarang), Umarhadi 2026 (peatland),\n");
-            out.push_str("     Pratama 2026 (Jatiluhur), Setyaningrum 2026 (Central Kalimantan)\n\n");
+            out.push_str("Ref: Science Advances 2024 (Java InSAR 2017-2023); Widiarso 2026 (Semarang),\n");
+            out.push_str("     Umarhadi 2026 (peatland), Bott 2021 (Jakarta/Semarang)\n\n");
 
-            let known: [(&str, f64, &str); 5] = [
-                ("Jakarta", -75.0, "Land subsidence, groundwater extraction"),
-                ("Semarang", -150.0, "Coastal subsidence, fault-controlled (Widiarso 2026)"),
+            // Rates are max-velocity spot values (mm/yr), not basin averages.
+            let known: [(&str, f64, &str); 6] = [
+                ("Jakarta", -36.0, "Land subsidence, groundwater extraction (SciAdv 2024 max 3.6 cm/yr)"),
+                ("Semarang", -80.0, "Coastal subsidence, fault-controlled (SciAdv 2024 max 8 cm/yr; Widiarso 2026)"),
+                ("Pekalongan", -100.0, "Worst hotspot on Java (SciAdv 2024 max 10 cm/yr)"),
                 ("Bandung", -30.0, "Land subsidence, industrial groundwater"),
                 ("Central Kalimantan (peatland)", -50.0, "Peat consolidation, drying (Umarhadi 2026)"),
                 ("Jatiluhur Dam", -5.0, "Dam structure stability (Pratama 2026)"),

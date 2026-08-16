@@ -3508,7 +3508,7 @@ impl EnvIndonesiaServer {
         tools::satellite::viirs_fishing::search(&HTTP, p.lat, p.lon, &p.date).await
     }
 
-    #[tool(description = "Air pollution AQI PM2.5 NO2 O3 SO2 CO (Open-Meteo CAMS)")]
+    #[tool(description = "Air quality: current AQI and concentrations of PM2.5, PM10, NO2, O3, SO2, CO for a location (Open-Meteo CAMS, free, no key). Concentrations in µg/m³; AQI 0-500. Baku mutu PP 22/2021: PM2.5 24h 65 µg/m³, PM10 24h 150 µg/m³. Limitation: regional reanalysis, not station-grade.")]
     async fn air_pollution(&self, Parameters(p): Parameters<LatLonParam>) -> String {
         let lat = p.lat.unwrap_or(-6.2);
         let lon = p.lon.unwrap_or(106.85);
@@ -3518,7 +3518,7 @@ impl EnvIndonesiaServer {
         tools::data::openweather::air_pollution(&HTTP, lat, lon).await
     }
 
-    #[tool(description = "Weather 7-day forecast (Open-Meteo, free, no API key)")]
+    #[tool(description = "Weather 7-day forecast for a location: temperature (°C), precipitation (mm), wind speed/direction (m/s). Source Open-Meteo, free, no API key. Limitation: coarse grid; use BMKG for legal/AMDAL wind rose or AERMOD met input.")]
     async fn open_meteo_weather(&self, Parameters(p): Parameters<LatLonParam>) -> String {
         let lat = p.lat.unwrap_or(-6.2);
         let lon = p.lon.unwrap_or(106.85);
@@ -3528,7 +3528,7 @@ impl EnvIndonesiaServer {
         tools::data::open_meteo::weather(&HTTP, lat, lon).await
     }
 
-    #[tool(description = "NASA POWER solar irradiance GHI DNI monthly for energy potential")]
+    #[tool(description = "NASA POWER solar irradiance for a location: GHI, DNI, DHI (kWh/m²/day or W/m²) monthly/daily. Use for solar PV energy potential & renewable feasibility. Free, no key. Limitation: satellite-derived; validate with ground pyranometer for bankable reports.")]
     async fn nasa_power_solar(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
             return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
@@ -3536,33 +3536,33 @@ impl EnvIndonesiaServer {
         tools::data::nasa_power::solar(&HTTP, p.lat, p.lon, None, None).await
     }
 
-    #[tool(description = "Search Satu Data Indonesia (data.go.id) environmental datasets")]
+    #[tool(description = "Search Satu Data Indonesia (data.go.id) for official environmental datasets (climate, forest, pollution, water). Returns dataset title, publisher, URL. Use as authoritative BPS/KLHK/BMKG source for AMDAL & regulatory reporting.")]
     async fn satu_data_search(&self, Parameters(p): Parameters<QueryParam>) -> String {
         tools::data::satu_data::search(&HTTP, &p.query, 5).await
     }
 
-    #[tool(description = "Climate TRACE GHG emissions Indonesia by sector")]
+    #[tool(description = "Climate TRACE GHG emissions for Indonesia by sector (energy, industry, agriculture, forestry, transport) in tCO2e. Use for Scope 1/3 benchmarking & NDC gap analysis. Ref: Climate TRACE 2024 inventory.")]
     async fn climate_trace_emissions(&self, Parameters(p): Parameters<SectorParam>) -> String {
         tools::data::climate_trace::emissions(&HTTP, p.sector).await
     }
 
     // --- GIS ANALYSIS ---
-    #[tool(description = "NDVI vegetation index from Sentinel-2 bands. NDVI=(NIR-Red)/(NIR+Red)")]
+    #[tool(description = "NDVI vegetation index from Sentinel-2 NIR (B8) and Red (B4) bands. NDVI=(NIR-Red)/(NIR+Red), valid range -1.0 to 1.0. Interpretation: <0 water/cloud, 0-0.2 bare, 0.2-0.5 sparse, >0.5 dense vegetation. Ref: Rouse et al. 1974.")]
     fn ndvi_compute(&self, Parameters(p): Parameters<NdviParam>) -> String {
         tools::gis::ndvi::compute(p.nir, p.red)
     }
 
-    #[tool(description = "Water quality indices from Sentinel-2: NDWI, turbidity, chlorophyll")]
+    #[tool(description = "Water quality indices from Sentinel-2 bands: NDWI (water detection), turbidity proxy (Red/Green), chlorophyll-a proxy (eutrophication). For danau/sungai/pesisir Indonesia. Limitation: empirical proxies need in-situ calibration (SNI 6989) for legal reporting.")]
     fn water_quality(&self, Parameters(p): Parameters<WaterQualityParam>) -> String {
         tools::gis::water::quality(p.green, p.red, p.nir, None)
     }
 
-    #[tool(description = "Drought index SPI from precipitation data")]
+    #[tool(description = "Drought index SPI (Standardized Precipitation Index) from precipitation time series. SPI: -2 extreme drought, -1.5 severe, -1 moderate, 0 normal, +2 wet. Ref: McKee et al. 1993. Use for kemarau/El Niño early warning & AMDAL hydrology.")]
     fn drought_index(&self, Parameters(p): Parameters<DroughtParam>) -> String {
         tools::gis::drought::index(p.precipitation_mm, p.avg_mm, p.std_mm)
     }
 
-    #[tool(description = "Analyze GeoJSON: type, features, geometry")]
+    #[tool(description = "Analyze GeoJSON: report geometry type, feature count, coordinate range, CRS. Use to validate GIS layers before raster/vector processing (e.g. AMDAL map inputs, watershed boundaries).")]
     fn geojson_analyze(&self, Parameters(p): Parameters<GeoJsonParam>) -> String {
         tools::gis::geojson_ops::analyze(&p.geojson)
     }
@@ -3586,7 +3586,7 @@ impl EnvIndonesiaServer {
         tools::esg::carbon::calculate(&p.activity, p.amount)
     }
 
-    #[tool(description = "Map activity to UN SDGs (17 Sustainable Development Goals)")]
+    #[tool(description = "Map an activity/project to relevant UN SDGs (17 goals). Returns matched goals with rationale. Use for ESG sustainability reporting & AMDAL social chapter. Ref: UN Agenda 2030.")]
     fn sdg_mapper(&self, Parameters(p): Parameters<QueryParam>) -> String {
         tools::esg::sdg::map_activity(&p.query)
     }
@@ -3619,12 +3619,12 @@ impl EnvIndonesiaServer {
     }
 
     // --- WRAPPERS (Existing Projects) ---
-    #[tool(description = "Wrapper: Trigger ESG Audit pipeline in GeoESG-Final (Port 8000)")]
+    #[tool(description = "ESG Audit pipeline (GeoESG-Final service, Port 8000). Computes Environmental/Social/Governance score from company activity data. Use for corporate ESG disclosure & OJK POJK 51 compliance. Limitation: requires the GeoESG service to be running.")]
     async fn wrapper_esg_audit(&self, Parameters(p): Parameters<QueryParam>) -> String {
         tools::wrappers::trigger_esg_audit(&HTTP, &p.query).await
     }
 
-    #[tool(description = "Wrapper: Predict flood via geo-flood-ai (Port 8001)")]
+    #[tool(description = "Flood prediction (geo-flood-ai service, Port 8001). Returns flood risk/zone for a location from ML model. Use for rapid screening only — verify with hydrologic model (SCS-CN/SWE) for legal flood maps. Limitation: requires geo-flood-ai service running.")]
     async fn wrapper_flood_predict(&self, Parameters(p): Parameters<LatLonRequired>) -> String {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
             return format!("ERROR [E101]: Koordinat tidak valid - {}", e);
@@ -3632,17 +3632,17 @@ impl EnvIndonesiaServer {
         tools::wrappers::predict_flood(&HTTP, p.lat, p.lon).await
     }
 
-    #[tool(description = "Wrapper: Get methane plumes data (Port 8002)")]
+    #[tool(description = "Methane plume data (service, Port 8002). Retrieves CH4 concentration/plume detection for a location. Use for fugitive methane (TPA, gas facilities, peatland) screening. Limitation: requires the methane service running.")]
     async fn wrapper_methane_plumes(&self) -> String {
         tools::wrappers::get_methane_plumes(&HTTP).await
     }
 
-    #[tool(description = "Wrapper: Get groundwater monitoring status (Port 8003)")]
+    #[tool(description = "Groundwater monitoring status (service, Port 8003). Returns water-table depth/level for a location. Use for peatland TMAT (PP 71/2014 threshold 40cm) & land subsidence screening. Limitation: requires the groundwater service running.")]
     async fn wrapper_groundwater(&self) -> String {
         tools::wrappers::get_groundwater_status(&HTTP).await
     }
 
-    #[tool(description = "Wrapper: Get air quality monitoring health (Port 8004)")]
+    #[tool(description = "Air quality monitoring health data (service, Port 8004). Returns station AQI/health status for a location. Use for ISPU & public health screening. Limitation: requires the air quality service running.")]
     async fn wrapper_air_quality(&self) -> String {
         tools::wrappers::get_air_quality(&HTTP).await
     }

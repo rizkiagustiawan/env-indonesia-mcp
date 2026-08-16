@@ -238,10 +238,10 @@ pub fn calculate(scope1_json: &str, scope2_json: &str, scope3_json: &str) -> Str
     ));
 
     // Carbon valuation
-    let carbon_tax_idr = grand_total * 30_000.0; // Perpres 98/2021 ~Rp30,000/tCO2
+    let carbon_tax_idr = grand_total * 30_000.0; // Pajak karbon UU 7/2021 (HPP) = Rp30,000/tCO2e
     let carbon_market_usd = grand_total * 51.0; // EPA SCC
     out.push_str(&format!(
-        "VALUASI KARBON:\n  Pajak karbon Indonesia (Perpres 98/2021): Rp {} (@ Rp 30,000/tCO2)\n  Social Cost of Carbon (EPA 2023):          USD {} (@ $51/tCO2)\n\n",
+        "VALUASI KARBON:\n  Pajak karbon Indonesia (UU 7/2021 HPP):    Rp {} (@ Rp 30,000/tCO2e)\n  Social Cost of Carbon (EPA 2023):          USD {} (@ $51/tCO2)\n\n",
         fmt_num(carbon_tax_idr), fmt_num(carbon_market_usd)
     ));
 

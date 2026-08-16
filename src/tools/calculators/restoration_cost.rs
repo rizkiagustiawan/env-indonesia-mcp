@@ -19,11 +19,12 @@
 ///   - River: Citarum Harum program; Rp 500M-2B/km
 ///   - Mine: Permen ESDM 26/2018 (reclamation guarantee); Rp 100-500M/ha
 ///   - Coral: Coremap/CTI; Rp 5-20M/m2 (artificial reef + transplantation)
-///   - Carbon price: Perpres 98/2021 (Nilai Ekonomi Karbon, NEK) Rp 465,000/tCO2e
+///   - Carbon price: estimasi Nilai Ekonomi Karbon / SCC ~$30/tCO2e = Rp 465,000/tCO2e
+///     (kerangka NEK diatur Perpres 98/2021; pajak karbon UU 7/2021 = Rp 30,000/tCO2e)
 ///   - Discount rate 5% per standard environmental CBA (World Bank/ADB practice)
 
 const IDR_PER_USD: f64 = 16_500.0;
-const CARBON_PRICE_IDR_PER_TCO2: f64 = 465_000.0; // Perpres 98/2021 NEK
+const CARBON_PRICE_IDR_PER_TCO2: f64 = 465_000.0; // Estimasi NEK/SCC (~$30/tCO2e), bukan pajak karbon
 const DISCOUNT_RATE: f64 = 0.05;
 
 /// Thousands-grouped integer string (e.g. 1234567 -> "1,234,567").

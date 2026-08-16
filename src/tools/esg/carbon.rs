@@ -16,15 +16,17 @@ pub fn calculate(activity: &str, amount: f64) -> String {
     };
 
     let co2_ton = co2_kg / 1000.0;
-    let nek_per_tco2 = 30.0 * 15500.0; // NEK ~$30/tCO2 * Rp15,500/USD = Rp465,000/tCO2
-    let carbon_price_idr = co2_ton * nek_per_tco2;
+    let scc_per_tco2 = 30.0 * 15500.0; // Estimasi Social Cost of Carbon (SCC) ~$30/tCO2e × Rp15,500/USD = Rp465,000/tCO2e
+    let carbon_tax_per_tco2 = 30_000.0; // Pajak karbon UU 7/2021 (HPP) = Rp30/kgCO2e = Rp30,000/tCO2e
+    let scc_value_idr = co2_ton * scc_per_tco2;
+    let carbon_tax_idr = co2_ton * carbon_tax_per_tco2;
 
     format!(
-        "=== Carbon Footprint Calculator ===\nActivity: {} = {:.2} units\n{}: {:.2}\n\nEmissions:\n  {:.2} kgCO2e\n  {:.4} tCO2e\n\nCarbon Valuation (NEK Indonesia):\n  ~Rp {:.0} (@ Rp {:.0}/tCO2e, Perpres 98/2021)\n\nGHG Protocol Scope: {}\n\nContext Indonesia:\n  - Avg household electricity: ~150 kWh/month = {:.0} kgCO2/month\n  - Avg motorcycle: 12,000 km/year = {:.0} kgCO2/year\n  - 1 ha deforestasi hutan tropis = {:.0} tCO2 released",
+        "=== Carbon Footprint Calculator ===\nActivity: {} = {:.2} units\n{}: {:.2}\n\nEmissions:\n  {:.2} kgCO2e\n  {:.4} tCO2e\n\nValuasi Karbon Indonesia:\n  Nilai Ekonomi Karbon (estimasi SCC ~$30/tCO2e): Rp {:.0}\n  Pajak karbon (UU 7/2021 HPP @ Rp 30,000/tCO2e): Rp {:.0}\n\nGHG Protocol Scope: {}\n\nContext Indonesia:\n  - Avg household electricity: ~150 kWh/month = {:.0} kgCO2/month\n  - Avg motorcycle: 12,000 km/year = {:.0} kgCO2/year\n  - 1 ha deforestasi hutan tropis = {:.0} tCO2 released",
         activity, amount, source, co2_kg,
         co2_kg, co2_ton,
-        carbon_price_idr,
-        nek_per_tco2,
+        scc_value_idr,
+        carbon_tax_idr,
         scope,
         150.0 * 0.794, 12000.0 * 0.21 / 1000.0 * 1000.0, 450.0
     )

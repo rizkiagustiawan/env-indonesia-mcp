@@ -144,8 +144,8 @@ pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) 
     let usd_to_idr = 15_500.0; // approximate
     let total_damage_idr = total_damage_usd * usd_to_idr;
 
-    // Indonesian carbon tax comparison
-    let indo_carbon_tax = 30_000.0; // IDR/ton CO2e (Perpres 98/2021)
+    // Indonesian carbon tax comparison (UU 7/2021 HPP)
+    let indo_carbon_tax = 30_000.0; // IDR/ton CO2e (pajak karbon UU 7/2021 HPP)
     let compliance_cost_idr = amount_ton * indo_carbon_tax;
 
     // Annual equivalents for context
@@ -219,7 +219,7 @@ pub fn calculate(pollutant: &str, amount: f64, unit: &str, location_type: &str) 
     // Comparison with compliance cost
     if pollutant.to_lowercase().contains("co2") {
         out.push_str(&format!(
-            "PERBANDINGAN BIAYA KEPATUHAN:\n  Pajak karbon Indonesia (Perpres 98/2021): Rp {} (@ Rp 30,000/tCO2)\n  Rasio damage/compliance: {:.1}x\n\n",
+            "PERBANDINGAN BIAYA KEPATUHAN:\n  Pajak karbon Indonesia (UU 7/2021 HPP): Rp {} (@ Rp 30,000/tCO2e)\n  Rasio damage/compliance: {:.1}x\n\n",
             fmt_num(compliance_cost_idr), total_damage_idr / compliance_cost_idr.max(1.0)
         ));
         out.push_str("  ⚠️ Biaya kerusakan riil >> pajak karbon Indonesia saat ini.\n");

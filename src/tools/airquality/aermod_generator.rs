@@ -86,11 +86,9 @@ pub fn generate_aermod_inp(
         "Input generated according to EPA standards.",
     ));
     
-    if let Ok(json_str) = serde_json::to_string(&payload) {
-        out.push_str("--- JSON PAYLOAD ---\n");
-        out.push_str(&json_str);
-        out.push_str("\n");
-    }
+    out.push_str("--- JSON PAYLOAD ---\n");
+    out.push_str(&payload.emit_validated());
+    out.push_str("\n");
 
     out
 }

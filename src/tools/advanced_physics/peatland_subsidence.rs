@@ -66,7 +66,7 @@ pub fn calculate_peatland_subsidence(param: &PeatlandSubsidenceParam) -> String 
         cumulative_co2,
         "tons",
     );
-    out.push_str(&serde_json::to_string(&payload).unwrap_or_default());
+    out.push_str(&payload.emit_validated());
 
     out
 }

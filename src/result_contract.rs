@@ -141,6 +141,16 @@ impl ScientificResult {
         self
     }
 
+    /// Fail-stop emission (EnviSmart audited-handoff pattern): runs `validate()`
+    /// and marks the result `validation_failed` if it violates the scientific
+    /// contract, then serialises to JSON for downstream agent chaining.
+    pub fn emit_validated(mut self) -> String {
+        if self.validate().is_err() {
+            self.status = ResultStatus::ValidationFailed;
+        }
+        serde_json::to_string(&self).unwrap_or_default()
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if !self.value.is_finite() {
             return Err("Value must be finite".to_string());
