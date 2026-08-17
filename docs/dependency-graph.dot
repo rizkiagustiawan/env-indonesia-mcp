@@ -6,6 +6,7 @@ digraph env_indonesia_mcp {
   splines=ortho;
   nodesep=0.5;
   ranksep=1.0;
+  concentrate=true;
   fontname="Helvetica";
   node [fontname="Helvetica", fontsize=11];
 
