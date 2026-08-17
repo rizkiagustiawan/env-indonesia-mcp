@@ -1,0 +1,4 @@
+torch>=2.2.0
+numpy>=1.26.0
+grpcio>=1.62.0
+grpcio-tools>=1.62.0
