@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  api_gateway:
+    build: 
+      context: .
+      dockerfile: src/microservices/api_gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    network_mode: "host"
+
+  ai_node:
+    build:
+      context: .
+      dockerfile: src/microservices/ai_node/Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    network_mode: "host"

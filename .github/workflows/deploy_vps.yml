@@ -1,0 +1,16 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted # Requires a self-hosted runner on the VPS
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild and Restart Services
+        run: |
+          docker-compose down
+          docker-compose build
+          docker-compose up -d
