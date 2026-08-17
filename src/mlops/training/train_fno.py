@@ -13,7 +13,7 @@ except ImportError:
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../microservices/ai_node'))
 try:
-    from models.fno import FNO2d
+    from models.fno import UFNO2d
 except ImportError:
     pass
 
