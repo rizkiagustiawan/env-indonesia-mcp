@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package ai_inference;
+
+service InferenceEngine {
+    // FNO macro-scale flood/weather prediction
+    rpc PredictFloodFNO (FloodRequest) returns (FloodResponse) {}
+    
+    // PINN micro-scale groundwater/contaminant prediction
+    rpc PredictGroundwaterPINN (GroundwaterRequest) returns (GroundwaterResponse) {}
+}
+
+message FloodRequest {
+    string site_id = 1;
+    // Bounding box [minx, miny, maxx, maxy]
+    repeated float bbox = 2;
+    // Flattened array of initial water depths (h)
+    repeated float initial_h = 3;
+    // Dimensions [width, height]
+    int32 width = 4;
+    int32 height = 5;
+    // Simulation duration in seconds
+    float t_end = 6;
+}
+
+message FloodResponse {
+    // Flattened array of predicted water depths (h) at t_end
+    repeated float predicted_h = 1;
+    // Dimensions [width, height]
+    int32 width = 2;
+    int32 height = 3;
+    // Inference time in ms
+    float inference_ms = 4;
+}
+
+message GroundwaterRequest {
+    string site_id = 1;
+    // Flattened initial concentration
+    repeated float initial_concentration = 2;
+    // Time step
+    float t_end = 3;
+}
+
+message GroundwaterResponse {
+    repeated float predicted_concentration = 1;
+    float inference_ms = 2;
+}

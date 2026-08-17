@@ -1,3 +1,4 @@
+mod ai_client;
 use axum::{
     routing::get,
     Router,
