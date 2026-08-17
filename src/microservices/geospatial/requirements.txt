@@ -1,0 +1,8 @@
+fastapi>=0.104.1
+uvicorn>=0.24.0
+pystac-fastapi.core>=2.4.3
+xarray>=2023.10.0
+rioxarray>=0.15.0
+dask>=2023.10.1
+pytest>=7.4.3
+httpx>=0.25.1
