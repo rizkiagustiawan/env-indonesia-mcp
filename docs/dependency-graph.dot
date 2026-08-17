@@ -14,6 +14,8 @@ digraph env_indonesia_mcp {
     label="Rust Core (src/)";
     style=filled; fillcolor="#eef2fb"; color="#4a69bd";
     main      [label="main.rs\n(entry)", shape=box, style=filled, fillcolor="#c9d6ff"];
+    api_gateway [label="api_gateway/main.rs\n(Axum+gRPC)", shape=box, style=filled, fillcolor="#ffb8b8"];
+    ai_bridge [label="ai_bridge.rs\n(gRPC Client)", shape=box, style=filled, fillcolor="#ffb8b8"];
     server    [label="server.rs\n(332 MCP tools)", shape=box, style=filled, fillcolor="#c9d6ff"];
     result    [label="result_contract.rs\n(shared type)", shape=box, style=filled, fillcolor="#c9d6ff"];
     amdalpipe [label="amdal_pipeline.rs", shape=box, style=filled, fillcolor="#c9d6ff"];
@@ -51,6 +53,8 @@ digraph env_indonesia_mcp {
 
   // ================= PYTHON BRIDGES =================
   subgraph cluster_python {
+    ai_node [label="ai_node/main.py\n(PyTorch + gRPC)", shape=box, style=filled, fillcolor="#d2b4de"];
+    fno_pinn [label="models/fno.py, pinn.py\n(Deep Learning)", shape=box, style=filled, fillcolor="#d2b4de"];
     label="Python Bridges (subprocess / GEE)";
     style=filled; fillcolor="#fef9e7"; color="#e67e22";
     provenance [label="gis/provenance.py\n(shared result type)", shape=box, style=filled, fillcolor="#fdebd0"];
@@ -72,6 +76,9 @@ digraph env_indonesia_mcp {
     rmcp [label="rmcp 2.0"];
     tokio [label="tokio"];
     reqwest [label="reqwest 0.12"];
+    axum [label="axum 0.8"];
+    tonic [label="tonic 0.10"];
+    prost [label="prost"];
     serde [label="serde"];
     serde_json [label="serde_json"];
     geo [label="geo 0.29"];
@@ -92,6 +99,8 @@ digraph env_indonesia_mcp {
     style=filled; fillcolor="#f5f5f5"; color="#95a5a6";
     node [shape=ellipse, style=filled, fillcolor="#ecf0f1", fontsize=9];
     numpy [label="numpy"];
+    torch [label="torch"];
+    grpcio [label="grpcio"];
     matplotlib [label="matplotlib"];
     fpdf2 [label="fpdf2"];
     geopandas [label="geopandas"];
@@ -169,6 +178,12 @@ digraph env_indonesia_mcp {
   orchestrator -> satengines;
   orchestrator -> raster;
   orchestrator -> landcover;
+
+  // Microservices / gRPC / AI Flow
+  advphys -> ai_bridge;
+  ai_bridge -> api_gateway [label="HTTP GET /test_inference"];
+  api_gateway -> ai_node [label="gRPC (Tonic -> grpcio)"];
+  ai_node -> fno_pinn [label="Tensors"];
 
   // external crates (used by core + tools)
   server -> rmcp;
