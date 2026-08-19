@@ -1,22 +1,8 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Bioretention / Rain Garden Design
 /// Ref: PU Cipta Karya, FHWA HEC-22, Prince George's County BMP Manual
-
-fn fmt_rp(v: f64) -> String {
-    let s = format!("{:.0}", v.abs());
-    let bytes: Vec<u8> = s.bytes().collect();
-    let mut result = String::new();
-    for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 {
-            result.push('.');
-        }
-        result.push(*b as char);
-    }
-    if v < 0.0 {
-        format!("-{}", result)
-    } else {
-        result
-    }
-}
 
 pub fn design(
     q_design_m3s: f64,
@@ -25,20 +11,8 @@ pub fn design(
     media_depth_m: f64,
     drain_time_hr: f64,
 ) -> String {
-    if q_design_m3s <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0 m³/s.".into();
-    }
-    if ksat_m_hr <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0 m/hr.".into();
-    }
-    if ponding_depth_m <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0 m.".into();
-    }
-    if media_depth_m <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0 m.".into();
-    }
-    if drain_time_hr <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0 jam.".into();
+    if q_design_m3s <= 0.0 || ksat_m_hr <= 0.0 || ponding_depth_m <= 0.0 || media_depth_m <= 0.0 || drain_time_hr <= 0.0 {
+        return json!({"error": "E102", "message": "Semua parameter desain harus > 0"}).to_string();
     }
 
     // Design storm volume (simplified: Q × duration assumed 1 hr = 3600s)
@@ -83,75 +57,40 @@ pub fn design(
 
     let cost_per_m2 = total_cost / af_design;
 
-    // Pollutant removal efficiency (typical)
-    let removals: &[(&str, &str)] = &[
-        ("TSS", "85-95%"),
-        ("Total Phosphorus", "50-80%"),
-        ("Total Nitrogen", "40-60%"),
-        ("Heavy Metals (Zn, Cu, Pb)", "90-98%"),
-        ("Bakteri (E. coli)", "70-90%"),
-        ("BOD", "60-80%"),
-        ("Minyak & Lemak", "85-95%"),
+    let res_area = ScientificResult::new("surface_area", af_design, "m2")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "FHWA_HEC_22", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("storm_duration_s", &storm_duration_s.to_string()))
+        .with_claim(Claim::new("runoff_volume_m3", &v_runoff.to_string()));
+
+    let res_excavation = ScientificResult::new("total_excavation_volume", excavation_volume, "m3")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("calculation", "FHWA_HEC_22", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("total_depth_m", &total_depth.to_string()));
+
+    let mut claims_cost = vec![
+        Claim::new("total_cost_idr", &total_cost.to_string()),
+        Claim::new("cost_per_m2_idr", &cost_per_m2.to_string()),
     ];
 
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  DESAIN BIORETENTION / RAIN GARDEN\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str("Ref: PU Cipta Karya, FHWA HEC-22, PG County BMP Manual\n\n");
-
-    out.push_str(&format!(
-        "INPUT:\n  Debit desain (Q)     = {:.4} m³/s ({:.2} L/s)\n  Ksat media           = {:.4} m/hr\n  Ponding depth        = {:.2} m\n  Media depth          = {:.2} m\n  Drain time           = {:.1} jam\n\n",
-        q_design_m3s, q_design_m3s * 1000.0, ksat_m_hr, ponding_depth_m, media_depth_m, drain_time_hr
-    ));
-
-    out.push_str(&format!(
-        "DESAIN HASIL:\n  Volume limpasan (1 jam)  = {:.2} m³\n  Luas permukaan (Af)     = {:.1} m² ({:.3} ha)\n  Volume media filter      = {:.1} m³\n  Volume gravel underdrain = {:.1} m³\n  Total kedalaman galian   = {:.2} m\n  Volume galian total      = {:.1} m³\n\n",
-        v_runoff, af_design, af_design / 10000.0, media_volume, gravel_volume, total_depth, excavation_volume
-    ));
-
-    out.push_str("SPESIFIKASI MEDIA FILTER:\n");
-    out.push_str("  Komposisi: 60-80% pasir, 20-30% kompos, 0-10% topsoil\n");
-    out.push_str(&format!("  Kedalaman: {:.2} m\n", media_depth_m));
-    out.push_str(&format!("  Ksat desain: {:.4} m/hr\n\n", ksat_m_hr));
-
-    out.push_str("UNDERDRAIN:\n");
-    out.push_str("  Pipa: PVC perforasi Ø100 mm\n");
-    out.push_str(&format!(
-        "  Lapisan gravel: {:.2} m (kerikil 10-20 mm)\n",
-        gravel_depth
-    ));
-    out.push_str(&format!(
-        "  Panjang estimasi: {:.1} m\n\n",
-        underdrain_length
-    ));
-
-    out.push_str("TANAMAN YANG DIREKOMENDASIKAN (Indonesia):\n");
-    out.push_str("  • Heliconia psittacorum — toleran genangan, estetik\n");
-    out.push_str("  • Canna indica — penyerap polutan logam berat\n");
-    out.push_str("  • Vetiveria zizanioides — akar dalam, stabilisasi tanah\n");
-    out.push_str("  • Cymbopogon nardus — serai wangi, anti nyamuk\n");
-    out.push_str("  • Typha angustifolia — cattail, wetland plant\n");
-    out.push_str("  • Pandanus amaryllifolius — pandan, adaptif lokal\n\n");
-
-    out.push_str("EFISIENSI PENYISIHAN POLUTAN (tipikal):\n");
-    for (pollutant, eff) in removals {
-        out.push_str(&format!("  {:30} {}\n", pollutant, eff));
-    }
-
-    out.push_str(&format!(
-        "\nESTIMASI BIAYA (IDR, 2024):\n  Media filter   : Rp {}\n  Gravel         : Rp {}\n  Galian         : Rp {}\n  Tanaman        : Rp {}\n  Underdrain     : Rp {}\n  ─────────────────────────────\n  TOTAL          : Rp {}\n  Per m²         : Rp {}/m²\n",
-        fmt_rp(media_volume * cost_media_per_m3),
-        fmt_rp(gravel_volume * cost_gravel_per_m3),
-        fmt_rp(excavation_volume * cost_excavation_per_m3),
-        fmt_rp(af_design * cost_plants_per_m2),
-        fmt_rp(underdrain_length * cost_underdrain_per_m),
-        fmt_rp(total_cost),
-        fmt_rp(cost_per_m2)
-    ));
-
     if drain_time_hr > 48.0 {
-        out.push_str("\n⚠️ Drain time > 48 jam — risiko genangan dan nyamuk. Pertimbangkan Ksat lebih tinggi.\n");
+        claims_cost.push(Claim::new("warning", "Drain time > 48 hours increases mosquito and flooding risk. Consider higher Ksat."));
     }
     if ponding_depth_m > 0.30 {
-        out.push_str("⚠️ Ponding > 30 cm — pertimbangkan keamanan (safety) di area publik.\n");
+        claims_cost.push(Claim::new("warning", "Ponding > 30 cm poses safety risks in public areas."));
     }
-    out
+
+    let mut res_cost = ScientificResult::new("total_cost_estimate", total_cost, "IDR")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("calculation", "PU_CiptaKarya_2024", "2026-08-19T00:00:00Z"));
+        
+    for claim in claims_cost {
+        res_cost = res_cost.with_claim(claim);
+    }
+
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_area.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_excavation.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_cost.emit_validated()).unwrap()
+    ]).to_string()
 }
