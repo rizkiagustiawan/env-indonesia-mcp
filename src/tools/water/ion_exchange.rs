@@ -78,7 +78,7 @@ pub fn design(
     let regen_dose_eq = 3.0; // 3× stoichiometric
     let regenerant_eq_per_cycle = total_capacity_eq * regen_dose_eq;
 
-    let (regen_name, regen_mw, regen_conc, regen_kg_per_cycle) = match regenerant_type.to_lowercase().as_str() {
+    let (regen_name, _regen_mw, regen_conc, regen_kg_per_cycle) = match regenerant_type.to_lowercase().as_str() {
         "nacl" | "sodium chloride" | "brine" => {
             let kg = regenerant_eq_per_cycle * 58.44; // NaCl MW
             ("NaCl brine", 58.44, 0.10, kg)

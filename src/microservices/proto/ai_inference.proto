@@ -8,6 +8,41 @@ service InferenceEngine {
     
     // PINN micro-scale groundwater/contaminant prediction
     rpc PredictGroundwaterPINN (GroundwaterRequest) returns (GroundwaterResponse) {}
+    // PINO macro-scale shallow water prediction
+    rpc PredictShallowWaterPINO (ShallowWaterRequest) returns (ShallowWaterResponse) {}
+}
+
+message ShallowWaterRequest {
+    string site_id = 1;
+    // Bounding box [minx, miny, maxx, maxy]
+    repeated float bbox = 2;
+    // Flattened array of initial water depths (h)
+    repeated float initial_h = 3;
+    // Flattened array of initial u velocity
+    repeated float initial_u = 4;
+    // Flattened array of initial v velocity
+    repeated float initial_v = 5;
+    // Flattened array of topography/DEM (z)
+    repeated float dem = 6;
+    // Dimensions [width, height]
+    int32 width = 7;
+    int32 height = 8;
+    // Simulation duration in seconds
+    float t_end = 9;
+}
+
+message ShallowWaterResponse {
+    // Flattened array of predicted water depths (h) at t_end
+    repeated float predicted_h = 1;
+    // Flattened array of predicted u velocity
+    repeated float predicted_u = 2;
+    // Flattened array of predicted v velocity
+    repeated float predicted_v = 3;
+    // Dimensions [width, height]
+    int32 width = 4;
+    int32 height = 5;
+    // Inference time in ms
+    float inference_ms = 6;
 }
 
 message FloodRequest {
@@ -16,11 +51,13 @@ message FloodRequest {
     repeated float bbox = 2;
     // Flattened array of initial water depths (h)
     repeated float initial_h = 3;
+    // Flattened array of topography/DEM (z)
+    repeated float dem = 4;
     // Dimensions [width, height]
-    int32 width = 4;
-    int32 height = 5;
+    int32 width = 5;
+    int32 height = 6;
     // Simulation duration in seconds
-    float t_end = 6;
+    float t_end = 7;
 }
 
 message FloodResponse {

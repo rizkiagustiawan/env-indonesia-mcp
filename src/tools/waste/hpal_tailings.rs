@@ -1,5 +1,7 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
 use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde_json::json;
 
 /// HPAL Nickel Tailings ESG Compliance Tool
 /// Evaluates slurry parameters against Indonesian regulations (PP 101/2014 & PermenLHK).
@@ -31,27 +33,22 @@ pub struct HpalTailingsParam {
 }
 
 pub fn evaluate_hpal_tailings(param: &HpalTailingsParam) -> String {
-    let mut out = String::from("=== HPAL Nickel Tailings ESG Compliance ===\n");
-    out.push_str("Ref: PP 101/2014, IFC Performance Standards; Delina et al. 2024 (ACS EST) Cr speciation\n\n");
-
-    let mut violations = Vec::new();
-
+    let mut risk_score = 0.0;
+    
     // 1. Corrosivity (pH) - PP 101/2014 Lampiran III
     let is_corrosive = param.ph <= 2.0 || param.ph >= 12.5;
     if is_corrosive {
-        violations.push(format!("pH ({:.1}) - KOROSIF (Kategori 1 B3 Akut)", param.ph));
+        risk_score += 10.0;
     }
 
     // 2. TCLP Heavy Metals - PP 101/2014 Lampiran IV (TCLP-A & TCLP-B)
-    // Cr(VI) limit: TCLP-A (5.0 mg/L), TCLP-B (2.5 mg/L)
     if param.cr6_mg_l > 5.0 {
-        violations.push(format!("Cr(VI) ({:.2} mg/L) > 5.0 - Gagal TCLP-A (Kategori 1 B3)", param.cr6_mg_l));
+        risk_score += 10.0; // Fails TCLP-A (Kategori 1 B3)
     } else if param.cr6_mg_l > 2.5 {
-        violations.push(format!("Cr(VI) ({:.2} mg/L) > 2.5 - Gagal TCLP-B (Kategori 2 B3)", param.cr6_mg_l));
+        risk_score += 10.0; // Fails TCLP-B (Kategori 2 B3)
     }
 
     // 3. Chromium speciation (Delina et al. 2024)
-    // Cr(III) = total - Cr(VI); structurally incorporated → immobile
     let cr3_mg_l = (param.total_cr_mg_l - param.cr6_mg_l).max(0.0);
     let cr3_fraction = if param.total_cr_mg_l > 0.0 {
         cr3_mg_l / param.total_cr_mg_l
@@ -59,70 +56,47 @@ pub fn evaluate_hpal_tailings(param: &HpalTailingsParam) -> String {
         0.0
     };
 
-    // 4. Cr(VI) mobility: alkaline pH desorbs Cr(VI) oxyanions (mobile risk)
-    // HPAL tailings are acidic (bound), but liming/neutralisation mobilises Cr(VI).
+    // 4. Cr(VI) mobility
     let cr6_mobile_risk = param.ph > 7.0 && param.cr6_mg_l > 0.05;
-
-    // General toxicity flags (Ni, Co, Mn lack explicit Indonesian TCLP limits, but are tracked for ESG/IFC)
-    // Using IFC/WHO proxy limits for groundwater protection
-    let mut esg_warnings = Vec::new();
-    if param.ni_mg_l > 0.02 { esg_warnings.push(format!("Nikel tinggi ({:.2} mg/L) - Risiko pencemaran laut/air tanah", param.ni_mg_l)); }
-    if param.co_mg_l > 0.05 { esg_warnings.push(format!("Kobalt terdeteksi ({:.2} mg/L)", param.co_mg_l)); }
-    if param.mn_mg_l > 0.5 { esg_warnings.push(format!("Mangan tinggi ({:.2} mg/L) - Potensi toksisitas akuatik", param.mn_mg_l)); }
-
-    out.push_str("Hasil Uji Karakteristik (Simulasi):\n");
-    out.push_str(&format!("  pH               : {:.1}\n", param.ph));
-    out.push_str(&format!("  Kromium Total    : {:.2} mg/L\n", param.total_cr_mg_l));
-    out.push_str(&format!("  Cr(VI) [Toksik]  : {:.2} mg/L\n", param.cr6_mg_l));
-    out.push_str(&format!("  Cr(III) [Imobil] : {:.2} mg/L ({:.0}% dari total)\n", cr3_mg_l, cr3_fraction * 100.0));
-    out.push_str(&format!("  Nickel           : {:.2} mg/L\n", param.ni_mg_l));
-    out.push_str(&format!("  Cobalt           : {:.2} mg/L\n", param.co_mg_l));
-    out.push_str(&format!("  Manganese        : {:.2} mg/L\n", param.mn_mg_l));
-    out.push_str(&format!("  Manajemen Tailing: {}\n\n", if param.is_dry_stack { "Dry Stack Tailings (DST)" } else { "Deep Sea Tailings Placement (DSTP)" }));
-
-    out.push_str("Spesiasi & Mobilitas Kromium (Delina et al. 2024):\n");
-    out.push_str(&format!("  Cr(III) terinkorporasi struktural dalam besi oksihidroksida → imobil ({:.0}%).\n", cr3_fraction * 100.0));
     if cr6_mobile_risk {
-        out.push_str("  [RISIKO] pH ALKALIN (>7): Cr(VI) oksianion terdesorpsi dari permukaan oksida → SANGAT MOBIL.\n");
-        out.push_str("           Netralisasi/kapur pada tailing HPAL asam dapat melepaskan Cr(VI) ke air tanah/laut.\n");
+        risk_score += 20.0;
+    }
+
+    // ESG Risk
+    if !param.is_dry_stack {
+        risk_score += 50.0; // DSTP is highly penalized
+    }
+
+    let mut claims = vec![];
+    
+    if cr6_mobile_risk {
+        claims.push(Claim::new("warning", "Alkaline pH (>7): Cr(VI) oxyanions desorb and become highly mobile"));
     } else if param.ph <= 7.0 {
-        out.push_str("  pH asam: Cr(VI) teradsorpsi kuat pada permukaan oksida (muatan positif) → mobilitas rendah.\n");
+        claims.push(Claim::new("observation", "Acidic pH: Cr(VI) strongly adsorbed, low mobility"));
     }
 
-    out.push_str("\nStatus Hukum (PP 101/2014):\n");
-    if violations.is_empty() {
-        out.push_str("  [PASS] Tidak melebihi baku mutu B3 Akut/TCLP.\n");
-    } else {
-        out.push_str("  [FAIL] PELANGGARAN TERDETEKSI:\n");
-        for v in &violations {
-            out.push_str(&format!("    - {}\n", v));
-        }
+    if !param.is_dry_stack {
+        claims.push(Claim::new("esg_warning", "DSTP poses severe benthic/coral risk and faces global market rejection"));
     }
 
-    out.push_str("\nAudit ESG (IFC Performance Standard 6):\n");
-    if param.is_dry_stack {
-        out.push_str("  - DST mengurangi risiko pencemaran laut, namun membutuhkan pemantauan leachate (air lindi) ketat.\n");
-    } else {
-        out.push_str("  - [!] DSTP SANGAT BERISIKO: Penolakan pasar global (Tesla/Eropa) terhadap nikel dari fasilitas DSTP karena kerusakan terumbu karang dan zona benthik.\n");
+    let res_risk = ScientificResult::new("hpal_esg_risk_score", risk_score, "index")
+        .with_status(if is_corrosive || param.cr6_mg_l > 5.0 { ResultStatus::ValidationFailed } else { ResultStatus::Valid })
+        .with_provenance(Provenance::new("calculation", "ESG_IFC_PP101", "2026-08-19T00:00:00Z"));
+
+    let res_cr3 = ScientificResult::new("cr3_immobile_fraction", cr3_fraction, "ratio")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Delina_et_al_2024", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("methodology", "Cr(III) structurally incorporated into secondary iron oxides"));
+
+    let mut res_cr3_mut = res_cr3;
+    for claim in claims {
+        res_cr3_mut = res_cr3_mut.with_claim(claim);
     }
 
-    for w in &esg_warnings {
-        out.push_str(&format!("  - {}\n", w));
-    }
-
-    // Chaining payload
-    let risk_score = violations.len() as f64 * 10.0
-        + if !param.is_dry_stack { 50.0 } else { 0.0 }
-        + if cr6_mobile_risk { 20.0 } else { 0.0 };
-    out.push_str("\n");
-    let payload = crate::result_contract::ScientificResult::new(
-        "HPAL_ESG_Risk_Score",
-        risk_score,
-        "index",
-    );
-    out.push_str(&payload.emit_validated());
-
-    out
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_risk.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_cr3_mut.emit_validated()).unwrap()
+    ]).to_string()
 }
 
 #[cfg(test)]
@@ -141,9 +115,8 @@ mod tests {
             is_dry_stack: true,
         };
         let out = evaluate_hpal_tailings(&p);
-        assert!(out.contains("[PASS]"));
-        assert!(out.contains("Dry Stack Tailings"));
-        assert!(out.contains("SANGAT MOBIL")); // alkaline pH + Cr(VI) > 0.05
+        assert!(out.contains("hpal_esg_risk_score"));
+        assert!(out.contains("Alkaline pH (>7): Cr(VI)")); 
     }
 
     #[test]
@@ -158,9 +131,7 @@ mod tests {
             is_dry_stack: false,
         };
         let out = evaluate_hpal_tailings(&p);
-        assert!(out.contains("KOROSIF"));
-        assert!(out.contains("Gagal TCLP-A"));
-        assert!(out.contains("DSTP SANGAT BERISIKO"));
-        assert!(out.contains("Cr(III)")); // speciation section present
+        assert!(out.contains("validation_failed")); // Fix string assert from "ValidationFailed"
+        assert!(out.contains("cr3_immobile_fraction"));
     }
 }

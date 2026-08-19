@@ -26,7 +26,7 @@ pub fn design(
         _ => (450.0, 1.8, "Default (needle felt)"),
     };
 
-    let rho_g = 1.2; // kg/m³
+    let _rho_g = 1.2; // kg/m³
     let K_dust = 5e7; // dust resistance coefficient (typical, Pa·s²/m²)
 
     out.push_str(&format!("Gas flow: {:.2} m³/s ({:.0} m³/hr)\n", gas_flow_m3_s, gas_flow_m3_s * 3600.0));
@@ -71,7 +71,7 @@ pub fn design(
 
     // ═══ Pressure Drop Verification ═══
     let delta_p_fabric = s_fabric * v_filtration_m_s;
-    let delta_p_total = delta_p_fabric; // at t=0 (clean fabric)
+    let _delta_p_total = delta_p_fabric; // at t=0 (clean fabric)
 
     out.push_str("── Pressure Drop Verification ──\n\n");
     out.push_str(&format!("  Fabric ΔP (clean): {:.0} Pa\n", delta_p_fabric));

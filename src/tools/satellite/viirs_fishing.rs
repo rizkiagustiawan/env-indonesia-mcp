@@ -1,5 +1,5 @@
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::json;
 
 const MPC_STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1";
 
@@ -9,13 +9,13 @@ const MPC_STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1"
 /// Method: VIIRS DNB (Day/Night Band) → threshold → boat detection → MPA overlay
 
 pub async fn search(
-    client: &Client,
+    _client: &Client,
     lat: f64,
     lon: f64,
     date: &str,
 ) -> String {
     let (s, w, n, e) = bbox_from_center(lat, lon, 50.0);
-    let datetime = format!("{}T00:00:00Z/{}T23:59:59Z", date, date);
+    let _datetime = format!("{}T00:00:00Z/{}T23:59:59Z", date, date);
 
     let mut out = String::new();
     out.push_str("═══════════════════════════════════════════════\n");
@@ -29,12 +29,12 @@ pub async fn search(
     out.push_str("      STAC MPC does not host VIIRS DNB directly.\n");
     out.push_str("      Access: https://worldview.earthdata.nasa.gov/ or NASA CMR.\n\n");
 
-    let body = json!({
+    let _body = json!({
         "collections": ["nasadem"],
         "bbox": [w, s, e, n],
         "limit": 1u32
     });
-    let url = format!("{}/search", MPC_STAC_URL);
+    let _url = format!("{}/search", MPC_STAC_URL);
 
     out.push_str("VIIRS Boat Detection (VBD) Algorithm (Elvidge):\n");
     out.push_str("  1. Acquire VIIRS DNB nightly composite (~750m resolution)\n");

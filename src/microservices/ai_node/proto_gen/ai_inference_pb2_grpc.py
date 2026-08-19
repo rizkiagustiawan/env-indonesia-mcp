@@ -44,6 +44,11 @@ class InferenceEngineStub:
                 request_serializer=ai__inference__pb2.GroundwaterRequest.SerializeToString,
                 response_deserializer=ai__inference__pb2.GroundwaterResponse.FromString,
                 _registered_method=True)
+        self.PredictShallowWaterPINO = channel.unary_unary(
+                '/ai_inference.InferenceEngine/PredictShallowWaterPINO',
+                request_serializer=ai__inference__pb2.ShallowWaterRequest.SerializeToString,
+                response_deserializer=ai__inference__pb2.ShallowWaterResponse.FromString,
+                _registered_method=True)
 
 
 class InferenceEngineServicer:
@@ -63,6 +68,13 @@ class InferenceEngineServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PredictShallowWaterPINO(self, request, context):
+        """PINO macro-scale shallow water prediction
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_InferenceEngineServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -75,6 +87,11 @@ def add_InferenceEngineServicer_to_server(servicer, server):
                     servicer.PredictGroundwaterPINN,
                     request_deserializer=ai__inference__pb2.GroundwaterRequest.FromString,
                     response_serializer=ai__inference__pb2.GroundwaterResponse.SerializeToString,
+            ),
+            'PredictShallowWaterPINO': grpc.unary_unary_rpc_method_handler(
+                    servicer.PredictShallowWaterPINO,
+                    request_deserializer=ai__inference__pb2.ShallowWaterRequest.FromString,
+                    response_serializer=ai__inference__pb2.ShallowWaterResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -131,6 +148,33 @@ class InferenceEngine:
             '/ai_inference.InferenceEngine/PredictGroundwaterPINN',
             ai__inference__pb2.GroundwaterRequest.SerializeToString,
             ai__inference__pb2.GroundwaterResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PredictShallowWaterPINO(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ai_inference.InferenceEngine/PredictShallowWaterPINO',
+            ai__inference__pb2.ShallowWaterRequest.SerializeToString,
+            ai__inference__pb2.ShallowWaterResponse.FromString,
             options,
             channel_credentials,
             insecure,

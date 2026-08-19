@@ -3,7 +3,7 @@
 ///   land-use correction factor. The R²>0.8 / 100-1000× faster claims below are
 ///   from the cited paper's ML surrogate, NOT this tool's performance.
 /// Ref: ML surrogate concept — Nature s44407-025-00035-4 (2025)
-pub fn assess(emission_g_s: f64, wind_speed_m_s: f64, wind_dir_deg: f64, mixing_height_m: f64, distance_m: f64, land_use: &str, receptor_height_m: f64) -> String {
+pub fn assess(emission_g_s: f64, wind_speed_m_s: f64, wind_dir_deg: f64, mixing_height_m: f64, distance_m: f64, land_use: &str, _receptor_height_m: f64) -> String {
     let mut out = String::from("=== Air Dispersion Screening (Gaussian + Land-Use Correction) ===\n");
     out.push_str("NOTE: This is a Gaussian plume model with empirical correction, NOT a trained ML surrogate.\n");
     out.push_str("Ref: ML surrogate concept — Nature s44407-025-00035-4 (2025)\n\n");

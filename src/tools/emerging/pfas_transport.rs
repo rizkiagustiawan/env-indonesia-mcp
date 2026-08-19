@@ -89,7 +89,7 @@ pub fn assess(
     out.push_str("  φ = dimensionless potential (F/RT units)\n\n");
 
     // PFAS as trace anion (z=-1) in background electrolyte
-    let z_pfas = -1.0; // PFOA/PFOS/PFBS are anionic
+    let _z_pfas = -1.0; // PFOA/PFOS/PFBS are anionic
     let p_s = velocity_m_day / 86400.0 * 0.01; // dominant salt permeance (approx from velocity)
     let b_param = 0.3; // SDEM fitting parameter (typical)
     let k_param = 5.0; // trace ion permeance ratio

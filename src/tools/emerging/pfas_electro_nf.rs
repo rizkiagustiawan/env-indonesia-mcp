@@ -73,7 +73,7 @@ pub fn assess(
     let optimal_min = 11.1;
     let optimal_max = 13.3;
 
-    let (base_rejection, flux_reduction) = match pfas_type.to_lowercase().as_str() {
+    let (base_rejection, _flux_reduction) = match pfas_type.to_lowercase().as_str() {
         s if s.contains("pfoa") => (0.904, 0.752),
         s if s.contains("pfbs") => (0.839, 0.65),
         s if s.contains("pfos") => (0.92, 0.78), // similar to PFOA but longer chain

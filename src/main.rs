@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
         if idx + 2 < args.len() {
             let tool_name = &args[idx + 1];
             let tool_args = &args[idx + 2];
-            println!("Executing tool: {}", tool_name);
+            eprintln!("Executing tool: {}", tool_name);
             // This is a minimal dispatch for the most critical calculators
             // (a full 229-tool dispatch would use the rmcp framework's router)
             match tool_name.as_str() {
@@ -116,6 +116,22 @@ async fn main() -> Result<()> {
                         &p.waste_type, p.solid_mass_g, p.water_volume_l, p.target_ph, &p.initial_metals_mg_kg
                     );
                     println!("{}", res);
+                },
+                "integrated_environment_study" => {
+                    let p: tools::integrated_study::IntegratedStudyRequest = serde_json::from_str(tool_args)?;
+                    let plan = tools::integrated_study::plan_study(&p)
+                        .map_err(|error| anyhow::anyhow!(error))?;
+                    let mut report = tools::integrated_study::run_baselines(&p, &plan);
+                    if p.satellite_fallback {
+                        let client = reqwest::Client::builder()
+                            .timeout(std::time::Duration::from_secs(30))
+                            .user_agent("env-indonesia-mcp/1.0.0")
+                            .build()?;
+                        report.satellite_discovery = Some(
+                            tools::integrated_study::discover_satellite_sources(&client, &plan).await,
+                        );
+                    }
+                    println!("{}", serde_json::to_string_pretty(&report)?);
                 },
                 "gaussian_plume" => {
                     let p: server::GaussianParam = serde_json::from_str(tool_args)?;

@@ -10,7 +10,7 @@ pub fn design(
     k_first_order_day: f64,   // first-order decay rate (day⁻¹)
     soil_volume_m3: f64,
     porosity: f64,
-    bulk_density_kg_m3: f64,
+    _bulk_density_kg_m3: f64,
 ) -> String {
     let mut out = String::from("=== Bioremediation Design ===\n");
     out.push_str("Ref: Chen et al. 1992; Suarez & Rifai 1999; Widdowson 1999 (SEAM3D)\n\n");

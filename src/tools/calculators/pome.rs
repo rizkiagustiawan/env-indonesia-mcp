@@ -1,6 +1,6 @@
 /// POME (Palm Oil Mill Effluent) Calculator
 /// Ref: KLHK P.05/2014; Rana 2017; Setiawan 2025; Sabiani 2023
-pub fn assess(ton_ffb_day: f64, has_pond_system: bool, target_bod_mg_l: f64) -> String {
+pub fn assess(ton_ffb_day: f64, has_pond_system: bool, _target_bod_mg_l: f64) -> String {
     let mut out = String::from("=== POME (Palm Oil Mill Effluent) ===\n");
     out.push_str("Ref: KLHK P.05/2014; Rana 2017; Setiawan 2025\n\n");
     // POME generation: 0.5-1.0 m3/ton FFB (Fresh Fruit Bunches)

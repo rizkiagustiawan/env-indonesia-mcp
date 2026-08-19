@@ -36,31 +36,65 @@ pub fn solve(
     let min_depth = 0.001;
 
 
-    // === NEW: Deep Tech AI Accelerated FNO Inference ===
-    // If the grid is large, we offload to the FNO PyTorch model via Axum Gateway
+    // === NEW: Deep Tech AI Accelerated FNO Inference with Mass Conservation Gate ===
     if nx > 50 && ny > 50 {
+        let mut initial_h_flat = vec![0.0; nx * ny];
+        let mut dem_flat = vec![0.0; nx * ny];
+        let mut total_inflow_vol = 0.0;
+        
+        // Initial setup for AI Request
+        for i in 0..nx {
+            for j in 0..ny {
+                dem_flat[j * nx + i] = dem[i][j];
+                // Approximate inflow volume representation for AI static boundary
+                if i < inflow_x + inflow_width && j == inflow_y {
+                    initial_h_flat[j * nx + i] = inflow_discharge_m3s; 
+                    total_inflow_vol += inflow_discharge_m3s * params.duration_s;
+                }
+            }
+        }
+        
+        let initial_volume: f64 = initial_h_flat.iter().sum::<f64>() * dx * dx;
+
         let req = super::ai_bridge::InferenceRequest {
             site_id: "sumbawa_grid".to_string(),
             bbox: vec![117.0, -8.5, 118.0, -9.0],
-            initial_h: vec![inflow_discharge_m3s; 4], // simplified flattened
-            width: 2,
-            height: 2,
+            initial_h: initial_h_flat,
+            dem: dem_flat,
+            width: nx,
+            height: ny,
             t_end: params.duration_s,
         };
         
         match super::ai_bridge::call_ai_node(req) {
-            Ok(resp) => {
-                return SweResult {
-                    max_depth: resp.predicted_depth_sample,
-                    flooded_cells: nx * ny / 4,
-                    total_cells: nx * ny,
-                    flooded_area_m2: (nx * ny / 4) as f64 * dx * dx,
-                    summary: format!("AI Accelerated (FNO) in {} ms. Status: {}", resp.inference_ms, resp.status),
-                };
+            Ok(resp) if resp.status == "success" && resp.predicted_h.len() == nx * ny => {
+                let predicted_volume: f64 = resp.predicted_h.iter().map(|&v| v.max(0.0)).sum::<f64>() * dx * dx;
+                let mass_error_pct = if initial_volume + total_inflow_vol > 0.0 {
+                    (predicted_volume - (initial_volume + total_inflow_vol)).abs() / (initial_volume + total_inflow_vol) * 100.0
+                } else { 0.0 };
+
+                if mass_error_pct <= 1.0 { // STRICT 1% CONSERVATION GATE
+                    let mut max_depth = 0.0;
+                    let mut flooded_cells = 0;
+                    for &h_val in &resp.predicted_h {
+                        if h_val > 0.05 {
+                            flooded_cells += 1;
+                            if h_val > max_depth { max_depth = h_val; }
+                        }
+                    }
+                    return SweResult {
+                        max_depth,
+                        flooded_cells,
+                        total_cells: nx * ny,
+                        flooded_area_m2: flooded_cells as f64 * dx * dx,
+                        summary: format!("AI Accelerated (PINO) in {} ms.\nStatus: {}\nMass Balance Error: {:.2}% (Passed Gate)", resp.inference_ms, resp.status, mass_error_pct),
+                    };
+                } else {
+                    println!("Physics Gate Failed: AI Mass Error {:.2}% > 1%. Triggering Numerical Fallback...", mass_error_pct);
+                }
             }
-            Err(e) => {
-                println!("AI Gateway failed ({}). Falling back to CPU numerical solver...", e);
-            }
+            Ok(resp) => println!("AI Gateway error status: {}. Falling back...", resp.status),
+            Err(e) => println!("AI Gateway failed ({}). Falling back to CPU numerical solver...", e),
         }
     }
     // === END AI ===

@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Matriks Kompatibilitas Limbah B3
 /// Ref: PP 101/2014, EPA Waste Compatibility Chart
 
@@ -21,18 +24,10 @@ pub fn check(waste_a: &str, waste_b: &str) -> String {
     let b_idx = categories.iter().position(|c| *c == b_lower.as_str());
 
     if a_idx.is_none() {
-        return format!(
-            "ERROR: Kategori limbah '{}' tidak dikenal.\nKategori tersedia: {}",
-            waste_a,
-            categories.join(", ")
-        );
+        return json!({"error": "E100", "message": format!("Kategori limbah A '{}' tidak dikenal. Kategori tersedia: {}", waste_a, categories.join(", "))}).to_string();
     }
     if b_idx.is_none() {
-        return format!(
-            "ERROR: Kategori limbah '{}' tidak dikenal.\nKategori tersedia: {}",
-            waste_b,
-            categories.join(", ")
-        );
+        return json!({"error": "E100", "message": format!("Kategori limbah B '{}' tidak dikenal. Kategori tersedia: {}", waste_b, categories.join(", "))}).to_string();
     }
 
     let a = a_idx.unwrap();
@@ -95,54 +90,22 @@ pub fn check(waste_a: &str, waste_b: &str) -> String {
         ),
     };
 
-    fn category_id(cat: &str) -> &'static str {
-        match cat {
-            "acid" => "Asam",
-            "base" => "Basa",
-            "oxidizer" => "Oksidator",
-            "reducer" => "Reduktor",
-            "water_reactive" => "Reaktif Air",
-            "flammable" => "Mudah Terbakar",
-            "organic_solvent" => "Pelarut Organik",
-            "heavy_metal" => "Logam Berat",
-            "cyanide" => "Sianida",
-            _ => "Lainnya",
-        }
+    let is_compatible = code == 'C';
+    let result_status = if is_compatible { ResultStatus::Valid } else { ResultStatus::ValidationFailed };
+
+    let mut res = ScientificResult::new("compatibility_check", if is_compatible { 1.0 } else { 0.0 }, "boolean_compatible")
+        .with_status(result_status)
+        .with_provenance(Provenance::new("regulatory_matrix", "EPA_Waste_Compatibility", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("status", status))
+        .with_claim(Claim::new("description", status_id))
+        .with_claim(Claim::new("reaction", reaction))
+        .with_claim(Claim::new("safety_action", safety));
+
+    if !is_compatible {
+        res = res.with_claim(Claim::new("warning", "Incompatible wastes MUST NOT be stored together."));
     }
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("MATRIKS KOMPATIBILITAS LIMBAH B3\n");
-    result.push_str("Ref: PP 101/2014, EPA Waste Compatibility\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
-
-    result.push_str(&format!(
-        "Limbah A : {} ({})\n",
-        category_id(&a_lower),
-        waste_a
-    ));
-    result.push_str(&format!(
-        "Limbah B : {} ({})\n\n",
-        category_id(&b_lower),
-        waste_b
-    ));
-
-    result.push_str(&format!("STATUS: {}\n", status));
-    result.push_str(&format!("        {}\n\n", status_id));
-
-    result.push_str("REAKSI:\n");
-    result.push_str(&format!("{}\n\n", reaction));
-
-    result.push_str("TINDAKAN KESELAMATAN:\n");
-    result.push_str(&format!("{}\n", safety));
-
-    result.push_str("\nLEGENDA MATRIKS:\n");
-    result.push_str("  C = Kompatibel (aman berdekatan)\n");
-    result.push_str("  H = Reaksi eksotermik (panas)\n");
-    result.push_str("  T = Gas beracun\n");
-    result.push_str("  F = Risiko kebakaran\n");
-    result.push_str("  E = Risiko ledakan\n");
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res.emit_validated()).unwrap()
+    ]).to_string()
 }

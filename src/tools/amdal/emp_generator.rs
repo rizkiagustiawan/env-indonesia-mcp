@@ -99,7 +99,7 @@ pub fn generate(
     // schedule compliance data and audit results. Do NOT present as measured performance.
     let kpi_monitoring = 85.0; // PLACEHOLDER (requires actual monitoring schedule data)
     let kpi_compliance = 90.0; // PLACEHOLDER (requires actual audit/baku mutu results)
-    let kpi_overall = (kpi_mitigation * 0.4 + kpi_monitoring * 0.35 + kpi_compliance * 0.25);
+    let kpi_overall = kpi_mitigation * 0.4 + kpi_monitoring * 0.35 + kpi_compliance * 0.25;
 
     out.push_str(&format!("  KPI Mitigasi:     {:>5.1}%  ({}/{} dampak punya mitigasi)\n", kpi_mitigation, rkl_count, significant.len()));
     out.push_str(&format!("  KPI Pemantauan:   {:>5.1}%  [PLACEHOLDER — needs actual schedule data]\n", kpi_monitoring));
@@ -133,7 +133,7 @@ pub fn generate(
     out
 }
 
-fn suggest_mitigation(dampak: &str, komponen: &str, sig: f64, project_type: &str) -> String {
+fn suggest_mitigation(dampak: &str, komponen: &str, _sig: f64, project_type: &str) -> String {
     let d = dampak.to_lowercase();
     let k = komponen.to_lowercase();
     if k.contains("air") || k.contains("water") {
@@ -159,7 +159,7 @@ fn suggest_mitigation(dampak: &str, komponen: &str, sig: f64, project_type: &str
     }
 }
 
-fn suggest_target(dampak: &str, komponen: &str, sig: f64) -> String {
+fn suggest_target(_dampak: &str, komponen: &str, _sig: f64) -> String {
     let k = komponen.to_lowercase();
     if k.contains("air") || k.contains("water") {
         "Patuhi PP 22/2021 baku mutu".into()
@@ -174,7 +174,7 @@ fn suggest_target(dampak: &str, komponen: &str, sig: f64) -> String {
     }
 }
 
-fn suggest_indicator(dampak: &str, komponen: &str) -> String {
+fn suggest_indicator(_dampak: &str, komponen: &str) -> String {
     let k = komponen.to_lowercase();
     if k.contains("air") || k.contains("water") {
         "TSS, pH, COD".into()
@@ -193,7 +193,7 @@ fn suggest_indicator(dampak: &str, komponen: &str) -> String {
     }
 }
 
-fn suggest_monitoring(dampak: &str, komponen: &str) -> (String, &'static str, String, String) {
+fn suggest_monitoring(_dampak: &str, komponen: &str) -> (String, &'static str, String, String) {
     let k = komponen.to_lowercase();
     if k.contains("air") || k.contains("water") {
         ("Kualitas air limbah".into(), "Bulanan", "SNI 6989".into(), "PP 22/2021".into())

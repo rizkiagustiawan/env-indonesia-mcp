@@ -3330,6 +3330,19 @@ impl EnvIndonesiaServer {
         tools::data::bmkg::weather(&HTTP, &p.location).await
     }
 
+    #[tool(description = "Integrated environment study: validate GeoJSON AOI, classify data sufficiency, optionally discover satellite fallback data, and run truthful flood/leachate/AMD baselines. Outputs structured JSON with evidence level, provenance, uncertainty status, and limitations.")]
+    async fn integrated_environment_study(&self, Parameters(p): Parameters<tools::integrated_study::IntegratedStudyRequest>) -> String {
+        let plan = match tools::integrated_study::plan_study(&p) {
+            Ok(plan) => plan,
+            Err(error) => return serde_json::json!({"status":"invalid_request","error":error}).to_string(),
+        };
+        let mut report = tools::integrated_study::run_baselines(&p, &plan);
+        if p.satellite_fallback {
+            report.satellite_discovery = Some(tools::integrated_study::discover_satellite_sources(&HTTP, &plan).await);
+        }
+        serde_json::to_string_pretty(&report).unwrap_or_else(|error| serde_json::json!({"status":"serialization_error","error":error.to_string()}).to_string())
+    }
+
     #[tool(description = "BMKG 15 latest earthquakes near Indonesia")]
     async fn bmkg_earthquake(&self) -> String {
         tools::data::bmkg::earthquake(&HTTP).await

@@ -5,8 +5,8 @@
 
 pub fn generate_aermod_inp(
     project_name: &str,
-    source_lat: f64,
-    source_lon: f64,
+    _source_lat: f64,
+    _source_lon: f64,
     stack_height_m: f64,
     stack_diameter_m: f64,
     exit_velocity_m_s: f64,

@@ -1,7 +1,7 @@
 /// Aquaculture Waste Load — Permen LH/BPLH 2/2026 + Permen KP 30/2021
 /// FCR-based N/P/COD load, effluent BOD/TSS, carrying capacity
 /// Ref: Permen LH 2/2026 (pakan akuakultur); Permen KP 30/2021; FAO
-pub fn assess(fish_type: &str, production_ton_year: f64, fcr: f64, feed_protein_pct: f64, feed_n_pct: f64, feed_p_pct: f64, water_body_volume_m3: f64, outflow_m3_s: f64) -> String {
+pub fn assess(fish_type: &str, production_ton_year: f64, fcr: f64, _feed_protein_pct: f64, feed_n_pct: f64, feed_p_pct: f64, water_body_volume_m3: f64, outflow_m3_s: f64) -> String {
     let mut out = String::from("=== Aquaculture Waste Load ===\n");
     out.push_str("Ref: Permen LH 2/2026; Permen KP 30/2021; FAO\n\n");
 

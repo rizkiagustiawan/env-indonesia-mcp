@@ -1,17 +1,20 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Persyaratan TPS Limbah B3 (Tempat Penyimpanan Sementara)
 /// Ref: PP 101/2014 tentang Pengelolaan Limbah B3
 
 pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64) -> String {
     if volume_m3_per_month <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter volume harus > 0"}).to_string();
     }
     if density_kg_m3 <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter densitas harus > 0"}).to_string();
     }
 
     let wt_lower = waste_type.to_lowercase();
 
-    let (type_name, max_storage_days_cat1, max_storage_days_cat2, stack_height_m, container_desc) =
+    let (_type_name, _max_storage_days_cat1, max_storage_days_cat2, stack_height_m, _container_desc) =
         match wt_lower.as_str() {
             "padat" => (
                 "Padat",
@@ -42,10 +45,7 @@ pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64)
                 "Tabung gas bertekanan standar DOT/SNI",
             ),
             _ => {
-                return format!(
-                    "ERROR: Jenis limbah '{}' tidak dikenal.\nPilihan: padat, cair, lumpur, gas",
-                    waste_type
-                );
+                return json!({"error": "E100", "message": format!("Jenis limbah '{}' tidak dikenal", waste_type)}).to_string();
             }
         };
 
@@ -66,97 +66,36 @@ pub fn calculate(waste_type: &str, volume_m3_per_month: f64, density_kg_m3: f64)
     let containment_volume = containment_110.max(containment_25pct);
 
     // Number of drums (200L)
-    let n_drums = (max_stored_volume_m3 / drum_volume_m3).ceil() as u64;
+    let n_drums = (max_stored_volume_m3 / drum_volume_m3).ceil() as f64;
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("PERSYARATAN TPS LIMBAH B3\n");
-    result.push_str("Ref: PP 101/2014 tentang Pengelolaan Limbah B3\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
+    let res_mass_month = ScientificResult::new("mass_per_month", mass_ton_per_month, "ton/month")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("calculation", "Volume_Density_Product", "2026-08-19T00:00:00Z"));
 
-    result.push_str("INPUT:\n");
-    result.push_str(&format!("• Jenis limbah         : {}\n", type_name));
-    result.push_str(&format!(
-        "• Volume per bulan     : {:.2} m³/bulan\n",
-        volume_m3_per_month
-    ));
-    result.push_str(&format!(
-        "• Densitas             : {:.0} kg/m³\n",
-        density_kg_m3
-    ));
-    result.push_str(&format!(
-        "• Massa per bulan      : {:.2} ton/bulan\n\n",
-        mass_ton_per_month
-    ));
+    let res_max_vol = ScientificResult::new("max_stored_volume", max_stored_volume_m3, "m3")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "PP_101_2014_Cat2", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("limitation", "Assumes category 2 maximum storage duration of 180 days"));
 
-    result.push_str("BATAS WAKTU PENYIMPANAN (PP 101/2014):\n");
-    result.push_str(&format!(
-        "• Kategori 1 (akut/reaktif)     : {} hari\n",
-        max_storage_days_cat1
-    ));
-    result.push_str(&format!(
-        "• Kategori 2 (kronis/umum)      : {} hari\n\n",
-        max_storage_days_cat2
-    ));
+    let res_area = ScientificResult::new("required_floor_area", floor_area_with_aisle, "m2")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Area_with_Aisle_Factor", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("limitation", "Includes 40% additional area for aisle access"));
 
-    result.push_str(&format!("KEBUTUHAN RUANG (maks {} hari):\n", max_storage_days_cat1.max(max_storage_days_cat2)));
-    result.push_str(&format!(
-        "• Volume tersimpan maks         : {:.2} m³\n",
-        max_stored_volume_m3
-    ));
-    result.push_str(&format!(
-        "• Kontainer                     : {}\n",
-        container_desc
-    ));
-    result.push_str(&format!(
-        "• Jumlah drum (200L) estimasi   : {} drum\n",
-        n_drums
-    ));
-    result.push_str(&format!(
-        "• Tinggi tumpukan maks          : {:.1} m\n",
-        stack_height_m
-    ));
-    result.push_str(&format!(
-        "• Luas lantai (netto)           : {:.1} m²\n",
-        floor_area_m2
-    ));
-    result.push_str(&format!(
-        "• Luas lantai (+ aisle 40%)     : {:.1} m²\n\n",
-        floor_area_with_aisle
-    ));
+    let res_containment = ScientificResult::new("bund_volume", containment_volume, "m3")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("calculation", "Containment_Criteria", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("rule", "110% of largest container or 25% of total, whichever is greater"));
 
-    result.push_str("SISTEM PENAHAN TUMPAHAN (BUND):\n");
-    result.push_str(&format!(
-        "• Volume bund minimum           : {:.2} m³\n",
-        containment_volume
-    ));
-    result.push_str("• Kriteria: 110% kontainer terbesar ATAU 25% total volume\n\n");
+    let res_drums = ScientificResult::new("estimated_200L_drums", n_drums, "count")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Drum_Count", "2026-08-19T00:00:00Z"));
 
-    result.push_str("PERSYARATAN KONSTRUKSI TPS B3:\n");
-    result.push_str("• Lantai kedap (beton K-250 + coating epoxy)\n");
-    result.push_str("• Atap penutup (melindungi dari hujan)\n");
-    result.push_str("• Ventilasi memadai (min 6 ACH untuk cair/gas)\n");
-    result.push_str("• Sistem drainase internal → bak penampung tumpahan\n");
-    result.push_str("• Tidak terhubung ke saluran umum/lingkungan\n\n");
-
-    result.push_str("PERSYARATAN KESELAMATAN:\n");
-    result.push_str("• APAR sesuai jenis limbah (ABC, CO₂, foam)\n");
-    result.push_str("• Spill kit dan absorben\n");
-    result.push_str("• APD: sarung tangan, kacamata, masker, sepatu safety\n");
-    result.push_str("• Shower darurat dan eyewash station\n");
-    result.push_str("• SDS (Safety Data Sheet) untuk setiap jenis limbah\n\n");
-
-    result.push_str("PERSYARATAN PELABELAN:\n");
-    result.push_str("• Simbol B3 pada setiap kontainer\n");
-    result.push_str("• Label: nama limbah, sumber, tanggal masuk, karakteristik\n");
-    result.push_str("• Papan informasi darurat di pintu masuk\n");
-    result.push_str("• Denah penyimpanan dan rute evakuasi\n\n");
-
-    result.push_str("PELAPORAN:\n");
-    result.push_str("• Neraca limbah B3 triwulanan ke DLHK\n");
-    result.push_str("• Manifest limbah B3 setiap pengiriman\n");
-    result.push_str("• Log book penerimaan dan pengeluaran harian\n");
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_mass_month.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_max_vol.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_area.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_containment.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_drums.emit_validated()).unwrap()
+    ]).to_string()
 }

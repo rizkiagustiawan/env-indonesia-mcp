@@ -115,7 +115,7 @@ pub fn assess(
     // ═══ Phase 4: FOLU Net Sink 2030 Contribution ═══
     out.push_str("-- Phase 4: FOLU Net Sink 2030 Contribution --\n\n");
     let folu_target_co2 = 118_000_000.0; // -118 MTon CO2e
-    let ndc_target_co2 = 1_490_000_000.0; // 1.49 GtCO2e (Second NDC 2035)
+    let _ndc_target_co2 = 1_490_000_000.0; // 1.49 GtCO2e (Second NDC 2035)
     out.push_str(&format!("  Carbon stock: {:.0} ton CO2e\n", total_co2));
     out.push_str(&format!("  FOLU Net Sink 2030 target: {:.0} MTon CO2e\n", folu_target_co2 / 1e6));
     out.push_str(&format!("  Contribution to FOLU: {:.6}%\n\n", total_co2 / folu_target_co2 * 100.0));

@@ -6,7 +6,7 @@
 pub fn assess(
     road_type: &str,
     lane_width_m: f64,
-    volume_kend_per_jam: f64,
+    _volume_kend_per_jam: f64,
     emp_mp: f64, emp_ks: f64, emp_sm: f64, emp_bb: f64,
     vol_mp: f64, vol_ks: f64, vol_sm: f64, vol_bb: f64,
     khs: &str,

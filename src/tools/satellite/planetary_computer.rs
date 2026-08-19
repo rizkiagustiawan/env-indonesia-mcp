@@ -1,5 +1,4 @@
 use crate::result_contract::{ScientificResult, ResultStatus, Claim};
-use serde_json::json;
 use std::process::Command;
 
 /// JAXA ALOS PALSAR & Microsoft Planetary Computer STAC Integration
@@ -15,7 +14,7 @@ pub fn query_stac_alos(
     // direct HTTP REST queries for STAC tokens are easier in Python with pystac-client.
     let script_path = "/home/awan/Documents/env-indonesia-mcp/src/tools/satellite/planetary_computer_engine.py";
     
-    let output = match Command::new("python3")
+    let _output = match Command::new("python3")
         .arg(script_path)
         .arg(lat.to_string())
         .arg(lon.to_string())

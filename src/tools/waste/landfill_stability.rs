@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Stabilitas Lereng TPA (Simplified Bishop / Infinite Slope)
 /// Ref: PermenPU 3/2013, Das (2010) Principles of Geotechnical Engineering
 
@@ -9,23 +12,23 @@ pub fn calculate(
     friction_deg: f64,
     pore_pressure_ratio: f64,
 ) -> String {
-    if slope_angle_deg <= 0.0 || slope_angle_deg >= 90.0 {
-        return "ERROR: Sudut lereng harus antara 0 dan 90 derajat (eksklusif).".into();
+    if !(0.0..90.0).contains(&slope_angle_deg) {
+        return json!({"error": "E102", "message": "Sudut lereng harus antara 0 dan 90 derajat (eksklusif)."}).to_string();
     }
     if height_m <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter tinggi harus > 0."}).to_string();
     }
     if unit_weight_kn_m3 <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter berat isi harus > 0."}).to_string();
     }
     if cohesion_kpa < 0.0 {
-        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+        return json!({"error": "E102", "message": "Parameter kohesi tidak boleh negatif."}).to_string();
     }
-    if friction_deg < 0.0 || friction_deg > 60.0 {
-        return "ERROR: Sudut geser internal harus antara 0 dan 60 derajat.".into();
+    if !(0.0..=60.0).contains(&friction_deg) {
+        return json!({"error": "E102", "message": "Sudut geser internal harus antara 0 dan 60 derajat."}).to_string();
     }
-    if pore_pressure_ratio < 0.0 || pore_pressure_ratio > 1.0 {
-        return "ERROR: Rasio tekanan pori (ru) harus antara 0 dan 1.".into();
+    if !(0.0..=1.0).contains(&pore_pressure_ratio) {
+        return json!({"error": "E102", "message": "Rasio tekanan pori (ru) harus antara 0 dan 1."}).to_string();
     }
 
     let alpha = slope_angle_deg.to_radians();
@@ -54,31 +57,14 @@ pub fn calculate(
     let fos = cohesion_term + friction_term;
 
     // Status per PermenPU 3/2013
-    let (status_static, status_label) = if fos >= 1.5 {
-        (
-            "AMAN",
-            "FoS ≥ 1.5 — Lereng stabil dengan margin keamanan tinggi",
-        )
+    let status = if fos >= 1.5 {
+        ResultStatus::Valid
     } else if fos >= 1.3 {
-        (
-            "AMAN",
-            "FoS ≥ 1.3 — Memenuhi syarat minimum statik (PermenPU)",
-        )
+        ResultStatus::ValidWithAssumptions
     } else if fos >= 1.1 {
-        (
-            "MARGINAL",
-            "FoS ≥ 1.1 — Memenuhi syarat seismik, tidak memenuhi statik",
-        )
-    } else if fos >= 1.0 {
-        (
-            "TIDAK AMAN",
-            "FoS 1.0–1.1 — Di bawah batas minimum, perlu perbaikan",
-        )
+        ResultStatus::ScreeningOnly
     } else {
-        (
-            "TIDAK AMAN",
-            "FoS < 1.0 — Lereng tidak stabil, LONGSOR potensial",
-        )
+        ResultStatus::ValidationFailed
     };
 
     // Recommended maximum slope angle for FoS = 1.3
@@ -118,81 +104,38 @@ pub fn calculate(
         f64::INFINITY // friction alone provides FoS ≥ 1.0
     };
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("ANALISIS STABILITAS LERENG TPA\n");
-    result.push_str("Ref: PermenPU 3/2013, Das (2010)\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
+    let res_fos = ScientificResult::new("factor_of_safety", fos, "dimensionless")
+        .with_status(status.clone())
+        .with_provenance(Provenance::new("calculation", "InfiniteSlope_Das_2010", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("methodology", "Infinite Slope Analysis"));
 
-    result.push_str("Metode: Infinite Slope (Simplified)\n\n");
+    let res_rec_angle = ScientificResult::new("recommended_max_slope_angle", recommended_angle, "degrees")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "PermenPU_3_2013_FoS_1_3", "2026-08-19T00:00:00Z"));
 
-    result.push_str("INPUT:\n");
-    result.push_str(&format!(
-        "• Sudut lereng (α)     : {:.1}°\n",
-        slope_angle_deg
-    ));
-    result.push_str(&format!("• Tinggi lereng (H)    : {:.1} m\n", height_m));
-    result.push_str(&format!(
-        "• Berat isi (γ)        : {:.1} kN/m³\n",
-        unit_weight_kn_m3
-    ));
-    result.push_str(&format!(
-        "• Kohesi (c')          : {:.1} kPa\n",
-        cohesion_kpa
-    ));
-    result.push_str(&format!("• Sudut geser (φ')     : {:.1}°\n", friction_deg));
-    result.push_str(&format!(
-        "• Rasio tekanan pori   : {:.2}\n\n",
-        pore_pressure_ratio
-    ));
-
-    result.push_str("FORMULA:\n");
-    result.push_str("FoS = c'/(γ×H×sin(α)×cos(α)) + (1-ru)×tan(φ')/tan(α)\n\n");
-
-    result.push_str("KOMPONEN FoS:\n");
-    result.push_str(&format!("• Kontribusi kohesi    : {:.4}\n", cohesion_term));
-    result.push_str(&format!("• Kontribusi gesekan   : {:.4}\n", friction_term));
-    result.push_str(&format!("• FoS TOTAL            : {:.4}\n\n", fos));
-
-    result.push_str(&format!("STATUS: {} — {}\n\n", status_static, status_label));
-
-    result.push_str("KRITERIA PermenPU 3/2013:\n");
-    result.push_str(&format!(
-        "• FoS minimum statik   : 1.3 {}\n",
-        if fos >= 1.3 {
-            "✓"
-        } else {
-            "✗ TIDAK MEMENUHI"
-        }
-    ));
-    result.push_str(&format!(
-        "• FoS minimum seismik  : 1.1 {}\n\n",
-        if fos >= 1.1 {
-            "✓"
-        } else {
-            "✗ TIDAK MEMENUHI"
-        }
-    ));
-
-    if fos < 1.3 {
-        result.push_str(&format!(
-            "REKOMENDASI SUDUT LERENG (FoS ≥ 1.3): {:.0}° (1V:{:.1}H)\n",
-            recommended_angle,
-            1.0 / recommended_angle.to_radians().tan()
-        ));
+    let mut res_h_crit = ScientificResult::new("critical_height", h_critical, "m")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "InfiniteSlope_Das_2010", "2026-08-19T00:00:00Z"));
+    
+    if !h_critical.is_finite() {
+        // Rust's JSON serialization of f64::INFINITY isn't strictly standard, but commonly emitted as "inf". 
+        // Our validator rejects non-finite values. If it's infinite, friction alone is sufficient. We cap to a very large number or nan and set status OutOfDomain.
+        res_h_crit.value = f64::NAN; 
+        res_h_crit.status = ResultStatus::OutOfDomain;
     }
 
-    if h_critical.is_finite() {
-        result.push_str(&format!("TINGGI KRITIS (FoS = 1.0): {:.1} m\n", h_critical));
+    let output = if h_critical.is_finite() {
+        json!([
+            serde_json::from_str::<serde_json::Value>(&res_fos.emit_validated()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&res_rec_angle.emit_validated()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&res_h_crit.emit_validated()).unwrap()
+        ])
     } else {
-        result.push_str("TINGGI KRITIS: Tidak terbatas (gesekan saja sudah stabil)\n");
-    }
+         json!([
+            serde_json::from_str::<serde_json::Value>(&res_fos.emit_validated()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&res_rec_angle.emit_validated()).unwrap()
+        ])
+    };
 
-    result.push_str("\nPARAMETER TIPIKAL SAMPAH PERKOTAAN:\n");
-    result.push_str("• γ  : 8–14 kN/m³ (tergantung umur & komposisi)\n");
-    result.push_str("• c' : 0–25 kPa\n");
-    result.push_str("• φ' : 20–35°\n");
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    output.to_string()
 }

@@ -7,7 +7,7 @@ pub fn assess(ore_type: &str, tailings_volume_m3_day: f64, tailings_solid_pct: f
     out.push_str("Ref: GISTM; Permen ESDM; ANCOLD; ICOLD\n\n");
 
     let solids_m3_day = tailings_volume_m3_day * tailings_solid_pct / 100.0;
-    let water_m3_day = tailings_volume_m3_day - solids_m3_day;
+    let _water_m3_day = tailings_volume_m3_day - solids_m3_day;
 
     out.push_str(&format!("Ore: {}, Tailings: {:.0} m³/day ({:.0}% solid))\n", ore_type, tailings_volume_m3_day, tailings_solid_pct));
     out.push_str(&format!("Dam: {:.0}m height, {:.0} m³ volume\n", dam_height_m, dam_volume_m3));
@@ -21,9 +21,9 @@ pub fn assess(ore_type: &str, tailings_volume_m3_day: f64, tailings_solid_pct: f
     // Factor of Safety (simplified Bishop)
     let fs = match (foundation_type, seismic_zone) {
         (f, s) if f.contains("rock") && s.contains("low") => 1.5,
-        (f, s) if f.contains("rock") => 1.4,
+        (f, _s) if f.contains("rock") => 1.4,
         (f, s) if f.contains("soil") && s.contains("low") => 1.4,
-        (f, s) if f.contains("soil") => 1.3,
+        (f, _s) if f.contains("soil") => 1.3,
         _ => 1.2,
     };
     out.push_str(&format!("  Factor of Safety (static)): {:.2}\n", fs));

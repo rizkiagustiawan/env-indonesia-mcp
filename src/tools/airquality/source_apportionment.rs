@@ -21,7 +21,7 @@ pub struct PmfParam {
 
 fn matmul(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
     let n = a.len();
-    let k = a[0].len();
+    let _k = a[0].len();
     let m = b[0].len();
     let mut c = vec![vec![0.0; m]; n];
     for (i, row) in a.iter().enumerate() {
@@ -63,7 +63,7 @@ fn weighted_nmf(
             g[i][k] = base.max(0.01) + 0.001 * (k as f64 + 1.0);
         }
     }
-    for (k, frow) in f.iter_mut().enumerate() {
+    for (_k, frow) in f.iter_mut().enumerate() {
         for (j, fv) in frow.iter_mut().enumerate() {
             *fv = 1.0 / p as f64 + 0.001 * (j as f64 + 1.0);
         }

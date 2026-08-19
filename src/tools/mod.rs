@@ -20,3 +20,4 @@ pub mod waste;
 pub mod water;
 pub mod wrappers;
 pub mod workflows;
+pub mod integrated_study;

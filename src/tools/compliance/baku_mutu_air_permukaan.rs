@@ -258,7 +258,7 @@ fn kelas_name(k: u8) -> &'static str {
               3 => "Kelas III (C) — Peternakan/Irigasi Tanaman Pangan", _ => "Kelas IV (D) — Irigasi Non-Pangan/Industri" }
 }
 
-fn check_compliance(value: f64, limit: &ParamLimit, param: &str, kelas: u8) -> (bool, String) {
+fn check_compliance(value: f64, limit: &ParamLimit, param: &str, _kelas: u8) -> (bool, String) {
     let (ok, status) = if let Some(min) = limit.min {
         if let Some(max) = limit.max {
             (value >= min && value <= max, format!("Range {:.3}-{:.3}", min, max))

@@ -3,8 +3,8 @@
 pub fn assess(
     free_chlorine_mg_l: f64,
     contact_time_min: f64,
-    target_log_removal: f64,
-    contaminant: &str,
+    _target_log_removal: f64,
+    _contaminant: &str,
     temp_c: f64,
     ph: f64,
 ) -> String {
@@ -16,13 +16,13 @@ pub fn assess(
     // EPA CT tables (simplified) for Giardia and Virus
     let ct_giardia_3log = match (temp_c as i32, ph) {
         (t, p) if t <= 5 && p <= 7.5 => 181.0,
-        (t, p) if t <= 5 => 256.0,
+        (t, _p) if t <= 5 => 256.0,
         (t, p) if t <= 10 && p <= 7.5 => 128.0,
-        (t, p) if t <= 10 => 183.0,
+        (t, _p) if t <= 10 => 183.0,
         (t, p) if t <= 15 && p <= 7.5 => 91.0,
-        (t, p) if t <= 15 => 131.0,
+        (t, _p) if t <= 15 => 131.0,
         (t, p) if t <= 20 && p <= 7.5 => 65.0,
-        (t, p) if t <= 20 => 93.0,
+        (t, _p) if t <= 20 => 93.0,
         (t, p) if t <= 25 && p <= 7.5 => 46.0,
         _ => 67.0,
     };

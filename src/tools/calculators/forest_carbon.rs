@@ -25,7 +25,7 @@ pub fn assess(forest_type: &str, area_ha: f64, tree_density_per_ha: f64, avg_dbh
     } else { 0.0 };
 
     let agb_ton_ha = if tree_density_per_ha > 0.0 && agb_per_tree_kg > 0.0 {
-        (agb_per_tree_kg * tree_density_per_ha / 1000.0)
+        agb_per_tree_kg * tree_density_per_ha / 1000.0
     } else { default_agb_ton_ha };
 
     let bgb_ton_ha = agb_ton_ha * root_shoot_ratio;

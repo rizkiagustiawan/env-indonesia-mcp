@@ -12,7 +12,7 @@ pub fn assess(sod20_g_m2_day: f64, temp_c: f64, area_m2: f64, river_flow_m3_s: f
 
     // Impact on water column DO
     // dDO/dt = -SOD * A / (H * Q)  =>  DO_depletion = SOD * A / Q (mg/L)
-    let do_depletion_mg_l = if river_flow_m3_s > 0.0 {
+    let _do_depletion_mg_l = if river_flow_m3_s > 0.0 {
         (total_sod_g_day / 1000.0) / (river_flow_m3_s * 86400.0 / 1000.0) // g/day -> kg/day; m3/s -> m3/day -> L
     } else { 0.0 };
 

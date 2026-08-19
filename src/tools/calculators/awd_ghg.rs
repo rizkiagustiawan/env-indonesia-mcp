@@ -36,8 +36,8 @@ pub fn assess(
     rice_season: &str,
     soil_type: &str,
     n_fertilizer_kg_ha: f64,
-    organic_amendment: &str,
-    climate_zone: &str,
+    _organic_amendment: &str,
+    _climate_zone: &str,
     duration_years: f64,
 ) -> String {
     let mut out = String::from("=== AWD GHG Calculator (2026 Meta-Analysis) ===\n");

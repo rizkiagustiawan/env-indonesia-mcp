@@ -1,56 +1,56 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Acid Mine Drainage (AMD) Calculator
 /// Ref: PermenLH 113/2003, Acid Base Accounting (ABA)
 
 pub fn calculate(sulfur_pct: f64, anc_kg_h2so4_t: f64, nag_ph: Option<f64>) -> String {
     if sulfur_pct < 0.0 {
-        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+        return json!({"error": "E102", "message": "Parameter tidak boleh negatif"}).to_string();
     }
 
     let mpa = sulfur_pct * 30.6; // kg H2SO4/ton
     let napp = mpa - anc_kg_h2so4_t;
 
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  Acid Mine Drainage (AMD)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str("Ref: Acid Base Accounting (ABA)\n\n");
-
-    out.push_str(&format!(
-        "INPUT:\n  Total Sulfur (S) = {:.2} %\n  ANC = {:.2} kg H₂SO₄/ton\n",
-        sulfur_pct, anc_kg_h2so4_t
-    ));
-    if let Some(ph) = nag_ph {
-        out.push_str(&format!("  NAG pH = {:.2}\n", ph));
-    }
-
-    out.push_str(&format!("\nHASIL:\n  MPA (Maximum Potential Acidity) = {:.2} kg H₂SO₄/ton\n  NAPP (Net Acid Producing Potential) = {:.2} kg H₂SO₄/ton\n\n", mpa, napp));
-
     let status = if napp > 0.0 {
         if let Some(ph) = nag_ph {
             if ph < 4.5 {
-                "PAF (Potentially Acid Forming) - BAHAYA TINGGI"
+                "PAF"
             } else {
-                "Uncertain (PAF berdasarkan NAPP, tapi NAG pH >= 4.5)"
+                "Uncertain_PAF"
             }
         } else {
-            "PAF (Potentially Acid Forming)"
+            "PAF"
         }
     } else if napp < 0.0 {
         if let Some(ph) = nag_ph {
             if ph >= 4.5 {
-                "NAF (Non-Acid Forming) - AMAN"
+                "NAF"
             } else {
-                "Uncertain (NAF berdasarkan NAPP, tapi NAG pH < 4.5)"
+                "Uncertain_NAF"
             }
         } else {
-            "NAF (Non-Acid Forming)"
+            "NAF"
         }
     } else {
-        "Uncertain (Perlu uji kinetik)"
+        "Uncertain"
     };
 
-    out.push_str(&format!("Klasifikasi: {}\n", status));
-
-    if napp > 0.0 {
-        out.push_str("\n⚠️ REKOMENDASI MITIGASI:\n  1. Enkapsulasi dengan material NAF (dry cover).\n  2. Penempatan di bawah muka air tanah (wet cover).\n  3. Pengolahan aktif dengan kapur (CaCO3) di settling pond.\n");
+    let mut res_napp = ScientificResult::new("NAPP", napp, "kg H2SO4/t")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("calculation", "ABA_Static_Test", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("classification", status));
+    
+    if status == "PAF" {
+        res_napp = res_napp.with_claim(Claim::new("mitigation", "Enkapsulasi NAF, Wet Cover, atau Active Treatment"));
     }
 
-    out
+    let res_mpa = ScientificResult::new("MPA", mpa, "kg H2SO4/t")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("calculation", "ABA_Static_Test", "2026-08-19T00:00:00Z"));
+
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_napp.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_mpa.emit_validated()).unwrap()
+    ]).to_string()
 }

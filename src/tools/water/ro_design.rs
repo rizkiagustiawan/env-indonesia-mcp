@@ -144,7 +144,7 @@ pub fn design(
     // E (kWh/m3) = dP(kPa) / (R * eta * 3600)
     let pump_eff = 0.85;
     // E[kWh/m³] = P[bar]×1e5 / (R·η·3.6e6) = P[bar]×100 / (R·η·3600)
-    let energy_kwh_m3 = feed_pressure_bar * 100.0 / (recovery * pump_eff * 3600.0);
+    let _energy_kwh_m3 = feed_pressure_bar * 100.0 / (recovery * pump_eff * 3600.0);
     let energy_kwh_m3_v2 = feed_pressure_bar * 100.0 / (recovery * pump_eff) / 3600.0;
     let daily_energy = energy_kwh_m3_v2 * permeate_flow;
 

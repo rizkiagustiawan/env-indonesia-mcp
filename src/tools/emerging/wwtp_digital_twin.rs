@@ -18,13 +18,13 @@ pub fn assess(influent_bod_mg_l: f64, influent_cod_mg_l: f64, flow_m3_day: f64, 
     let mut out = String::from("=== WWTP Digital Twin (ASM1 + Heuristic Sensitivity 2026) ===\n");
     out.push_str("Ref: Nourani 2025 (34 cit); Yun 2025 (32 cit); Xiong 2025 (23 cit)\n\n");
 
-    let k_h = 3.0 * 1.072_f64.powf(temp_c - 20.0);
+    let _k_h = 3.0 * 1.072_f64.powf(temp_c - 20.0);
     let mu_h = 4.0 * 1.072_f64.powf(temp_c - 20.0);
     let k_s = 20.0;
     let k_oh = 0.2;
     let b_h = 0.3 * 1.072_f64.powf(temp_c - 20.0);
     let y_h = 0.67;
-    let q = flow_m3_day / 24.0 / 60.0;
+    let _q = flow_m3_day / 24.0 / 60.0;
     let bod_load = influent_bod_mg_l * flow_m3_day / 1000.0;
     let fm = bod_load / (volume_m3 * mlss_mg_l / 1000.0);
     let monod_substrate = influent_bod_mg_l / (k_s + influent_bod_mg_l).max(1e-6);

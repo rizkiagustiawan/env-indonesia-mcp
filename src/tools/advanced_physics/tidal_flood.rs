@@ -55,12 +55,12 @@ pub async fn assess(
     match client.get(&tide_url).send().await {
         Ok(resp) => match resp.json::<Value>().await {
             Ok(v) => {
-                if let Some(times) = v.pointer("/hourly/time").and_then(|t| t.as_array()) {
+                if let Some(_times) = v.pointer("/hourly/time").and_then(|t| t.as_array()) {
                     if let Some(heights) = v.pointer("/hourly/sea_level_height_msl").and_then(|h| h.as_array()) {
-                        let mut max_tide: f64 = heights.iter()
+                        let max_tide: f64 = heights.iter()
                             .filter_map(|h| h.as_f64())
                             .fold(0.0f64, f64::max);
-                        let mut min_tide: f64 = heights.iter()
+                        let min_tide: f64 = heights.iter()
                             .filter_map(|h| h.as_f64())
                             .fold(0.0f64, f64::min);
 

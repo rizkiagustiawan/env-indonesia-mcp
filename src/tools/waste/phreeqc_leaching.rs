@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// PHREEQC Geochemical Leaching Model Generator
 /// Menghasilkan script termodinamika untuk memprediksi pelepasan (leaching) logam berat
 /// dari limbah tambang (misal: tailing nikel, limbah B3) berdasarkan perubahan pH.
@@ -76,13 +79,14 @@ pub fn generate_phreeqc_script(
     script.push_str("    -saturation_indices Ni(OH)2 Cr(OH)3 Fe(OH)3(a)\n");
     script.push_str("END\n");
 
-    let mut out = String::from("=== PHREEQC Geochemical Leaching Generator ===\n");
-    out.push_str("Standar Emas Termodinamika USGS untuk Memprediksi Pelindian Logam Berat (Tailing/Limbah B3).\n");
-    out.push_str("Simpan teks di bawah sebagai `model.pqi` dan jalankan dengan PHREEQC (atau phreeqpython).\n\n");
-    out.push_str("```phreeqc\n");
-    out.push_str(&script);
-    out.push_str("```\n\n");
-    out.push_str("🔍 *Environmental Insight*: PHREEQC akan menghitung persis berapa mg/L Nikel (Ni) atau Kromium (Cr) yang larut (leached) ke dalam air tanah pada pH ekstrem, yang tidak bisa ditebak dengan kalkulator linier biasa.\n");
-    
-    out
+    // We output the script string inside a claim, so the orchestrator can still parse the output as JSON
+    let res = ScientificResult::new("phreeqc_script_generated", 1.0, "boolean")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("generator", "USGS_PHREEQC_v3", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("script_content", &script))
+        .with_claim(Claim::new("limitation", "This is a script generator only. Does not execute reactive transport directly."));
+
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res.emit_validated()).unwrap()
+    ]).to_string()
 }

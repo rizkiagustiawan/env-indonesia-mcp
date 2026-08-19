@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Desain Sistem Liner TPA
 /// Ref: PermenPU 3/2013 tentang Penyelenggaraan Prasarana dan Sarana Persampahan
 /// Ref: Giroud & Bonaparte (1989) — Leakage through Liners
@@ -10,20 +13,20 @@ pub fn design(
     clay_thickness_m: f64,
 ) -> String {
     if area_m2 <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter area harus > 0"}).to_string();
     }
     if head_on_liner_m < 0.0 {
-        return "ERROR [E102]: Parameter tidak boleh negatif.".into();
+        return json!({"error": "E102", "message": "Parameter head_on_liner_m tidak boleh negatif"}).to_string();
     }
     if k_clay <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter k_clay harus > 0"}).to_string();
     }
     if clay_thickness_m <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter clay_thickness_m harus > 0"}).to_string();
     }
 
     let liner_lower = liner_type.to_lowercase();
-    let (liner_name, leakage_rate_m3_s, geomembrane_mm, description) = match liner_lower.as_str() {
+    let (_liner_name, leakage_rate_m3_s, geomembrane_mm, description) = match liner_lower.as_str() {
         "single_clay" => {
             // Q = k × i × A, i = (h + d) / d
             let gradient = (head_on_liner_m + clay_thickness_m) / clay_thickness_m;
@@ -73,10 +76,7 @@ pub fn design(
             )
         }
         _ => {
-            return format!(
-                "ERROR: Tipe liner '{}' tidak dikenal.\nPilihan: single_clay, composite, double_liner",
-                liner_type
-            );
+            return json!({"error": "E100", "message": format!("Tipe liner '{}' tidak dikenal", liner_type)}).to_string();
         }
     };
 
@@ -87,77 +87,28 @@ pub fn design(
         0.0
     };
 
-    // Compliance checks per PermenPU 3/2013
-    let k_compliant = k_clay <= 1e-9;
-    let thickness_compliant = clay_thickness_m >= 0.6;
-    let k_status = if k_compliant {
-        "MEMENUHI (≤ 1×10⁻⁹ m/s)"
-    } else {
-        "TIDAK MEMENUHI (harus ≤ 1×10⁻⁹ m/s)"
-    };
-    let thick_status = if thickness_compliant {
-        "MEMENUHI (≥ 60 cm)"
-    } else {
-        "TIDAK MEMENUHI (harus ≥ 60 cm)"
-    };
+    let res_leakage_m3_s = ScientificResult::new("leakage_rate", leakage_rate_m3_s, "m3/s")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Giroud_Bonaparte_1989", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("methodology", description));
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("DESAIN SISTEM LINER TPA\n");
-    result.push_str("Ref: PermenPU 3/2013, Giroud & Bonaparte (1989)\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
+    let res_leakage_l_day = ScientificResult::new("leakage_rate_daily", leakage_l_day, "L/day")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Giroud_Bonaparte_1989", "2026-08-19T00:00:00Z"));
 
-    result.push_str(&format!("Tipe Liner       : {}\n", liner_name));
-    result.push_str(&format!("Deskripsi        : {}\n", description));
-    result.push_str(&format!(
-        "Luas area        : {:.2} m² ({:.2} Ha)\n",
-        area_m2,
-        area_m2 / 10000.0
-    ));
-    result.push_str(&format!("Head on liner    : {:.3} m\n", head_on_liner_m));
-    result.push_str(&format!("K clay           : {:.2e} m/s\n", k_clay));
-    result.push_str(&format!("Tebal clay       : {:.2} m\n\n", clay_thickness_m));
+    let res_leakage_l_ha_day = ScientificResult::new("leakage_rate_per_ha", leakage_l_ha_day, "L/ha/day")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("calculation", "Giroud_Bonaparte_1989", "2026-08-19T00:00:00Z"));
 
-    result.push_str("HASIL PERHITUNGAN:\n");
-    result.push_str(&format!(
-        "• Laju kebocoran       : {:.4e} m³/s\n",
-        leakage_rate_m3_s
-    ));
-    result.push_str(&format!(
-        "• Laju kebocoran       : {:.2} L/hari\n",
-        leakage_l_day
-    ));
-    result.push_str(&format!(
-        "• Laju kebocoran       : {:.2} L/Ha/hari\n\n",
-        leakage_l_ha_day
-    ));
+    let res_geomembrane = ScientificResult::new("geomembrane_thickness", geomembrane_mm, "mm")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("specification", "PermenPU_3_2013", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("material", "HDPE"));
 
-    if geomembrane_mm > 0.0 {
-        result.push_str("SPESIFIKASI GEOMEMBRANE:\n");
-        result.push_str(&format!("• Material             : HDPE\n"));
-        result.push_str(&format!(
-            "• Ketebalan minimum    : {:.1} mm\n",
-            geomembrane_mm
-        ));
-        result.push_str("• Sambungan            : Double wedge weld\n");
-        result.push_str("• Uji sambungan        : Vakum + tekanan udara\n\n");
-    }
-
-    result.push_str("KEPATUHAN PermenPU 3/2013:\n");
-    result.push_str(&format!("• K clay               : {}\n", k_status));
-    result.push_str(&format!("• Tebal clay           : {}\n", thick_status));
-
-    result.push_str("\nPERSYARATAN DRAINASE:\n");
-    result.push_str("• Lapisan drainase leachate min 30 cm (kerikil/geonet)\n");
-    result.push_str("• K drainase ≥ 1×10⁻² m/s\n");
-    result.push_str("• Kemiringan dasar min 2% menuju pipa pengumpul\n");
-
-    result.push_str("\nPERSYARATAN QC:\n");
-    result.push_str("• Uji densitas clay (Proctor ≥ 95%)\n");
-    result.push_str("• Uji permeabilitas lapangan (Boutwell/BAT)\n");
-    result.push_str("• Uji sambungan geomembrane (destructive & non-destructive)\n");
-    result.push_str("• Survei kebocoran elektrik (pasca-pemasangan)\n");
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_leakage_m3_s.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_leakage_l_day.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_leakage_l_ha_day.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_geomembrane.emit_validated()).unwrap()
+    ]).to_string()
 }

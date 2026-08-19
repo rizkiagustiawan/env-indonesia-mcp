@@ -69,7 +69,7 @@ pub async fn search(
                         for (i, feat) in features.iter().take(10).enumerate() {
                             let id = feat.get("id").and_then(|v| v.as_str()).unwrap_or("?");
                             let props = feat.get("properties").unwrap_or(&Value::Null);
-                            let datetime = props.get("datetime")
+                            let _datetime = props.get("datetime")
                                 .and_then(|d| d.as_str()).unwrap_or("?");
                             let ref_time = props.get("ecmwf:reference_datetime")
                                 .and_then(|r| r.as_str()).unwrap_or("?");

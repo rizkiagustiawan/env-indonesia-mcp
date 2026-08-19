@@ -24,21 +24,25 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x61i_inference.proto\x12\x0c\x61i_inference\"n\n\x0c\x46loodRequest\x12\x0f\n\x07site_id\x18\x01 \x01(\t\x12\x0c\n\x04\x62\x62ox\x18\x02 \x03(\x02\x12\x11\n\tinitial_h\x18\x03 \x03(\x02\x12\r\n\x05width\x18\x04 \x01(\x05\x12\x0e\n\x06height\x18\x05 \x01(\x05\x12\r\n\x05t_end\x18\x06 \x01(\x02\"Y\n\rFloodResponse\x12\x13\n\x0bpredicted_h\x18\x01 \x03(\x02\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\x12\x14\n\x0cinference_ms\x18\x04 \x01(\x02\"S\n\x12GroundwaterRequest\x12\x0f\n\x07site_id\x18\x01 \x01(\t\x12\x1d\n\x15initial_concentration\x18\x02 \x03(\x02\x12\r\n\x05t_end\x18\x03 \x01(\x02\"L\n\x13GroundwaterResponse\x12\x1f\n\x17predicted_concentration\x18\x01 \x03(\x02\x12\x14\n\x0cinference_ms\x18\x02 \x01(\x02\x32\xc0\x01\n\x0fInferenceEngine\x12L\n\x0fPredictFloodFNO\x12\x1a.ai_inference.FloodRequest\x1a\x1b.ai_inference.FloodResponse\"\x00\x12_\n\x16PredictGroundwaterPINN\x12 .ai_inference.GroundwaterRequest\x1a!.ai_inference.GroundwaterResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x61i_inference.proto\x12\x0c\x61i_inference\"\xa8\x01\n\x13ShallowWaterRequest\x12\x0f\n\x07site_id\x18\x01 \x01(\t\x12\x0c\n\x04\x62\x62ox\x18\x02 \x03(\x02\x12\x11\n\tinitial_h\x18\x03 \x03(\x02\x12\x11\n\tinitial_u\x18\x04 \x03(\x02\x12\x11\n\tinitial_v\x18\x05 \x03(\x02\x12\x0b\n\x03\x64\x65m\x18\x06 \x03(\x02\x12\r\n\x05width\x18\x07 \x01(\x05\x12\x0e\n\x06height\x18\x08 \x01(\x05\x12\r\n\x05t_end\x18\t \x01(\x02\"\x8a\x01\n\x14ShallowWaterResponse\x12\x13\n\x0bpredicted_h\x18\x01 \x03(\x02\x12\x13\n\x0bpredicted_u\x18\x02 \x03(\x02\x12\x13\n\x0bpredicted_v\x18\x03 \x03(\x02\x12\r\n\x05width\x18\x04 \x01(\x05\x12\x0e\n\x06height\x18\x05 \x01(\x05\x12\x14\n\x0cinference_ms\x18\x06 \x01(\x02\"{\n\x0c\x46loodRequest\x12\x0f\n\x07site_id\x18\x01 \x01(\t\x12\x0c\n\x04\x62\x62ox\x18\x02 \x03(\x02\x12\x11\n\tinitial_h\x18\x03 \x03(\x02\x12\x0b\n\x03\x64\x65m\x18\x04 \x03(\x02\x12\r\n\x05width\x18\x05 \x01(\x05\x12\x0e\n\x06height\x18\x06 \x01(\x05\x12\r\n\x05t_end\x18\x07 \x01(\x02\"Y\n\rFloodResponse\x12\x13\n\x0bpredicted_h\x18\x01 \x03(\x02\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\x12\x14\n\x0cinference_ms\x18\x04 \x01(\x02\"S\n\x12GroundwaterRequest\x12\x0f\n\x07site_id\x18\x01 \x01(\t\x12\x1d\n\x15initial_concentration\x18\x02 \x03(\x02\x12\r\n\x05t_end\x18\x03 \x01(\x02\"L\n\x13GroundwaterResponse\x12\x1f\n\x17predicted_concentration\x18\x01 \x03(\x02\x12\x14\n\x0cinference_ms\x18\x02 \x01(\x02\x32\xa4\x02\n\x0fInferenceEngine\x12L\n\x0fPredictFloodFNO\x12\x1a.ai_inference.FloodRequest\x1a\x1b.ai_inference.FloodResponse\"\x00\x12_\n\x16PredictGroundwaterPINN\x12 .ai_inference.GroundwaterRequest\x1a!.ai_inference.GroundwaterResponse\"\x00\x12\x62\n\x17PredictShallowWaterPINO\x12!.ai_inference.ShallowWaterRequest\x1a\".ai_inference.ShallowWaterResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ai_inference_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_FLOODREQUEST']._serialized_start=36
-  _globals['_FLOODREQUEST']._serialized_end=146
-  _globals['_FLOODRESPONSE']._serialized_start=148
-  _globals['_FLOODRESPONSE']._serialized_end=237
-  _globals['_GROUNDWATERREQUEST']._serialized_start=239
-  _globals['_GROUNDWATERREQUEST']._serialized_end=322
-  _globals['_GROUNDWATERRESPONSE']._serialized_start=324
-  _globals['_GROUNDWATERRESPONSE']._serialized_end=400
-  _globals['_INFERENCEENGINE']._serialized_start=403
-  _globals['_INFERENCEENGINE']._serialized_end=595
+  _globals['_SHALLOWWATERREQUEST']._serialized_start=37
+  _globals['_SHALLOWWATERREQUEST']._serialized_end=205
+  _globals['_SHALLOWWATERRESPONSE']._serialized_start=208
+  _globals['_SHALLOWWATERRESPONSE']._serialized_end=346
+  _globals['_FLOODREQUEST']._serialized_start=348
+  _globals['_FLOODREQUEST']._serialized_end=471
+  _globals['_FLOODRESPONSE']._serialized_start=473
+  _globals['_FLOODRESPONSE']._serialized_end=562
+  _globals['_GROUNDWATERREQUEST']._serialized_start=564
+  _globals['_GROUNDWATERREQUEST']._serialized_end=647
+  _globals['_GROUNDWATERRESPONSE']._serialized_start=649
+  _globals['_GROUNDWATERRESPONSE']._serialized_end=725
+  _globals['_INFERENCEENGINE']._serialized_start=728
+  _globals['_INFERENCEENGINE']._serialized_end=1020
 # @@protoc_insertion_point(module_scope)
