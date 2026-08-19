@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// AERMOD Input Generator (Tier 3 Pro-Justitia Model)
 /// Menghasilkan file konfigurasi (.inp) standar EPA/KLHK untuk pemodelan dispersi
 /// udara AMDAL (PLTU, Smelter, Industri).
@@ -67,28 +70,17 @@ pub fn generate_aermod_inp(
     inp.push_str("   MAXTABLE  ALLAVE  50\n");
     inp.push_str("OU FINISHED\n");
 
-    let mut out = String::from("=== AERMOD Pro-Justitia Input Generator ===\n");
-    out.push_str("Standar Tier-3 Modeling untuk AMDAL & Perizinan Lingkungan KLHK.\n");
-    out.push_str("Simpan teks di bawah ini sebagai file `aermod.inp` dan jalankan dengan executable AERMOD (EPA).\n\n");
-    out.push_str("```aermod\n");
-    out.push_str(&inp);
-    out.push_str("```\n\n");
-    
-    // JSON Payload for LLM Chaining
-    let payload = crate::result_contract::ScientificResult::new(
+    let payload = ScientificResult::new(
         "AERMOD_Input_Generator",
         1.0,
-        "success"
+        "boolean"
     )
-    .with_status(crate::result_contract::ResultStatus::Valid)
-    .with_claim(crate::result_contract::Claim::new(
-        "Pro-Justitia Ready",
-        "Input generated according to EPA standards.",
-    ));
-    
-    out.push_str("--- JSON PAYLOAD ---\n");
-    out.push_str(&payload.emit_validated());
-    out.push_str("\n");
+    .with_status(ResultStatus::ScreeningOnly)
+    .with_provenance(Provenance::new("generator", "AERMOD_EPA", "2026-08-19T00:00:00Z"))
+    .with_claim(Claim::new("script_content", &inp))
+    .with_claim(Claim::new("limitation", "Input generated according to EPA standards, uses placeholder UTM coordinates. Validated execution required."));
 
-    out
+    json!([
+        serde_json::from_str::<serde_json::Value>(&payload.emit_validated()).unwrap()
+    ]).to_string()
 }

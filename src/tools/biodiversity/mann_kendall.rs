@@ -1,18 +1,18 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult, Uncertainty};
+use serde_json::json;
+
 /// Uji Tren Mann-Kendall dengan Sen's Slope
 /// Ref: Mann (1945), Kendall (1975), Sen (1968)
 
 pub fn trend_test(data_json: &str) -> String {
     let data: Vec<f64> = match serde_json::from_str(data_json) {
         Ok(v) => v,
-        Err(e) => return format!("ERROR: Gagal parsing JSON array: {}", e),
+        Err(e) => return json!({"error": "E100", "message": format!("Gagal parsing JSON array: {}", e)}).to_string(),
     };
 
     let n = data.len();
     if n < 4 {
-        return format!(
-            "ERROR: Minimal 4 data diperlukan untuk uji Mann-Kendall, diberikan {}.",
-            n
-        );
+        return json!({"error": "E102", "message": format!("Minimal 4 data diperlukan untuk uji Mann-Kendall, diberikan {}.", n)}).to_string();
     }
 
     // S = Σ Σ sgn(xj - xi) for all i<j
@@ -37,7 +37,6 @@ pub fn trend_test(data_json: &str) -> String {
 
     // Variance: σ² = n(n-1)(2n+5)/18 (without tie correction)
     // Tie correction: subtract Σ tp(tp-1)(2tp+5)/18 for each tie group of size tp
-    // Simple: count ties
     let mut tie_groups: std::collections::HashMap<i64, usize> = std::collections::HashMap::new();
     for val in &data {
         // Round to avoid floating point issues
@@ -94,107 +93,46 @@ pub fn trend_test(data_json: &str) -> String {
     };
 
     // Trend determination
-    let (trend, trend_id) = if p_value <= 0.01 {
+    let (trend, _trend_id) = if p_value <= 0.01 {
         if z > 0.0 {
-            (
-                "MENINGKAT (sangat signifikan)",
-                "Tren naik signifikan pada α = 0.01",
-            )
+            ("MENINGKAT_SANGAT_SIGNIFIKAN", "Tren naik signifikan pada α = 0.01")
         } else {
-            (
-                "MENURUN (sangat signifikan)",
-                "Tren turun signifikan pada α = 0.01",
-            )
+            ("MENURUN_SANGAT_SIGNIFIKAN", "Tren turun signifikan pada α = 0.01")
         }
     } else if p_value <= 0.05 {
         if z > 0.0 {
-            (
-                "MENINGKAT (signifikan)",
-                "Tren naik signifikan pada α = 0.05",
-            )
+            ("MENINGKAT_SIGNIFIKAN", "Tren naik signifikan pada α = 0.05")
         } else {
-            (
-                "MENURUN (signifikan)",
-                "Tren turun signifikan pada α = 0.05",
-            )
+            ("MENURUN_SIGNIFIKAN", "Tren turun signifikan pada α = 0.05")
         }
     } else if p_value <= 0.10 {
         if z > 0.0 {
-            ("MENINGKAT (marginal)", "Tren naik marginal pada α = 0.10")
+            ("MENINGKAT_MARGINAL", "Tren naik marginal pada α = 0.10")
         } else {
-            ("MENURUN (marginal)", "Tren turun marginal pada α = 0.10")
+            ("MENURUN_MARGINAL", "Tren turun marginal pada α = 0.10")
         }
     } else {
-        ("TIDAK ADA TREN", "Tidak ada tren signifikan terdeteksi")
+        ("TIDAK_ADA_TREN", "Tidak ada tren signifikan terdeteksi")
     };
 
-    // Data summary
-    let data_min = data.iter().cloned().fold(f64::INFINITY, f64::min);
-    let data_max = data.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-    let data_mean = data.iter().sum::<f64>() / nn;
+    let is_significant = p_value <= 0.05;
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("UJI TREN MANN-KENDALL + SEN'S SLOPE\n");
-    result.push_str("Ref: Mann (1945), Kendall (1975), Sen (1968)\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
+    let res_z = ScientificResult::new("mann_kendall_z_score", z, "dimensionless")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("calculation", "Mann_1945", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("p_value", &p_value.to_string()))
+        .with_claim(Claim::new("trend_classification", trend))
+        .with_claim(Claim::new("is_significant_alpha_0_05", &is_significant.to_string()));
 
-    result.push_str("DATA:\n");
-    result.push_str(&format!("• Jumlah data (n)      : {}\n", n));
-    result.push_str(&format!("• Minimum              : {:.4}\n", data_min));
-    result.push_str(&format!("• Maksimum             : {:.4}\n", data_max));
-    result.push_str(&format!("• Rata-rata            : {:.4}\n\n", data_mean));
+    let res_slope = ScientificResult::new("sens_slope", sens_slope, "units/time")
+        .with_status(ResultStatus::Valid)
+        .with_provenance(Provenance::new("calculation", "Sen_1968", "2026-08-19T00:00:00Z"))
+        .with_uncertainty(Uncertainty::confidence_interval(lower_ci, upper_ci, 0.95));
 
-    result.push_str("HASIL UJI MANN-KENDALL:\n");
-    result.push_str(&format!("• Statistik S          : {}\n", s));
-    result.push_str(&format!("• Varians (σ²)         : {:.2}\n", variance));
-    result.push_str(&format!("• Z-score              : {:.4}\n", z));
-    result.push_str(&format!("• p-value (two-tailed) : {:.6}\n\n", p_value));
-
-    result.push_str("SEN'S SLOPE:\n");
-    result.push_str(&format!(
-        "• Slope estimasi       : {:.6} per satuan waktu\n",
-        sens_slope
-    ));
-    result.push_str(&format!(
-        "• 95% CI               : [{:.6}, {:.6}]\n\n",
-        lower_ci, upper_ci
-    ));
-
-    result.push_str(&format!("TREN: {}\n", trend));
-    result.push_str(&format!("  {}\n\n", trend_id));
-
-    result.push_str("SIGNIFIKANSI:\n");
-    result.push_str(&format!(
-        "• α = 0.01 : {} (p {} 0.01)\n",
-        if p_value <= 0.01 {
-            "Signifikan"
-        } else {
-            "Tidak signifikan"
-        },
-        if p_value <= 0.01 { "≤" } else { ">" }
-    ));
-    result.push_str(&format!(
-        "• α = 0.05 : {} (p {} 0.05)\n",
-        if p_value <= 0.05 {
-            "Signifikan"
-        } else {
-            "Tidak signifikan"
-        },
-        if p_value <= 0.05 { "≤" } else { ">" }
-    ));
-    result.push_str(&format!(
-        "• α = 0.10 : {} (p {} 0.10)\n",
-        if p_value <= 0.10 {
-            "Signifikan"
-        } else {
-            "Tidak signifikan"
-        },
-        if p_value <= 0.10 { "≤" } else { ">" }
-    ));
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_z.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_slope.emit_validated()).unwrap()
+    ]).to_string()
 }
 
 /// Approximate normal CDF using Abramowitz & Stegun

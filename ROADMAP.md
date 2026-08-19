@@ -11,7 +11,7 @@
 ## Phase 0: The Truth Layer & Inventory (Maturity 0 -> 20%)
 *Mengubah 347 tool yang mengembalikan String menjadi sistem berkontrak terstruktur.*
 - [ ] Audit dan registrasi 347 tools ke dalam *Maturity Matrix* (screening, conceptual, implemented_tested).
-- [x] Implementasi `result_contract.rs` (JSON) ke **semua** tool.
+- [ ] Implementasi `result_contract.rs` (JSON) ke **semua** tool.
 - [ ] Wajibkan parameter *Uncertainty*, *Provenance*, *Unit*, dan *CRS* di setiap output.
 
 ## Phase 1: Shared Scientific Data Contract & Acquisition Engine (Maturity 20 -> 40%)

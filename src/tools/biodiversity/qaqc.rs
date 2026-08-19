@@ -1,17 +1,19 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Validasi QA/QC Data Lingkungan
 /// Ref: US EPA QA/QC Guidance, SNI 6989-series
 
 pub fn validate(data_json: &str) -> String {
     let samples: Vec<serde_json::Value> = match serde_json::from_str(data_json) {
         Ok(v) => v,
-        Err(e) => return format!("ERROR: Gagal parsing JSON: {}", e),
+        Err(e) => return json!({"error": "E100", "message": format!("Gagal parsing JSON: {}", e)}).to_string(),
     };
 
     if samples.is_empty() {
-        return "ERROR: Array data QA/QC kosong.".into();
+        return json!({"error": "E102", "message": "Array data QA/QC kosong"}).to_string();
     }
 
-    let mut rows = Vec::new();
     let mut total_samples = 0_usize;
     let mut rpd_pass = 0_usize;
     let mut rpd_fail = 0_usize;
@@ -27,8 +29,6 @@ pub fn validate(data_json: &str) -> String {
         let sample_id = sample.get("sample").and_then(|v| v.as_str()).unwrap_or("?");
         let value = sample.get("value").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
-        let mut sample_row = format!("Sampel: {} (nilai: {:.4})\n", sample_id, value);
-
         // RPD check (duplicate)
         if let Some(dup) = sample.get("duplicate").and_then(|v| v.as_f64()) {
             let avg = (value + dup) / 2.0;
@@ -38,7 +38,6 @@ pub fn validate(data_json: &str) -> String {
                 0.0
             };
 
-            // Acceptable: <20% water, <30% soil (use 20% as default)
             let rpd_limit = 20.0;
             let rpd_ok = rpd <= rpd_limit;
 
@@ -46,23 +45,7 @@ pub fn validate(data_json: &str) -> String {
                 rpd_pass += 1;
             } else {
                 rpd_fail += 1;
-            }
-
-            sample_row.push_str(&format!(
-                "  RPD: |{:.4} - {:.4}| / {:.4} × 100 = {:.1}% {} (batas: {}%)\n",
-                value,
-                dup,
-                avg,
-                rpd,
-                if rpd_ok { "LULUS ✓" } else { "GAGAL ✗" },
-                rpd_limit
-            ));
-
-            if !rpd_ok {
-                flags.push(format!(
-                    "{}: RPD {:.1}% melebihi batas {}%",
-                    sample_id, rpd, rpd_limit
-                ));
+                flags.push(format!("{}: RPD {:.1}% melebihi batas {}%", sample_id, rpd, rpd_limit));
             }
         }
 
@@ -77,67 +60,30 @@ pub fn validate(data_json: &str) -> String {
                 0.0
             };
 
-            let recovery_ok = recovery >= 80.0 && recovery <= 120.0;
+            let recovery_ok = (80.0..=120.0).contains(&recovery);
 
             if recovery_ok {
                 spike_pass += 1;
             } else {
                 spike_fail += 1;
-            }
-
-            sample_row.push_str(&format!(
-                "  Spike Recovery: ({:.4} - {:.4}) / {:.4} × 100 = {:.1}% {} (batas: 80-120%)\n",
-                spike,
-                value,
-                spike_amt,
-                recovery,
-                if recovery_ok {
-                    "LULUS ✓"
-                } else {
-                    "GAGAL ✗"
-                }
-            ));
-
-            if !recovery_ok {
-                flags.push(format!(
-                    "{}: Recovery {:.1}% di luar 80-120%",
-                    sample_id, recovery
-                ));
+                flags.push(format!("{}: Recovery {:.1}% di luar 80-120%", sample_id, recovery));
             }
         }
 
         // Blank check
         if let Some(blank) = sample.get("blank").and_then(|v| v.as_f64()) {
-            // MDL typically ~10% of sample value or instrument-specific
             let mdl_estimate = value * 0.1;
-            let blank_ok = blank < mdl_estimate.max(0.01); // at least 0.01
+            let blank_ok = blank < mdl_estimate.max(0.01);
 
             if blank_ok {
                 blank_pass += 1;
             } else {
                 blank_fail += 1;
-            }
-
-            sample_row.push_str(&format!(
-                "  Blank: {:.4} {} (MDL estimasi: {:.4})\n",
-                blank,
-                if blank_ok {
-                    "LULUS ✓"
-                } else {
-                    "GAGAL ✗ — kontaminasi terdeteksi"
-                },
-                mdl_estimate.max(0.01)
-            ));
-
-            if !blank_ok {
                 flags.push(format!("{}: Blank {:.4} melebihi MDL", sample_id, blank));
             }
         }
-
-        rows.push(sample_row);
     }
 
-    // Overall assessment
     let total_checks = rpd_pass + rpd_fail + spike_pass + spike_fail + blank_pass + blank_fail;
     let total_pass = rpd_pass + spike_pass + blank_pass;
     let pass_pct = if total_checks > 0 {
@@ -146,64 +92,26 @@ pub fn validate(data_json: &str) -> String {
         100.0
     };
 
-    let overall = if flags.is_empty() {
-        "LULUS — Semua parameter QA/QC memenuhi kriteria"
+    let status = if flags.is_empty() {
+        ResultStatus::Valid
     } else if pass_pct >= 80.0 {
-        "LULUS BERSYARAT — Sebagian besar memenuhi, ada catatan"
+        ResultStatus::ValidWithAssumptions
     } else {
-        "GAGAL — Data tidak memenuhi kriteria QA/QC, perlu pengulangan"
+        ResultStatus::ValidationFailed
     };
 
-    let mut result = String::new();
-    result.push_str("══════════════════════════════════════════════\n");
-    result.push_str("VALIDASI QA/QC DATA LINGKUNGAN\n");
-    result.push_str("Ref: US EPA QA/QC Guidance, SNI 6989-series\n");
-    result.push_str("══════════════════════════════════════════════\n\n");
-
-    result.push_str(&format!("Jumlah sampel divalidasi: {}\n\n", total_samples));
-
-    result.push_str("KRITERIA:\n");
-    result.push_str("• RPD (Relative Percent Difference) : < 20% (air), < 30% (tanah)\n");
-    result.push_str("• Spike Recovery                    : 80–120%\n");
-    result.push_str("• Blank                             : < MDL (Method Detection Limit)\n\n");
-
-    result.push_str("────────────────────────────────────────\n");
-    result.push_str("DETAIL PER SAMPEL:\n");
-    result.push_str("────────────────────────────────────────\n");
-    for row in &rows {
-        result.push_str(row);
-        result.push('\n');
-    }
-
-    result.push_str("────────────────────────────────────────\n");
-    result.push_str("RINGKASAN:\n");
-    result.push_str(&format!(
-        "• RPD          : {} lulus, {} gagal\n",
-        rpd_pass, rpd_fail
-    ));
-    result.push_str(&format!(
-        "• Spike Recov. : {} lulus, {} gagal\n",
-        spike_pass, spike_fail
-    ));
-    result.push_str(&format!(
-        "• Blank        : {} lulus, {} gagal\n",
-        blank_pass, blank_fail
-    ));
-    result.push_str(&format!(
-        "• Total        : {}/{} lulus ({:.0}%)\n\n",
-        total_pass, total_checks, pass_pct
-    ));
+    let mut res = ScientificResult::new("qaqc_pass_rate", pass_pct, "%")
+        .with_status(status)
+        .with_provenance(Provenance::new("calculation", "EPA_QAQC_SNI6989", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("total_samples", &total_samples.to_string()))
+        .with_claim(Claim::new("total_checks", &total_checks.to_string()))
+        .with_claim(Claim::new("total_passed", &total_pass.to_string()));
 
     if !flags.is_empty() {
-        result.push_str("FLAG (CATATAN):\n");
-        for flag in &flags {
-            result.push_str(&format!("  ⚠ {}\n", flag));
-        }
-        result.push('\n');
+        res = res.with_claim(Claim::new("flags", &flags.join("; ")));
     }
 
-    result.push_str(&format!("PENILAIAN KESELURUHAN: {}\n", overall));
-    result.push_str("══════════════════════════════════════════════\n");
-
-    result
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res.emit_validated()).unwrap()
+    ]).to_string()
 }
