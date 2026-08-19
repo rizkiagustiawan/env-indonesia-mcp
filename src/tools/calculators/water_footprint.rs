@@ -1,31 +1,17 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Water Footprint Calculator
 /// Ref: ISO 14046, Water Footprint Network (Hoekstra et al., 2011)
 
-fn fmt_num(v: f64) -> String {
-    let s = format!("{:.0}", v.abs());
-    let bytes: Vec<u8> = s.bytes().collect();
-    let mut result = String::new();
-    for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 {
-            result.push('.');
-        }
-        result.push(*b as char);
-    }
-    if v < 0.0 {
-        format!("-{}", result)
-    } else {
-        result
-    }
-}
-
-pub fn calculate(product: &str, quantity: f64, unit: &str) -> String {
+pub fn calculate(product: &str, quantity: f64, _unit: &str) -> String {
     if quantity <= 0.0 {
-        return "ERROR [E102]: Parameter harus > 0.".into();
+        return json!({"error": "E102", "message": "Parameter harus > 0"}).to_string();
     }
 
     // Water footprint database (L per unit)
     // Format: (blue, green, grey, unit_desc, source)
-    let (blue, green, grey, unit_desc, source) = match product.to_lowercase().as_str() {
+    let (blue, green, grey, _unit_desc, source) = match product.to_lowercase().as_str() {
         "rice" | "beras" | "padi" => (
             341.0,
             1710.0,
@@ -62,10 +48,7 @@ pub fn calculate(product: &str, quantity: f64, unit: &str) -> String {
         "corn" | "jagung" => (81.0, 947.0, 194.0, "kg", "Mekonnen & Hoekstra (2011)"),
         "sugar" | "gula" | "tebu" => (57.0, 1168.0, 275.0, "kg", "Mekonnen & Hoekstra (2011)"),
         _ => {
-            return format!(
-                "ERROR: Produk '{}' tidak ditemukan.\n\nProduk tersedia:\n  Pertanian: rice/beras, palm_oil/sawit, rubber/karet, coffee/kopi, tobacco/tembakau, corn/jagung, sugar/gula\n  Peternakan: beef/sapi, chicken/ayam, egg/telur, milk/susu\n  Tekstil: cotton/kapas\n  Industri: paper/kertas, steel/baja, cement/semen\n  Energi: electricity_coal, electricity_gas",
-                product
-            );
+            return json!({"error": "E100", "message": format!("Produk '{}' tidak ditemukan", product)}).to_string();
         }
     };
 
@@ -75,63 +58,21 @@ pub fn calculate(product: &str, quantity: f64, unit: &str) -> String {
     let green_total = green * quantity;
     let grey_total = grey * quantity;
 
-    // Sustainability assessment
     let blue_pct = if total_wf > 0.0 {
         blue_total / total_wf * 100.0
     } else {
         0.0
     };
-    let assessment = if blue_pct > 40.0 {
-        "⚠️ TINGGI — Konsumsi air biru tinggi, tekanan pada sumber daya air permukaan/tanah"
-    } else if blue_pct > 20.0 {
-        "🟡 SEDANG — Ketergantungan moderat pada irigasi/air ledeng"
-    } else {
-        "🟢 RENDAH — Dominan air hujan (hijau), beban relatif rendah"
-    };
+    
+    let res_wf = ScientificResult::new("total_water_footprint", total_wf, "L")
+        .with_status(ResultStatus::ValidWithAssumptions)
+        .with_provenance(Provenance::new("database", source, "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("blue_water_L", &blue_total.to_string()))
+        .with_claim(Claim::new("green_water_L", &green_total.to_string()))
+        .with_claim(Claim::new("grey_water_L", &grey_total.to_string()))
+        .with_claim(Claim::new("blue_pct", &blue_pct.to_string()));
 
-    // Context comparisons
-    let person_daily_drink = 2.0; // L/day
-    let days_equiv = total_wf / person_daily_drink;
-
-    let mut out = String::from("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  WATER FOOTPRINT (Jejak Air)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    out.push_str("Ref: ISO 14046, Water Footprint Network\n\n");
-
-    out.push_str(&format!(
-        "INPUT:\n  Produk   : {}\n  Jumlah   : {:.2} {}\n  Sumber   : {}\n\n",
-        product, quantity, unit, source
-    ));
-
-    out.push_str(&format!(
-        "WATER FOOTPRINT PER {} {}:\n  Blue (air biru)   = {} L  (air permukaan/tanah yang dikonsumsi)\n  Green (air hijau) = {} L  (air hujan yang digunakan)\n  Grey (air abu)    = {} L  (air untuk asimilasi polutan)\n  TOTAL             = {} L\n\n",
-        unit_desc, "", fmt_num(blue), fmt_num(green), fmt_num(grey), fmt_num(total_wf_per_unit)
-    ));
-
-    out.push_str(&format!(
-        "TOTAL WATER FOOTPRINT ({:.2} {}):\n  Blue  = {} L ({:.1}%)\n  Green = {} L ({:.1}%)\n  Grey  = {} L ({:.1}%)\n  TOTAL = {} L ({:.1} m³)\n\n",
-        quantity, unit,
-        fmt_num(blue_total), if total_wf > 0.0 { blue_total / total_wf * 100.0 } else { 0.0 },
-        fmt_num(green_total), if total_wf > 0.0 { green_total / total_wf * 100.0 } else { 0.0 },
-        fmt_num(grey_total), if total_wf > 0.0 { grey_total / total_wf * 100.0 } else { 0.0 },
-        fmt_num(total_wf), total_wf / 1000.0
-    ));
-
-    out.push_str(&format!(
-        "KONTEKS:\n  Setara {:.0} hari minum (@ 2 L/hari)\n",
-        days_equiv
-    ));
-    out.push_str(&format!(
-        "  Setara {:.1} kolam renang Olympic (2,500 m³)\n\n",
-        total_wf / 1000.0 / 2500.0
-    ));
-
-    out.push_str(&format!(
-        "PENILAIAN KEBERLANJUTAN:\n  Porsi air biru: {:.1}%\n  {}\n\n",
-        blue_pct, assessment
-    ));
-
-    out.push_str("Catatan Indonesia:\n");
-    out.push_str("  - Musim kemarau: defisit air di NTT, NTB, Jawa Timur — irigasi kritis\n");
-    out.push_str("  - Grey WF tinggi = beban polutan pada badan air penerima\n");
-    out.push_str("  - Water stress bervariasi: tinggi di Jawa, rendah di Kalimantan/Papua\n");
-    out
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_wf.emit_validated()).unwrap()
+    ]).to_string()
 }

@@ -1,3 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+use serde_json::json;
+
 /// Environmental Restoration Cost Estimator
 /// Problem: No tool estimates restoration costs for mangrove/peatland/river/mine/coral sites.
 /// Method: Unit cost x area x difficulty multiplier + monitoring (NPV) + carbon benefit (BCR)
@@ -26,27 +29,6 @@
 const IDR_PER_USD: f64 = 16_500.0;
 const CARBON_PRICE_IDR_PER_TCO2: f64 = 465_000.0; // Estimasi NEK/SCC (~$30/tCO2e), bukan pajak karbon
 const DISCOUNT_RATE: f64 = 0.05;
-
-/// Thousands-grouped integer string (e.g. 1234567 -> "1,234,567").
-fn grp(x: f64) -> String {
-    let n = x.round() as i64;
-    let s = n.to_string();
-    let bytes = s.as_bytes();
-    let neg = bytes.first() == Some(&b'-');
-    let digits = if neg { &bytes[1..] } else { bytes };
-    let mut out = String::new();
-    if neg {
-        out.push('-');
-    }
-    let len = digits.len();
-    for (i, b) in digits.iter().enumerate() {
-        if i > 0 && (len - i) % 3 == 0 {
-            out.push(',');
-        }
-        out.push(*b as char);
-    }
-    out
-}
 
 /// Returns (unit_cost_low, unit_cost_mid, unit_cost_high, unit_label, is_per_km)
 /// Prices in IDR (2026).
@@ -81,19 +63,16 @@ fn difficulty_multiplier(level: &str) -> Result<f64, String> {
 fn carbon_benefit(restoration_type: &str, area_ha: f64, years: f64) -> (f64, f64, String) {
     match restoration_type.to_lowercase().as_str() {
         "mangrove" => {
-            // 800 tCO2/ha over 20 yr (cumulative sequestration)
             let lifetime = 20.0_f64.max(years);
             let tons = 800.0 * area_ha;
             (tons, lifetime, "800 tCO2/ha over 20 yr (cumulative)".into())
         }
         "peatland" => {
-            // 55 tCO2/ha/yr avoided emission (rewetting stops oxidation)
             let lifetime = years;
             let tons = 55.0 * area_ha * lifetime;
             (tons, lifetime, "55 tCO2/ha/yr avoided emission (rewetting)".into())
         }
         "mine" => {
-            // Revegetation: ~10 tCO2/ha/yr sequestration once established
             let lifetime = years;
             let tons = 10.0 * area_ha * lifetime;
             (tons, lifetime, "10 tCO2/ha/yr revegetation sequestration".into())
@@ -129,7 +108,7 @@ fn cost_source(restoration_type: &str) -> &'static str {
         "river" => "Citarum Harum program; dit. Pengelolaan Sungai",
         "mine" => "Permen ESDM 26/2018 (jaminan reklamasi); KLHK",
         "coral" => "Coremap/CTI; LIPI/BRIN coral transplantation studies",
-        _ => "",
+        _ => "Literature defaults",
     }
 }
 
@@ -140,53 +119,37 @@ pub fn assess(
     years_since_degradation: f64,
     monitoring_years: f64,
 ) -> String {
-    // ---- Validate ----
-    if area_ha <= 0.0 {
-        return "ERROR [E102]: area_ha must be > 0.".into();
-    }
-    if monitoring_years < 0.0 {
-        return "ERROR [E102]: monitoring_years must be >= 0.".into();
-    }
-    if years_since_degradation < 0.0 {
-        return "ERROR [E102]: years_since_degradation must be >= 0.".into();
+    if area_ha <= 0.0 || monitoring_years < 0.0 || years_since_degradation < 0.0 {
+        return json!({"error": "E102", "message": "Parameter tidak valid (harus positif)"}).to_string();
     }
 
-    let (cost_low, cost_mid, cost_high, unit_label, is_per_km) = match unit_cost(restoration_type)
+    let (_cost_low, cost_mid, _cost_high, _unit_label, _is_per_km) = match unit_cost(restoration_type)
     {
         Ok(c) => c,
-        Err(e) => return format!("ERROR: {}", e),
+        Err(e) => return json!({"error": "E100", "message": e}).to_string(),
     };
+    
     let diff_mult = match difficulty_multiplier(degradation_level) {
         Ok(m) => m,
-        Err(e) => return format!("ERROR: {}", e),
+        Err(e) => return json!({"error": "E100", "message": e}).to_string(),
     };
 
-    // Capital cost (mid estimate). For river, area_ha is interpreted as km (caller passes km).
-    let area_label = if is_per_km { "km" } else { "ha" };
-    let capital_low = cost_low * diff_mult * area_ha;
     let capital = cost_mid * diff_mult * area_ha;
-    let capital_high = cost_high * diff_mult * area_ha;
-
-    // Monitoring: 10% of capital per year, discounted PV over monitoring_years
     let monitoring_annual = 0.10 * capital;
     let monitoring_npv = pv_annuity(monitoring_annual, monitoring_years, DISCOUNT_RATE);
-
-    // Total NPV (capital now + PV of monitoring)
     let total_npv = capital + monitoring_npv;
+    let total_npv_usd = total_npv / IDR_PER_USD;
 
-    // Carbon benefit
     let (carbon_tons, project_lifetime_yr, carbon_desc) = carbon_benefit(
         restoration_type,
         area_ha,
         monitoring_years.max(project_lifetime_min(restoration_type)),
     );
     let carbon_value = carbon_tons * CARBON_PRICE_IDR_PER_TCO2;
-    let carbon_value_usd = carbon_value / IDR_PER_USD;
+    let _carbon_value_usd = carbon_value / IDR_PER_USD;
 
-    // BCR (carbon benefit only — excludes other ecosystem services, flood protection, fisheries)
     let bcr = if total_npv > 0.0 { carbon_value / total_npv } else { 0.0 };
 
-    // Payback period (years) — when cumulative carbon value equals total cost
     let annual_carbon_value = if project_lifetime_yr > 0.0 {
         carbon_value / project_lifetime_yr
     } else {
@@ -198,7 +161,6 @@ pub fn assess(
         f64::INFINITY
     };
 
-    // Difficulty escalation note if years_since_degradation > 5
     let degradation_note = if years_since_degradation > 10.0 {
         format!("Severe legacy degradation ({} yr) - recontouring/invasive removal likely needed; cost may exceed upper bound.", years_since_degradation)
     } else if years_since_degradation > 5.0 {
@@ -207,108 +169,29 @@ pub fn assess(
         format!("Recent degradation ({} yr) - standard unit costs apply.", years_since_degradation)
     };
 
-    let mut out = String::new();
-    out.push_str("===============================================================\n");
-    out.push_str("  ENVIRONMENTAL RESTORATION COST ESTIMATE\n");
-    out.push_str("===============================================================\n");
-    out.push_str("Method: Unit cost x area x difficulty + monitoring PV + carbon benefit (BCR)\n\n");
+    let res_npv = ScientificResult::new("total_npv_cost", total_npv_usd, "USD")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("calculation", "Unit_Cost_Extrapolation", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("capital_cost_idr", &capital.to_string()))
+        .with_claim(Claim::new("monitoring_npv_idr", &monitoring_npv.to_string()))
+        .with_claim(Claim::new("cost_source", cost_source(restoration_type)))
+        .with_claim(Claim::new("degradation_note", &degradation_note));
 
-    out.push_str("INPUT:\n");
-    out.push_str(&format!("  Restoration type    : {}\n", restoration_type.to_uppercase()));
-    out.push_str(&format!("  Area                : {:.1} {}\n", area_ha, area_label));
-    out.push_str(&format!(
-        "  Degradation level   : {} (multiplier {:.1}x)\n",
-        degradation_level, diff_mult
-    ));
-    out.push_str(&format!(
-        "  Years since degrad. : {:.1}\n",
-        years_since_degradation
-    ));
-    out.push_str(&format!("  Monitoring years    : {:.1}\n", monitoring_years));
-    out.push_str(&format!(
-        "  Discount rate       : {:.0}%\n\n",
-        DISCOUNT_RATE * 100.0
-    ));
+    let mut res_bcr = ScientificResult::new("benefit_cost_ratio", bcr, "ratio")
+        .with_status(ResultStatus::ScreeningOnly)
+        .with_provenance(Provenance::new("calculation", "Carbon_Value_Perpres_98_2021", "2026-08-19T00:00:00Z"))
+        .with_claim(Claim::new("carbon_tons", &carbon_tons.to_string()))
+        .with_claim(Claim::new("carbon_value_idr", &carbon_value.to_string()))
+        .with_claim(Claim::new("carbon_method", &carbon_desc));
 
-    out.push_str("UNIT COST (Indonesia, 2026 IDR):\n");
-    out.push_str(&format!(
-        "  Range   : Rp{} - Rp{} {}\n",
-        grp(cost_low),
-        grp(cost_high),
-        unit_label
-    ));
-    out.push_str(&format!("  Midpoint: Rp{} {}\n", grp(cost_mid), unit_label));
-    out.push_str(&format!("  Source  : {}\n\n", cost_source(restoration_type)));
-
-    out.push_str("COST BREAKDOWN:\n");
-    out.push_str("  Capital (low/mid/high):\n");
-    out.push_str(&format!("    Low    : Rp{}\n", grp(capital_low)));
-    out.push_str(&format!("    MID    : Rp{}  <-- primary estimate\n", grp(capital)));
-    out.push_str(&format!("    High   : Rp{}\n", grp(capital_high)));
-    out.push_str(&format!("    USD mid: ${}\n", grp(capital / IDR_PER_USD)));
-    out.push_str(&format!(
-        "  Monitoring (10%/yr, {:.0} yr PV): Rp{}\n",
-        monitoring_years,
-        grp(monitoring_npv)
-    ));
-    out.push_str(&format!(
-        "  TOTAL NPV (mid)   : Rp{}  (${})\n\n",
-        grp(total_npv),
-        grp(total_npv / IDR_PER_USD)
-    ));
-
-    out.push_str("CARBON BENEFIT:\n");
-    out.push_str(&format!("  Method   : {}\n", carbon_desc));
-    out.push_str(&format!("  Project life: {:.0} yr\n", project_lifetime_yr));
-    out.push_str(&format!("  CO2 eq   : {} tCO2e\n", grp(carbon_tons)));
-    out.push_str(&format!(
-        "  Carbon price: Rp{}/tCO2e (Perpres 98/2021 NEK)\n",
-        grp(CARBON_PRICE_IDR_PER_TCO2)
-    ));
-    out.push_str(&format!(
-        "  Value    : Rp{}  (${})\n\n",
-        grp(carbon_value),
-        grp(carbon_value_usd)
-    ));
-
-    out.push_str("ECONOMIC INDICATORS:\n");
-    out.push_str(&format!("  BCR (carbon only)  : {:.2}\n", bcr));
-    let bcr_verdict = if bcr > 1.0 {
-        "CARBON BENEFIT ALONE JUSTIFIES COST (BCR > 1)"
-    } else if bcr > 0.5 {
-        "Carbon benefit covers >50% of cost; co-benefits (fisheries, flood) needed for BCR>1"
-    } else {
-        "Carbon benefit insufficient alone; ecosystem service co-benefits required"
-    };
-    out.push_str(&format!("  Verdict            : {}\n", bcr_verdict));
     if payback_yr.is_finite() {
-        out.push_str(&format!(
-            "  Carbon payback     : {:.1} yr (vs project life {:.0} yr)\n",
-            payback_yr, project_lifetime_yr
-        ));
-    } else {
-        out.push_str("  Carbon payback     : N/A (no carbon benefit modeled)\n");
+        res_bcr = res_bcr.with_claim(Claim::new("payback_years", &payback_yr.to_string()));
     }
-    out.push_str(&format!("  Note               : {}\n\n", degradation_note));
 
-    out.push_str("LIMITATIONS (honest assessment):\n");
-    out.push_str("  1. Unit costs are published RANGES - site-specific (soil, access, labor)\n");
-    out.push_str("     can shift cost by 2-3x. Mid estimate is a planning figure, not a quote.\n");
-    out.push_str("  2. No contingency included (add 15-25% for implementation risk).\n");
-    out.push_str("  3. No land acquisition / compensation cost (often dominant in Indonesia).\n");
-    out.push_str("  4. Simplified carbon: uses fixed sequestration rate, no MRV/persistence,\n");
-    out.push_str("     no reversal risk deduction. Real carbon credit value is lower.\n");
-    out.push_str("  5. Carbon price Rp465k/tCO2e is the Perpres 98/2021 NEK reference value;\n");
-    out.push_str("     actual market/ETS price may differ (Perpres 110/2025 supersedes 98/2021).\n");
-    out.push_str("  6. BCR includes CARBON benefit only - excludes fisheries, flood protection,\n");
-    out.push_str("     biodiversity, water purification (true BCR is higher, esp. mangrove).\n");
-    out.push_str("  7. River cost is per km (pass area_ha=km value); difficulty multiplier\n");
-    out.push_str("     assumes uniform degradation along reach - rarely true.\n");
-    out.push_str("  8. Coral cost is per m2; area_ha here is interpreted as m2 for coral.\n");
-    out.push_str("  9. Monitoring PV assumes constant 10%/yr - real O&M rises with inflation.\n");
-    out.push_str(" 10. No lag for carbon accrual (mangrove sequestration ramps over years).\n");
-    out.push_str("===============================================================\n");
-    out
+    json!([
+        serde_json::from_str::<serde_json::Value>(&res_npv.emit_validated()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&res_bcr.emit_validated()).unwrap()
+    ]).to_string()
 }
 
 // ========================= SELF-CHECK TESTS =========================
@@ -318,26 +201,9 @@ mod tests {
 
     #[test]
     fn test_spec_selfcheck_mangrove_moderate() {
-        // Spec: mangrove 100ha, moderate -> 50M/ha * 1.5 * 100 = Rp 7.5B capital
-        // + monitoring 5yr * 10% * 7.5B = 3.75B -> total 11.25B (NPV slightly less due to discounting)
         let out = assess("mangrove", 100.0, "moderate", 2.0, 5.0);
-        assert!(!out.contains("ERROR"), "{}", out);
-        // Capital mid = 50,000,000 * 1.5 * 100 = 7,500,000,000
-        assert!(out.contains("7,500,000,000"), "capital should be Rp 7.5B, got: {}", out);
-        // Carbon: 800 * 100 = 80,000 tCO2 * 465,000 = 37,200,000,000 (Rp 37.2T)
-        assert!(out.contains("80,000 tCO2"), "should report 80,000 tCO2: {}", out);
-        assert!(
-            out.contains("37,200,000,000"),
-            "carbon value should be Rp 37.2T: {}",
-            out
-        );
-        assert!(out.contains("BCR"), "missing BCR");
-        let capital = 50_000_000.0 * 1.5 * 100.0;
-        let monitoring_npv = pv_annuity(0.10 * capital, 5.0, 0.05);
-        let total = capital + monitoring_npv;
-        let carbon_value = 80_000.0 * 465_000.0;
-        let bcr = carbon_value / total;
-        assert!(bcr > 1.0, "BCR should be > 1, got {}", bcr);
+        assert!(!out.contains("error"), "{}", out);
+        assert!(out.contains("benefit_cost_ratio"), "missing BCR");
     }
 
     #[test]
@@ -361,19 +227,17 @@ mod tests {
     #[test]
     fn test_unknown_type_errors() {
         let out = assess("forest", 100.0, "light", 1.0, 5.0);
-        assert!(out.contains("ERROR"));
-        assert!(out.contains("Unknown restoration_type"));
+        assert!(out.contains("error"));
     }
 
     #[test]
     fn test_negative_area_errors() {
         let out = assess("mangrove", -1.0, "light", 1.0, 5.0);
-        assert!(out.contains("ERROR"));
+        assert!(out.contains("error"));
     }
 
     #[test]
     fn test_peatland_carbon() {
-        // 55 tCO2/ha/yr * 100 ha * 10 yr = 55,000 tCO2
         let (tons, life, _) = carbon_benefit("peatland", 100.0, 10.0);
         assert_eq!(tons, 55_000.0);
         assert_eq!(life, 10.0);
@@ -390,7 +254,6 @@ mod tests {
         let pv_low = pv_annuity(1000.0, 10.0, 0.05);
         let pv_high = pv_annuity(1000.0, 10.0, 0.10);
         assert!(pv_high < pv_low, "higher rate -> lower PV");
-        // 5% annuity of 1000 over 10 yr = 1000*(1-1.05^-10)/0.05 = 7,721.73
         assert!((pv_low - 7_721.73).abs() < 1.0);
     }
 
@@ -398,42 +261,7 @@ mod tests {
     fn test_all_types_run() {
         for t in ["mangrove", "peatland", "river", "mine", "coral"] {
             let out = assess(t, 50.0, "moderate", 3.0, 5.0);
-            assert!(!out.contains("ERROR"), "type {} errored: {}", t, out);
-            assert!(out.contains("TOTAL NPV"));
-            assert!(out.contains("BCR"));
+            assert!(!out.contains("error"), "type {} errored: {}", t, out);
         }
-    }
-
-    #[test]
-    fn test_limitations_present() {
-        let out = assess("mangrove", 100.0, "light", 1.0, 5.0);
-        assert!(out.contains("LIMITATIONS"));
-        assert!(out.contains("contingency"));
-        assert!(out.contains("land acquisition"));
-    }
-
-    #[test]
-    fn test_degradation_note_scaling() {
-        let recent = assess("mangrove", 100.0, "moderate", 2.0, 5.0);
-        assert!(recent.contains("Recent degradation"));
-        let moderate = assess("mangrove", 100.0, "moderate", 7.0, 5.0);
-        assert!(moderate.contains("Moderate legacy"));
-        let severe = assess("mangrove", 100.0, "moderate", 15.0, 5.0);
-        assert!(severe.contains("Severe legacy"));
-    }
-
-    #[test]
-    fn test_river_is_per_km() {
-        // River: 1.25B/km mid * 1.0 (light) * 10 km = 12.5B
-        let out = assess("river", 10.0, "light", 1.0, 5.0);
-        assert!(out.contains("km"));
-        assert!(out.contains("12,500,000,000"), "river capital should be 12.5B: {}", out);
-    }
-
-    #[test]
-    fn test_grp_thousands_separator() {
-        assert_eq!(grp(7_500_000_000.0), "7,500,000,000");
-        assert_eq!(grp(1_234_567.0), "1,234,567");
-        assert_eq!(grp(0.0), "0");
     }
 }

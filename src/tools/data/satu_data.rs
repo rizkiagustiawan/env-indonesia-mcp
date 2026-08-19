@@ -1,4 +1,6 @@
+use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
 use reqwest::Client;
+use serde_json::json;
 
 pub async fn search(client: &Client, query: &str, limit: u32) -> String {
     let url = format!(
@@ -6,59 +8,71 @@ pub async fn search(client: &Client, query: &str, limit: u32) -> String {
         urlencoding(query), limit
     );
 
-    let mut out = format!("=== Satu Data Indonesia — Search: '{}' ===\n", query);
-    out.push_str("Source: data.go.id (CKAN API)\n\n");
+    let mut results = vec![];
 
     match client.get(&url).send().await {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
             Ok(v) => {
-                if let Some(results) = v
+                if let Some(ds_results) = v
                     .get("result")
                     .and_then(|r| r.get("results"))
                     .and_then(|r| r.as_array())
                 {
-                    out.push_str(&format!(
-                        "Found: {} datasets\n\n",
-                        v.get("result")
-                            .and_then(|r| r.get("count"))
-                            .and_then(|c| c.as_u64())
-                            .unwrap_or(0)
-                    ));
-                    for (i, ds) in results.iter().enumerate() {
+                    let count = v
+                        .get("result")
+                        .and_then(|r| r.get("count"))
+                        .and_then(|c| c.as_f64())
+                        .unwrap_or(0.0);
+
+                    let mut res = ScientificResult::new("satu_data_dataset_count", count, "count")
+                        .with_status(ResultStatus::Valid)
+                        .with_provenance(Provenance::new("database", "data.go.id", "2026-08-19T00:00:00Z"));
+
+                    for (i, ds) in ds_results.iter().enumerate() {
                         let title = ds.get("title").and_then(|t| t.as_str()).unwrap_or("?");
                         let org = ds
                             .get("organization")
                             .and_then(|o| o.get("title"))
                             .and_then(|t| t.as_str())
                             .unwrap_or("?");
-                        let notes = ds.get("notes").and_then(|n| n.as_str()).unwrap_or("");
-                        let url = ds.get("url").and_then(|u| u.as_str()).unwrap_or("");
-                        out.push_str(&format!(
-                            "{}. {}\n   Org: {}\n   {}\n   URL: {}\n\n",
-                            i + 1,
-                            title,
-                            org,
-                            &notes[..notes.len().min(200)],
-                            url
-                        ));
+                        let url_str = ds.get("url").and_then(|u| u.as_str()).unwrap_or("");
+                        
+                        res = res.with_claim(Claim::new(&format!("dataset_{}", i), &format!("{} ({})", title, org)));
+                        if !url_str.is_empty() {
+                            res = res.with_claim(Claim::new(&format!("url_{}", i), url_str));
+                        }
                     }
+                    results.push(res);
                 } else {
-                    out.push_str("No results or API format changed.\n");
-                    out.push_str(&format!(
-                        "Raw: {}\n",
-                        serde_json::to_string_pretty(&v)
-                            .unwrap_or_default()
-                            .chars()
-                            .take(1000)
-                            .collect::<String>()
-                    ));
+                    let res = ScientificResult::new("satu_data_search_error", 1.0, "boolean")
+                        .with_status(ResultStatus::ValidationFailed)
+                        .with_provenance(Provenance::new("database", "data.go.id", "2026-08-19T00:00:00Z"))
+                        .with_claim(Claim::new("error", "No results or API format changed"));
+                    results.push(res);
                 }
             }
-            Err(e) => out.push_str(&format!("Parse error: {}\n", e)),
+            Err(e) => {
+                 let res = ScientificResult::new("satu_data_search_error", 1.0, "boolean")
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_provenance(Provenance::new("database", "data.go.id", "2026-08-19T00:00:00Z"))
+                    .with_claim(Claim::new("error", &format!("Parse error: {}", e)));
+                 results.push(res);
+            }
         },
-        Err(e) => out.push_str(&format!("Connection error: {}\n", e)),
+        Err(e) => {
+             let res = ScientificResult::new("satu_data_search_error", 1.0, "boolean")
+                .with_status(ResultStatus::ValidationFailed)
+                .with_provenance(Provenance::new("database", "data.go.id", "2026-08-19T00:00:00Z"))
+                .with_claim(Claim::new("error", &format!("Connection error: {}", e)));
+             results.push(res);
+        }
     }
-    out
+    
+    let json_array: Vec<serde_json::Value> = results.iter()
+        .map(|r| serde_json::from_str(&r.clone().emit_validated()).unwrap())
+        .collect();
+
+    json!(json_array).to_string()
 }
 
 fn urlencoding(s: &str) -> String {
