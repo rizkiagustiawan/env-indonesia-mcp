@@ -1744,12 +1744,22 @@ pub struct StacListParam {
 pub struct StacAssetParam {
     #[schemars(description = "STAC API: 'mpc' or 'earth-search'. Default: mpc")]
     pub api: Option<String>,
-    #[schemars(description = "Collection ID, e.g. sentinel-2-l2a")]
+    #[schemars(description = "Collection ID (e.g., sentinel-2-l2a)")]
     pub collection: String,
     #[schemars(description = "Item/Scene ID from stac_search results")]
     pub item_id: String,
-    #[schemars(description = "Asset key: data, visual, thumbnail, rendered_preview, tif, image, etc.")]
+    #[schemars(description = "Asset key (e.g., visual, red, nir)")]
     pub asset_key: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct StacDownloadParam {
+    #[schemars(description = "STAC API: 'mpc' or 'earth-search'. Default: mpc")]
+    pub api: Option<String>,
+    pub collection: String,
+    pub item_id: String,
+    pub asset_key: String,
+    pub output_dir: String,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -3389,6 +3399,13 @@ impl EnvIndonesiaServer {
         tools::satellite::stac::get_asset_url(&HTTP, api, &p.collection, &p.item_id, &p.asset_key).await
     }
 
+    #[tool(description = "Download and hash one STAC raster asset. Retrieval is validated; scientific interpretation is not performed.")]
+    async fn stac_download_asset(&self, Parameters(p): Parameters<StacDownloadParam>) -> String {
+        tools::satellite::stac::download_asset(&HTTP, p.api.as_deref().unwrap_or("mpc"), &p.collection, &p.item_id, &p.asset_key, &p.output_dir).await
+    }
+
+
+
     #[tool(description = "Flood SAR Mapping — Sentinel-1 VV change detection. Cloud-penetrating radar, 10m, 6-day revisit. Searches pre and post flood scenes, provides VV band download URLs + flood analysis protocol. Ref: Twele et al. 2016; Cian et al. 2018. Bypasses cloud cover limitation.")]
     async fn flood_sar_mapping(&self, Parameters(p): Parameters<FloodSarParam>) -> String {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
@@ -4754,7 +4771,9 @@ impl EnvIndonesiaServer {
                         let fc = val["forest_cover_pct"].as_f64().unwrap_or(0.0);
                         let tp = val["target_pct"].as_f64().unwrap_or(30.0);
                         tools::compliance::iklh_sub::calculate_iktl(fc, tp)
-                    }
+}
+
+
                     Err(e) => format!("ERROR: {}", e),
                 }
             }

@@ -204,6 +204,22 @@ async fn main() -> Result<()> {
                     ).await;
                     println!("{}", res);
                 },
+                "stac_download_asset" => {
+                    let p: server::StacDownloadParam = serde_json::from_str(tool_args)?;
+                    let client = reqwest::Client::builder()
+                        .timeout(std::time::Duration::from_secs(30))
+                        .user_agent("env-indonesia-mcp/1.0.0")
+                        .build()?;
+                    let res = tools::satellite::stac::download_asset(
+                        &client,
+                        p.api.as_deref().unwrap_or("mpc"),
+                        &p.collection,
+                        &p.item_id,
+                        &p.asset_key,
+                        &p.output_dir,
+                    ).await;
+                    println!("{}", res);
+                },
                 "flood_sar_mapping" => {
                     let p: server::FloodSarParam = serde_json::from_str(tool_args)?;
                     let client = reqwest::Client::builder()
