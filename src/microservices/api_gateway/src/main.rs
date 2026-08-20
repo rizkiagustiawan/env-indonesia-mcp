@@ -82,6 +82,7 @@ async fn test_pino_inference() -> Json<ShallowWaterInferenceResponse> {
         initial_h: vec![2.0; grid_size], // Simulate 2m initial water depth
         initial_u: vec![0.5; grid_size], // Simulate initial x-velocity
         initial_v: vec![0.1; grid_size], // Simulate initial y-velocity
+        dem: vec![0.0; grid_size], // Flat synthetic topography for testing
         width: 10,
         height: 10,
         t_end: 3600.0,
@@ -127,6 +128,7 @@ async fn test_inference() -> Json<InferenceResponse> {
         site_id: "sumbawa_test".to_string(),
         bbox: vec![117.0, -8.5, 118.0, -9.0],
         initial_h: vec![1.0, 1.2, 1.1, 1.0], // 2x2 grid
+        dem: vec![0.0; 4], // Flat synthetic topography for testing
         width: 2,
         height: 2,
         t_end: 3600.0,

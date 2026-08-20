@@ -26,3 +26,20 @@ Pillow>=10.0
 
 # Date utilities
 python-dateutil>=2.8
+
+# --- Environmental engineering solvers (scripts/swmm_run.py, scripts/phreeqc_run.py) ---
+# These are executed as subprocesses by the Rust server, which resolves the
+# interpreter from ENV_INDONESIA_SWMM_PYTHON (default /home/awan/env-indonesia/bin/python).
+# EPA SWMM 1D sewer routing
+pyswmm==2.1.0
+swmm-toolkit==0.17.0
+# EPANET / water distribution network analysis
+wntr==1.5.0
+# PHREEQC geochemistry. phreeqcrm provides the engine; phreeqpython provides both
+# a usable API and the bundled .dat thermodynamic databases that phreeqcrm omits.
+phreeqcrm==0.0.20
+phreeqpython==1.6.2
+# MODFLOW groundwater (binaries installed separately via `get-modflow`)
+flopy==3.10.0
+scipy>=1.11
+pandas>=2.0

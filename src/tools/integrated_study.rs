@@ -11,6 +11,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid AOI should plan");
@@ -28,6 +29,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let error = plan_study(&request).expect_err("malformed AOI must fail");
@@ -43,6 +45,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let error = plan_study(&request).expect_err("empty domain list must fail");
@@ -58,6 +61,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid point should plan");
@@ -81,6 +85,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid point should plan");
@@ -108,6 +113,7 @@ mod tests {
                 anc_kg_h2so4_t: 10.0,
                 nag_ph: Some(3.0),
             }),
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid study should plan");
@@ -132,6 +138,7 @@ mod tests {
             flood: None,
             leachate: None,
             amd: None,
+            data_availability: None,
         };
         let plan = plan_study(&feature_collection).expect("FeatureCollection should plan");
         assert_eq!(plan.bbox, [100.0, 0.0, 101.2, 1.2]);
@@ -154,9 +161,11 @@ mod tests {
                 inflow_x: 0,
                 inflow_y: 0,
                 inflow_width: 1,
+                synthetic: false,
             }),
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid study should plan");
@@ -182,9 +191,11 @@ mod tests {
                 inflow_x: 2,
                 inflow_y: 2,
                 inflow_width: 1,
+                synthetic: false,
             }),
             leachate: None,
             amd: None,
+            data_availability: None,
         };
 
         let plan = plan_study(&request).expect("valid flood study should plan");
@@ -192,6 +203,28 @@ mod tests {
         let summary = &report.domain_results[0].summary;
         assert!(summary["max_depth_m"].as_f64().unwrap() > 0.0);
         assert!(summary["flooded_cells"].as_u64().unwrap() > 0);
+    }
+
+    #[test]
+    fn requested_validated_without_observations_is_blocked() {
+        let request = IntegratedStudyRequest {
+            aoi_geojson: r#"{"type":"Point","coordinates":[101.0,0.0]}"#.into(),
+            domains: Some(vec!["flood".into()]),
+            satellite_fallback: true,
+            flood: Some(FloodBaselineInput {
+                dem: vec![vec![10.0; 5]; 5],
+                dx_m: 10.0, manning_n: 0.03, duration_s: 10.0, dt_max_s: 0.1,
+                second_order: false, inflow_discharge_m3s: 1.0,
+                inflow_x: 2, inflow_y: 2, inflow_width: 1, synthetic: false,
+            }),
+            data_availability: Some(crate::honesty::DataAvailability {
+                satellite_context: true, ..Default::default()
+            }),
+            leachate: None, amd: None,
+        };
+        let plan = plan_study(&request).unwrap();
+        let flood_plan = plan.domains.iter().find(|d| d.domain == "urban_flood").unwrap();
+        assert_eq!(flood_plan.evidence_level, "screening");
     }
 }
 use serde::{Deserialize, Serialize};
@@ -208,6 +241,7 @@ pub struct IntegratedStudyRequest {
     pub flood: Option<FloodBaselineInput>,
     pub leachate: Option<LeachateBaselineInput>,
     pub amd: Option<AmdBaselineInput>,
+    pub data_availability: Option<crate::honesty::DataAvailability>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
@@ -223,6 +257,8 @@ pub struct FloodBaselineInput {
     pub inflow_x: usize,
     pub inflow_y: usize,
     pub inflow_width: usize,
+    #[serde(default)]
+    pub synthetic: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
@@ -372,18 +408,23 @@ pub fn plan_study(request: &IntegratedStudyRequest) -> Result<StudyPlan, String>
             format!("Unsupported domain '{}'. Use urban_flood, landfill_leachate, or acid_mine_drainage.", raw_domain)
         })?;
         let (evidence_level, method, gaps) = match domain.as_str() {
-            "urban_flood" => (
-                if request.flood.is_some() { "screening" } else { "insufficient_data" },
-                "2D SWE baseline; urban sewer coupling is not available",
-                if request.flood.is_some() { vec!["independent flood observations".into(), "rainfall-runoff and sewer network inputs".into()] } else { vec!["rectangular DEM and hydraulic forcing".into()] },
-            ),
+            "urban_flood" => {
+                let evidence_level = if let Some(avail) = &request.data_availability {
+                    format!("{:?}", crate::honesty::assess_level(avail)).to_lowercase()
+                } else if request.flood.is_some() {
+                    "screening".to_string()
+                } else {
+                    "insufficient_data".to_string()
+                };
+                (evidence_level, "2D SWE baseline; sewer coupling available separately via swmm_1d2d_coupling", if request.flood.is_some() { vec!["independent flood observations".into(), "rainfall-runoff and sewer network inputs".into()] } else { vec!["rectangular DEM and hydraulic forcing".into()] })
+            },
             "landfill_leachate" => (
-                if request.leachate.is_some() { "screening" } else { "insufficient_data" },
+                if request.leachate.is_some() { "screening".to_string() } else { "insufficient_data".to_string() },
                 "monthly landfill water balance",
                 if request.leachate.is_some() { vec!["leachate quality time series".into(), "layered liner and vadose-zone parameters".into()] } else { vec!["landfill area, rainfall, ET, storage, and runoff inputs".into()] },
             ),
             "acid_mine_drainage" => (
-                if request.amd.is_some() { "screening" } else { "insufficient_data" },
+                if request.amd.is_some() { "screening".to_string() } else { "insufficient_data".to_string() },
                 "ABA MPA/NAPP static screening",
                 if request.amd.is_some() { vec!["kinetic test data".into(), "mineralogy and reactive transport parameters".into(), "pH/sulfate/metals observations".into()] } else { vec!["sulfur, ANC, and optional NAG pH inputs".into()] },
             ),
@@ -436,7 +477,7 @@ pub fn run_baselines(request: &IntegratedStudyRequest, plan: &StudyPlan) -> Inte
         uncertainty: UncertaintySummary { status: "not_available".into(), method: "No ensemble or parameter-distribution run was requested".into() },
         satellite_discovery: None,
         provenance: vec!["user-supplied GeoJSON and optional baseline inputs".into()],
-        limitations: vec!["This vertical slice does not perform sewer coupling, PHREEQC reactive transport, calibration, or trained AI inference".into()],
+        limitations: vec!["This vertical slice does not perform sewer coupling (use swmm_1d2d_coupling), PHREEQC reactive transport, calibration, or trained AI inference".into()],
     }
 }
 
@@ -458,7 +499,12 @@ fn run_flood(input: &FloodBaselineInput) -> DomainResult {
         input.inflow_y,
         input.inflow_width,
     );
-    DomainResult { domain: "urban_flood".into(), status: "screening_only".into(), method: "2D SWE HLLC/MUSCL baseline".into(), output: Some(result.summary), summary: serde_json::json!({"max_depth_m": result.max_depth, "flooded_cells": result.flooded_cells, "total_cells": result.total_cells, "flooded_area_m2": result.flooded_area_m2}), limitations: vec!["No observed flood extent/depth validation".into(), "No 1D sewer network or rainfall-runoff coupling".into()] }
+    let mut domain_result = DomainResult { domain: "urban_flood".into(), status: "screening_only".into(), method: "2D SWE HLLC/MUSCL baseline".into(), output: Some(result.summary), summary: serde_json::json!({"max_depth_m": result.max_depth, "flooded_cells": result.flooded_cells, "total_cells": result.total_cells, "flooded_area_m2": result.flooded_area_m2, "total_volume_m3": result.total_volume_m3}), limitations: vec!["No observed flood extent/depth validation".into(), "No 1D sewer or rainfall-runoff coupling in this baseline; use swmm_1d2d_coupling for sewer surcharge".into()] };
+    if input.synthetic {
+        domain_result.limitations.push("synthetic field data flagged; cannot be validated".into());
+        domain_result.summary["synthetic"] = serde_json::json!(true);
+    }
+    domain_result
 }
 
 fn run_leachate(input: &LeachateBaselineInput) -> DomainResult {

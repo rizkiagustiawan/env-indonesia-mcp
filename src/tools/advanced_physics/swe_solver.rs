@@ -18,7 +18,16 @@ pub struct SweResult {
     pub flooded_cells: usize,
     pub total_cells: usize,
     pub flooded_area_m2: f64,
+    pub total_volume_m3: f64,
     pub summary: String,
+}
+
+/// A single point inflow source (e.g. a manhole / culvert outlet) expressed in
+/// grid coordinates with its own discharge.
+pub struct InflowSource {
+    pub x: usize,
+    pub y: usize,
+    pub discharge_m3s: f64,
 }
 
 pub fn solve(
@@ -29,12 +38,42 @@ pub fn solve(
     inflow_y: usize,
     inflow_width: usize,
 ) -> SweResult {
+    let mut sources = Vec::new();
+    if inflow_discharge_m3s > 0.0 && inflow_width > 0 {
+        let per_cell = inflow_discharge_m3s / inflow_width as f64;
+        for w in 0..inflow_width {
+            sources.push(InflowSource {
+                x: inflow_x,
+                y: inflow_y + w,
+                discharge_m3s: per_cell,
+            });
+        }
+    }
+    solve_multi_source(dem, params, &sources, 0.7)
+}
+
+/// Multi-source variant: every `InflowSource` injects independently while
+/// `t < duration_s * duty_fraction`. `solve` is a thin wrapper over this.
+pub fn solve_multi_source(
+    dem: &[Vec<f64>],
+    params: &SweParams,
+    sources: &[InflowSource],
+    duty_fraction: f64,
+) -> SweResult {
     let nx = params.nx;
     let ny = params.ny;
     let dx = params.dx;
     let g = 9.81_f64;
     let min_depth = 0.001;
 
+    // Aggregate single-inlet approximation, used ONLY to build the static
+    // boundary condition for the AI/FNO surrogate branch below. For the
+    // evenly-split `solve` wrapper this reproduces the original values exactly
+    // (total discharge, first-source position, cell count as width).
+    let inflow_discharge_m3s: f64 = sources.iter().map(|s| s.discharge_m3s).sum();
+    let inflow_x = sources.first().map_or(0, |s| s.x);
+    let inflow_y = sources.first().map_or(0, |s| s.y);
+    let inflow_width = sources.len();
 
     // === NEW: Deep Tech AI Accelerated FNO Inference with Mass Conservation Gate ===
     if nx > 50 && ny > 50 {
@@ -87,6 +126,7 @@ pub fn solve(
                         flooded_cells,
                         total_cells: nx * ny,
                         flooded_area_m2: flooded_cells as f64 * dx * dx,
+                        total_volume_m3: predicted_volume,
                         summary: format!("AI Accelerated (PINO) in {} ms.\nStatus: {}\nMass Balance Error: {:.2}% (Passed Gate)", resp.inference_ms, resp.status, mass_error_pct),
                     };
                 } else {
@@ -123,13 +163,35 @@ pub fn solve(
         let dt = (0.4 * dx / max_speed).min(params.dt_max).min(params.duration_s - t);
         if dt <= 0.0 { break; }
 
-        // Inflow boundary
-        if t < params.duration_s * 0.7 {
-            let q_per_cell = inflow_discharge_m3s / (inflow_width as f64 * dx);
-            for w in 0..inflow_width {
-                let jj = (inflow_y + w).min(ny - 1);
-                let ii = inflow_x.min(nx - 1);
-                h[ii][jj] += q_per_cell * dt / dx;
+        // Inflow source term. The injected depth is volume-conserving:
+        // depth increment = Q * dt / (dx*dx) for each point source (m^3 of water
+        // spread over one cell footprint). Injecting into the interior ensures
+        // the finite-volume update below actually advects the source; a boundary
+        // cell is never updated (the flux loop runs 1..nx-1 / 1..ny-1).
+        if t < params.duration_s * duty_fraction {
+            for src in sources {
+                if src.discharge_m3s <= 0.0 {
+                    continue;
+                }
+                let jj = src.y.min(ny - 1);
+                let ii = src.x.min(nx - 1);
+                let ii = ii.clamp(1, nx.saturating_sub(2).max(1));
+                let jj = jj.clamp(1, ny.saturating_sub(2).max(1));
+                let dh = src.discharge_m3s * dt / (dx * dx);
+                h[ii][jj] += dh;
+                // Inject momentum so the source has a physical velocity rather than
+                // piling up as a static column. Direction follows the local bed slope
+                // (water flows downhill); flat beds default to +x.
+                let (gx, gy) = downslope_direction(&dem, ii, jj);
+                let mag = (gx * gx + gy * gy).sqrt();
+                let (ux, uy) = if mag > 1e-9 {
+                    (gx / mag, gy / mag)
+                } else {
+                    (1.0, 0.0)
+                };
+                let u_inflow = 1.0;
+                hu[ii][jj] += dh * u_inflow * ux;
+                hv[ii][jj] += dh * u_inflow * uy;
             }
         }
 
@@ -186,7 +248,7 @@ pub fn solve(
                 let hr_star_l = (eta_lr - z_star_l).max(0.0);
                 let u_l = if hl_star_l > min_depth { q_ll / hl_star_l } else { 0.0 };
                 let u_cl = if hr_star_l > min_depth { q_lr / hr_star_l } else { 0.0 };
-                let (fhl, fhul) = hllc_flux(hl_star_l, u_l, hr_star_l, u_cl, g);
+                let (mut fhl, mut fhul) = hllc_flux(hl_star_l, u_l, hr_star_l, u_cl, g);
 
                 // Right interface (i+1/2).
                 let eta_rl = eta_c + 0.5 * slope_eta_x[i][j];          // cell i right face
@@ -198,13 +260,28 @@ pub fn solve(
                 let hr_star_r = (eta_rr - z_star_r).max(0.0);
                 let u_cr = if hl_star_r > min_depth { q_rl / hl_star_r } else { 0.0 };
                 let u_r = if hr_star_r > min_depth { q_rr / hr_star_r } else { 0.0 };
-                let (fhr, fhur) = hllc_flux(hl_star_r, u_cr, hr_star_r, u_r, g);
+                let (mut fhr, mut fhur) = hllc_flux(hl_star_r, u_cr, hr_star_r, u_r, g);
+
+                // Reflective (closed-basin) walls at the domain boundary so the
+                // frozen boundary cells act as a wall, not as a mass sink.
+                if i == 1 {
+                    fhl = 0.0;
+                    fhul = 0.0;
+                }
+                if i == nx - 2 {
+                    fhr = 0.0;
+                    fhur = 0.0;
+                }
 
                 let flux_h_x = (fhr - fhl) / dx;
                 let flux_hu_x = (fhur - fhul) / dx;
 
                 // Bed-slope source (Audusse 2004): S = g/2 * [ h*_{i+1/2,L}^2 - h*_{i-1/2,R}^2 ]
-                let sx = 0.5 * g * (hl_star_r * hl_star_r - hr_star_l * hr_star_l) / dx;
+                let sx = if i == 1 || i == nx - 2 {
+                    0.0
+                } else {
+                    0.5 * g * (hl_star_r * hl_star_r - hr_star_l * hr_star_l) / dx
+                };
 
                 // ---- Y-direction (interfaces j-1/2 and j+1/2) ----
                 let z_b = dem[i][j-1];
@@ -219,7 +296,7 @@ pub fn solve(
                 let hr_star_b = (eta_bt - z_star_b).max(0.0);
                 let v_b = if hl_star_b > min_depth { q_bb / hl_star_b } else { 0.0 };
                 let v_cb = if hr_star_b > min_depth { q_bt / hr_star_b } else { 0.0 };
-                let (fhb, fhvb) = hllc_flux(hl_star_b, v_b, hr_star_b, v_cb, g);
+                let (mut fhb, mut fhvb) = hllc_flux(hl_star_b, v_b, hr_star_b, v_cb, g);
 
                 let eta_tb = eta_c + 0.5 * slope_eta_y[i][j];
                 let eta_tt = eta[i][j+1] - 0.5 * slope_eta_y[i][j+1];
@@ -230,12 +307,25 @@ pub fn solve(
                 let hr_star_t = (eta_tt - z_star_t).max(0.0);
                 let v_ct = if hl_star_t > min_depth { q_tb / hl_star_t } else { 0.0 };
                 let v_t = if hr_star_t > min_depth { q_tt / hr_star_t } else { 0.0 };
-                let (fht, fhvt) = hllc_flux(hl_star_t, v_ct, hr_star_t, v_t, g);
+                let (mut fht, mut fhvt) = hllc_flux(hl_star_t, v_ct, hr_star_t, v_t, g);
+
+                if j == 1 {
+                    fhb = 0.0;
+                    fhvb = 0.0;
+                }
+                if j == ny - 2 {
+                    fht = 0.0;
+                    fhvt = 0.0;
+                }
 
                 let flux_h_y = (fht - fhb) / dx;
                 let flux_hv_y = (fhvt - fhvb) / dx;
 
-                let sy = 0.5 * g * (hl_star_t * hl_star_t - hr_star_b * hr_star_b) / dx;
+                let sy = if j == 1 || j == ny - 2 {
+                    0.0
+                } else {
+                    0.5 * g * (hl_star_t * hl_star_t - hr_star_b * hr_star_b) / dx
+                };
 
                 // Conservative update
                 h_new[i][j] = (eta_c - dem[i][j] - dt * (flux_h_x + flux_h_y)).max(0.0);
@@ -253,6 +343,21 @@ pub fn solve(
             }
         }
 
+        // Mass-conservation correction. The explicit update clips h to >= 0,
+        // which silently destroys water whenever the flux over-drains a cell.
+        // Interior fluxes telescope and the domain walls are reflective, so any
+        // deficit is numerical clipping; rescaling restores the injected volume.
+        let vol_before: f64 = h.iter().flatten().sum::<f64>();
+        let vol_after: f64 = h_new.iter().flatten().sum::<f64>();
+        if vol_after > 0.0 && vol_after < vol_before {
+            let scale = vol_before / vol_after;
+            for i in 0..nx {
+                for j in 0..ny {
+                    h_new[i][j] *= scale;
+                }
+            }
+        }
+
         h = h_new;
         hu = hu_new;
         hv = hv_new;
@@ -261,6 +366,7 @@ pub fn solve(
     }
 
     // Statistik
+    let total_volume_m3: f64 = h.iter().flatten().sum::<f64>() * dx * dx;
     let mut max_depth = 0.0_f64;
     let mut flooded = 0usize;
     for i in 0..nx {
@@ -275,12 +381,13 @@ pub fn solve(
     let flooded_area = flooded as f64 * dx * dx;
 
     let summary = format!(
-        "=== 2D SWE Solver Result ===\nRef: Toro (2001); Audusse et al. 2004 (hydrostatic reconstruction)\nSolver: HLLC + Well-Balanced{} (hydrostatic reconstruction)\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\n",
+        "=== 2D SWE Solver Result ===\nRef: Toro (2001); Audusse et al. 2004 (hydrostatic reconstruction)\nSolver: HLLC + Well-Balanced{} (hydrostatic reconstruction)\n\nGrid: {}x{} | dx: {:.0}m\nManning's n: {:.3}\nDuration: {:.0}s ({:.1} jam)\nTimesteps: {}\n\nMax Depth: {:.2} m\nFlooded Cells: {} / {} ({:.1}%)\nFlooded Area: {:.0} m² ({:.2} ha)\nTotal Volume: {:.0} m³\n",
         if params.second_order { " + MUSCL 2nd-order (η-limiting)" } else { "" },
         nx, ny, dx, params.manning_n, params.duration_s, params.duration_s / 3600.0,
         step, max_depth, flooded, nx * ny,
         100.0 * flooded as f64 / (nx * ny) as f64,
-        flooded_area, flooded_area / 10000.0
+        flooded_area, flooded_area / 10000.0,
+        total_volume_m3
     );
 
     SweResult {
@@ -288,8 +395,22 @@ pub fn solve(
         flooded_cells: flooded,
         total_cells: nx * ny,
         flooded_area_m2: flooded_area,
+        total_volume_m3,
         summary,
     }
+}
+
+/// Downslope direction at cell (i,j): returns the negative DEM gradient
+/// (water flows toward lower elevation), zero at domain edges.
+fn downslope_direction(dem: &[Vec<f64>], i: usize, j: usize) -> (f64, f64) {
+    let nx = dem.len();
+    let ny = dem.first().map_or(0, Vec::len);
+    if i == 0 || i + 1 >= nx || j == 0 || j + 1 >= ny {
+        return (0.0, 0.0);
+    }
+    let gx = dem[i - 1][j] - dem[i + 1][j];
+    let gy = dem[i][j - 1] - dem[i][j + 1];
+    (gx, gy)
 }
 
 /// minmod slope limiter: returns 0 if a and b have opposite signs, else the
@@ -456,7 +577,7 @@ mod tests {
 
 #[cfg(test)]
 mod muscl_tests {
-    use super::{minmod, solve, SweParams, SweResult};
+    use super::{minmod, solve, solve_multi_source, InflowSource, SweParams, SweResult};
 
     #[test]
     fn minmod_limiter_behavior() {
@@ -486,5 +607,82 @@ mod muscl_tests {
         let res: SweResult = solve(&dem, &params, 5.0, 2, 10, 3);
         assert!(res.max_depth.is_finite());
         assert!(res.summary.contains("MUSCL 2nd-order"));
+    }
+
+    #[test]
+    fn inflow_at_boundary_cell_spreads_with_bounded_depth() {
+        // Inflow at a boundary cell must not pile up into a non-physical column:
+        // the source must enter the interior so the finite-volume update advects it.
+        let nx = 16;
+        let ny = 16;
+        let dem = vec![vec![1.0; ny]; nx];
+        let params = SweParams {
+            nx,
+            ny,
+            dx: 10.0,
+            manning_n: 0.03,
+            duration_s: 300.0,
+            dt_max: 0.5,
+            second_order: false,
+        };
+        let res: SweResult = solve(&dem, &params, 50.0, 0, 0, 1);
+        assert!(res.max_depth.is_finite());
+        // Mass conservation: total volume must match the injected volume
+        // (Q * 0.7 * duration) regardless of how it redistributes.
+        let expected_volume = 50.0 * 0.7 * 300.0;
+        let ratio = res.total_volume_m3 / expected_volume;
+        assert!(
+            (ratio - 1.0).abs() < 0.05,
+            "mass not conserved: volume={} expected={}",
+            res.total_volume_m3,
+            expected_volume
+        );
+        assert!(
+            res.flooded_cells > 1,
+            "water must spread beyond the single injection cell"
+        );
+        // Single-cell theoretical max = expected_volume / (dx*dx) = 105 m.
+        // A boundary-cell pile-up bug previously produced ~224 m in one cell.
+        assert!(
+            res.max_depth <= expected_volume / (params.dx * params.dx) * 1.05,
+            "max depth {} m exceeds the single-cell volume bound",
+            res.max_depth
+        );
+    }
+
+    #[test]
+    fn multi_source_conserves_total_injected_volume() {
+        let dem = vec![vec![10.0; 12]; 12];
+        let params = SweParams { nx: 12, ny: 12, dx: 10.0, manning_n: 0.03, duration_s: 60.0, dt_max: 0.5, second_order: false };
+        let sources = vec![
+            InflowSource { x: 3, y: 3, discharge_m3s: 2.0 },
+            InflowSource { x: 8, y: 8, discharge_m3s: 3.0 },
+        ];
+        let res = solve_multi_source(&dem, &params, &sources, 1.0);
+        let expected = (2.0 + 3.0) * 60.0;
+        let ratio = res.total_volume_m3 / expected;
+        assert!(ratio > 0.95 && ratio < 1.05, "expected ~{expected}, got {}", res.total_volume_m3);
+    }
+
+    #[test]
+    fn solve_delegates_to_multi_source_with_same_result() {
+        let dem = vec![vec![10.0; 8]; 8];
+        let params = SweParams { nx: 8, ny: 8, dx: 10.0, manning_n: 0.03, duration_s: 30.0, dt_max: 0.5, second_order: false };
+        let via_solve = solve(&dem, &params, 4.0, 3, 3, 2);
+        let sources = vec![
+            InflowSource { x: 3, y: 3, discharge_m3s: 2.0 },
+            InflowSource { x: 3, y: 4, discharge_m3s: 2.0 },
+        ];
+        let via_multi = solve_multi_source(&dem, &params, &sources, 0.7);
+        assert!((via_solve.total_volume_m3 - via_multi.total_volume_m3).abs() < 1e-6);
+    }
+
+    #[test]
+    fn zero_sources_produces_no_water() {
+        let dem = vec![vec![10.0; 6]; 6];
+        let params = SweParams { nx: 6, ny: 6, dx: 10.0, manning_n: 0.03, duration_s: 10.0, dt_max: 0.5, second_order: false };
+        let res = solve_multi_source(&dem, &params, &[], 1.0);
+        assert_eq!(res.flooded_cells, 0);
+        assert!(res.total_volume_m3 < 1e-9);
     }
 }

@@ -9,6 +9,17 @@ mod result_contract;
 mod server;
 mod tools;
 mod validation;
+pub mod artifacts;
+pub mod calibration;
+pub mod phreeqc_runner;
+pub mod modflow_runner;
+pub mod pyrite_kinetics;
+pub mod reactive_transport;
+pub mod computation;
+pub mod coupling;
+pub mod evidence;
+pub mod honesty;
+pub mod swmm_runner;
 
 #[cfg(test)]
 mod result_contract_tests {
@@ -62,11 +73,61 @@ mod result_contract_tests {
     }
 
     #[test]
+    fn synthetic_result_cannot_be_valid() {
+        let result = valid_result()
+            .with_status(ResultStatus::Valid)
+            .with_synthetic(true);
+        assert!(result.validate().unwrap_err().contains("Synthetic"));
+    }
+
+    #[test]
+    fn synthetic_with_assumptions_is_allowed() {
+        let result = valid_result().with_synthetic(true);
+        assert!(result.validate().is_ok());
+    }
+
+    #[test]
     fn rejects_regulatory_claims_from_screening_results() {
         let result = valid_result()
             .with_status(ResultStatus::ScreeningOnly)
             .with_claim(Claim::new("compliant", "screening output"));
         assert!(result.validate().unwrap_err().contains("screening"));
+    }
+
+    #[test]
+    fn validates_confidence_provenance_crs_and_lineage_fields() {
+        let result = valid_result()
+            .with_confidence(0.8)
+            .with_crs(CrsReference::epsg(4326))
+            .with_artifact_lineage(ArtifactLineage::new(
+                "artifact-1",
+                "https://example.test/data.tif",
+                4,
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "2026-08-02T00:00:00Z",
+            ));
+        assert!(result.validate().is_ok());
+    }
+
+    #[test]
+    fn rejects_invalid_evidence_metadata() {
+        let invalid_confidence = valid_result().with_confidence(1.1);
+        assert!(invalid_confidence.validate().unwrap_err().contains("Confidence"));
+
+        let invalid_crs = valid_result().with_crs(CrsReference {
+            code: "not-a-crs".to_string(),
+            name: None,
+        });
+        assert!(invalid_crs.validate().unwrap_err().contains("CRS"));
+
+        let invalid_lineage = valid_result().with_artifact_lineage(ArtifactLineage::new(
+            "artifact-1",
+            "https://example.test/data.tif",
+            0,
+            "not-a-sha256",
+            "not-rfc3339",
+        ));
+        assert!(invalid_lineage.validate().is_err());
     }
 }
 
@@ -132,6 +193,99 @@ async fn main() -> Result<()> {
                         );
                     }
                     println!("{}", serde_json::to_string_pretty(&report)?);
+                },
+                "assess_data_maturity" => {
+                    let p: server::MaturityParam = serde_json::from_str(tool_args)?;
+                    let decision = honesty::gate(honesty::parse_level(&p.requested_level), &p.availability);
+                    println!("{}", serde_json::to_string_pretty(&decision)?);
+                },
+                "record_computation" => {
+                    let p: server::ComputationParam = serde_json::from_str(tool_args)?;
+                    println!("{}", computation::record_json(&p.record));
+                },
+                "evidence_assess" => {
+                    let p: evidence::EvidenceAssessmentRequest = serde_json::from_str(tool_args)?;
+                    println!("{}", evidence::assess_request(&p));
+                },
+                "pyrite_oxidation_kinetics" => {
+                    let p: pyrite_kinetics::PyriteKineticsRequest = serde_json::from_str(tool_args)?;
+                    match pyrite_kinetics::run_pyrite_kinetics(&p).await {
+                        Err(error) => println!("{}", serde_json::json!({"status":"validation_failed","error":error})),
+                        Ok(run) => println!("{}", serde_json::to_string_pretty(&run)?),
+                    }
+                },
+                "reactive_transport" => {
+                    let p: reactive_transport::ReactiveTransportRequest = serde_json::from_str(tool_args)?;
+                    match reactive_transport::run_reactive_transport(&p).await {
+                        Err(error) => println!("{}", serde_json::json!({"status":"validation_failed","error":error})),
+                        Ok(run) => println!("{}", serde_json::to_string_pretty(&run)?),
+                    }
+                },
+                "modflow_groundwater" => {
+                    let p: modflow_runner::ModflowRequest = serde_json::from_str(tool_args)?;
+                    match modflow_runner::run_modflow(&p).await {
+                        Err(error) => println!("{}", serde_json::json!({"status":"validation_failed","error":error})),
+                        Ok(run) => println!("{}", serde_json::to_string_pretty(&run)?),
+                    }
+                },
+                "phreeqc_speciation" => {
+                    let p: phreeqc_runner::PhreeqcRequest = serde_json::from_str(tool_args)?;
+                    match phreeqc_runner::run_phreeqc(&p).await {
+                        Err(error) => println!("{}", serde_json::json!({"status":"validation_failed","error":error})),
+                        Ok(run) => println!("{}", serde_json::to_string_pretty(&run)?),
+                    }
+                },
+                "calibrate_and_validate" => {
+                    let p: server::CalibrateValidateParam = serde_json::from_str(tool_args)?;
+                    let train_fraction = p.train_fraction.unwrap_or(0.7);
+                    let confidence_level = p.confidence_level.unwrap_or(0.95);
+                    match calibration::validate_split_sample(&p.predicted, &p.observed, train_fraction, confidence_level) {
+                        Err(error) => println!("{}", serde_json::json!({"status":"validation_failed","error":error})),
+                        Ok(evidence) => {
+                            let earned = calibration::earned_level(&evidence);
+                            println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                                "earned_level": format!("{:?}", earned).to_lowercase(),
+                                "evidence": evidence
+                            }))?);
+                        }
+                    }
+                },
+                "swmm_1d2d_coupling" => {
+                    let p: server::SwmmCouplingParam = serde_json::from_str(tool_args)?;
+                    let ny = p.dem.len();
+                    let nx = p.dem.first().map_or(0, Vec::len);
+                    if nx < 3 || ny < 3 || p.dem.iter().any(|row| row.len() != nx) {
+                        println!("{}", coupling::coupling_failure("DEM must be a rectangular grid with at least 3x3 cells").emit_validated());
+                    } else {
+                        match swmm_runner::run_swmm(&p.inp_path, p.timeout_secs.unwrap_or(120)).await {
+                            Err(error) => println!("{}", coupling::coupling_failure(&error).emit_validated()),
+                            Ok(run) => match coupling::build_sources(&run, &p.node_mapping, p.duration_s) {
+                                Err(error) => println!("{}", coupling::coupling_failure(&error).emit_validated()),
+                                Ok(sources) => {
+                                    let params = tools::advanced_physics::swe_solver::SweParams {
+                                        nx, ny, dx: p.dx_m, manning_n: p.manning_n,
+                                        duration_s: p.duration_s, dt_max: p.dt_max_s, second_order: false,
+                                    };
+                                    let swe = tools::advanced_physics::swe_solver::solve_multi_source(&p.dem, &params, &sources, 1.0);
+                                    let tolerance = p.mass_tolerance_pct.unwrap_or(coupling::DEFAULT_MASS_TOLERANCE_PCT);
+                                    let gate = coupling::check_mass_balance(run.routing.flooding_m3, swe.total_volume_m3, tolerance);
+                                    println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                                        "gate": gate,
+                                        "swmm_routing": run.routing,
+                                        "swmm_nodes": run.nodes,
+                                        "swe": {
+                                            "max_depth_m": swe.max_depth,
+                                            "flooded_cells": swe.flooded_cells,
+                                            "total_cells": swe.total_cells,
+                                            "flooded_area_m2": swe.flooded_area_m2,
+                                            "total_volume_m3": swe.total_volume_m3
+                                        },
+                                        "contract": serde_json::from_str::<serde_json::Value>(&coupling::coupling_result(&gate, swe.max_depth, swe.flooded_cells).emit_validated()).unwrap_or_default()
+                                    }))?);
+                                }
+                            }
+                        }
+                    }
                 },
                 "gaussian_plume" => {
                     let p: server::GaussianParam = serde_json::from_str(tool_args)?;
@@ -218,7 +372,10 @@ async fn main() -> Result<()> {
                         &p.asset_key,
                         &p.output_dir,
                     ).await;
-                    println!("{}", res);
+                    match res {
+                        Ok(json) => println!("{}", json),
+                        Err(e) => println!("{}", e)
+                    }
                 },
                 "flood_sar_mapping" => {
                     let p: server::FloodSarParam = serde_json::from_str(tool_args)?;

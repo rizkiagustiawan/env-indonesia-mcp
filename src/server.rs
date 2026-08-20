@@ -82,6 +82,40 @@ pub struct LandfillParam {
     pub l0_potential: f64,
 }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct MaturityParam {
+    pub requested_level: String,
+    pub availability: crate::honesty::DataAvailability,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ComputationParam {
+    pub record: crate::computation::ComputationRecord,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CalibrateValidateParam {
+    pub model_name: String,
+    pub predicted: Vec<f64>,
+    pub observed: Vec<f64>,
+    pub unit: String,
+    pub train_fraction: Option<f64>,
+    pub confidence_level: Option<f64>,
+    /// Point estimate the prediction interval is attached to. Defaults to the
+    /// mean of the test-partition predictions.
+    pub point_estimate: Option<f64>,
+    pub availability: Option<crate::honesty::DataAvailability>,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SwmmCouplingParam {
+    pub inp_path: String,
+    pub dem: Vec<Vec<f64>>,
+    pub dx_m: f64,
+    pub manning_n: f64,
+    pub duration_s: f64,
+    pub dt_max_s: f64,
+    pub node_mapping: Vec<crate::coupling::NodeGridMapping>,
+    pub timeout_secs: Option<u64>,
+    pub mass_tolerance_pct: Option<f64>,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct SolidWasteParam {
     pub population: u64,
     pub generation_rate_kg: f64,
@@ -3353,6 +3387,546 @@ impl EnvIndonesiaServer {
         serde_json::to_string_pretty(&report).unwrap_or_else(|error| serde_json::json!({"status":"serialization_error","error":error.to_string()}).to_string())
     }
 
+    #[tool(description = "Assess data maturity against the honesty ladder (insufficient_data, screening, conceptual, calibrated, validated). Returns allowed level, whether the request is blocked, and missing data requirements. Synthetic field data is capped and never reaches calibrated/validated.")]
+    async fn assess_data_maturity(&self, Parameters(p): Parameters<MaturityParam>) -> String {
+        let decision = crate::honesty::gate(crate::honesty::parse_level(&p.requested_level), &p.availability);
+        serde_json::to_string(&decision).unwrap_or_default()
+    }
+
+    #[tool(description = "Record an external software computation (QGIS, SWMM, EPANET, GDAL, etc.) into the tamper-evident audit chain. Returns the audit event with its SHA-256 chain hash. External software output is untrusted execution: record it before treating any result as evidence.")]
+    async fn record_computation(&self, Parameters(p): Parameters<ComputationParam>) -> String {
+        crate::computation::record_json(&p.record)
+    }
+
+    #[tool(description = "Assess multi-source evidence: deduplicate claims by semantics, require at least two INDEPENDENT reporting lineages before corroborating, flag contradictions for human review, and abstain rather than concluding. A tier-1 official finding is sufficient alone. Never emits a legal or regulatory conclusion.")]
+    async fn evidence_assess(&self, Parameters(p): Parameters<crate::evidence::EvidenceAssessmentRequest>) -> String {
+        crate::evidence::assess_request(&p)
+    }
+
+    #[tool(description = "Simulate time-dependent PYRITE OXIDATION (acid mine drainage generation rate) with PHREEQC KINETICS using the Williamson & Rimstidt (1994) rate law. Answers how fast acid appears, which static ABA screening (MPA/NAPP) and equilibrium speciation cannot. Returns a pH / Fe / sulfate time series plus four guards: oxygen limitation (a sealed system stalls and its flat pH is an artifact), pyrite depletion (the physically real reason a curve flattens), sulfate-to-iron stoichiometry (FeS2 gives 2 S per Fe; iron precipitation breaks the link between dissolved Fe and oxidation extent), and an always-reported note that the rate is laboratory-derived. Capped at screening_only.")]
+    async fn pyrite_oxidation_kinetics(&self, Parameters(p): Parameters<crate::pyrite_kinetics::PyriteKineticsRequest>) -> String {
+        use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let run = match crate::pyrite_kinetics::run_pyrite_kinetics(&p).await {
+            Ok(run) => run,
+            Err(error) => {
+                return ScientificResult::new("pyrite_kinetics_error", 0.0, "dimensionless")
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_claim(Claim::new("pyrite_kinetics_error", &error))
+                    .with_limitation("pyrite oxidation kinetics did not execute; no acid generation rate was computed")
+                    .emit_validated();
+            }
+        };
+        let finished_at = chrono::Utc::now().to_rfc3339();
+
+        let audit_event = crate::computation::record_json(&crate::computation::ComputationRecord {
+            run_id: format!("pyrite-{}", &run.database_sha256[..16]),
+            software: "phreeqc".to_string(),
+            software_version: format!("kinetics/{}", run.database),
+            tool_name: "pyrite_oxidation_kinetics".to_string(),
+            arguments: serde_json::to_value(&p).unwrap_or(serde_json::Value::Null),
+            input_sha256s: vec![run.database_sha256.clone()],
+            output_sha256s: vec![],
+            exit_code: 0,
+            started_at,
+            finished_at,
+        });
+
+        let guards = &run.guards;
+        let mut result = ScientificResult::new("pyrite_oxidation_final_ph", guards.final_ph, "pH")
+            .with_status(crate::honesty::to_result_status(
+                crate::honesty::MaturityLevel::Screening,
+            ))
+            .with_provenance(Provenance::new(
+                "model",
+                &format!("phreeqc_kinetics/{}", run.database),
+                &chrono::Utc::now().to_rfc3339(),
+            ))
+            .with_claim(Claim::new("rate_law", &run.rate_law))
+            .with_claim(Claim::new("database_sha256", &run.database_sha256))
+            .with_claim(Claim::new("audit_event", &audit_event))
+            .with_claim(Claim::new(
+                "simulated_days",
+                &format!("{:.1}", guards.simulated_days),
+            ))
+            .with_claim(Claim::new(
+                "ph_trajectory",
+                &format!("{:.3} -> {:.3}", guards.initial_ph, guards.final_ph),
+            ))
+            .with_claim(Claim::new(
+                "time_series",
+                &serde_json::to_string(&run.series).unwrap_or_default(),
+            ))
+            .with_claim(Claim::new(
+                "pyrite_consumed_fraction",
+                &format!("{:?}", guards.pyrite_consumed_fraction),
+            ))
+            .with_limitation(
+                "Laboratory-derived rate constant: field pyrite oxidation is commonly one to two orders of magnitude slower, so the absolute timescale is not calibrated",
+            )
+            .with_limitation(
+                "Single well-mixed batch: no gas diffusion through waste rock, no unsaturated flow, no bacterial catalysis (Acidithiobacillus)",
+            );
+
+        if guards.oxygen_limited {
+            result = result.with_limitation(&format!(
+                "reaction stalled from oxygen exhaustion in a closed system (late pH change {:.5}); the flat pH is an artifact of the sealed box, not a stable long-term outcome",
+                guards.late_ph_change
+            ));
+        }
+        if guards.pyrite_depleted {
+            result = result.with_claim(Claim::new(
+                "pyrite_depleted",
+                "all reactive pyrite was consumed within the simulated window",
+            ));
+        }
+        if !guards.stoichiometry_consistent {
+            result = result.with_limitation(&format!(
+                "sulfate-to-iron ratio {:?} departs from the FeS2 value of 2, so iron was removed by secondary precipitation and dissolved Fe understates how much pyrite oxidised",
+                guards.sulfate_to_iron_ratio
+            ));
+        }
+        if !crate::pyrite_kinetics::trajectory_is_interpretable(&run) {
+            result = result.with_limitation(
+                "one or more kinetic guards failed; this trajectory describes the model setup rather than the waste rock and must not be read as an acid generation forecast",
+            );
+        }
+        result.emit_validated()
+    }
+
+    #[tool(description = "Execute 1D advective-dispersive reactive transport through a mineral column using real PHREEQC TRANSPORT. Reports outlet pH/metals by pore volume and catches four failure modes: numerical dispersion dominating because grid Peclet > 2, an influent front that never traversed the column, reactive-buffer exhaustion, and the explicit assumption of full equilibrium at every cell (no kinetic limitation or preferential flow). Capped at screening_only.")]
+    async fn reactive_transport(&self, Parameters(p): Parameters<crate::reactive_transport::ReactiveTransportRequest>) -> String {
+        use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let run = match crate::reactive_transport::run_reactive_transport(&p).await {
+            Ok(run) => run,
+            Err(error) => {
+                return ScientificResult::new("reactive_transport_error", 0.0, "dimensionless")
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_claim(Claim::new("reactive_transport_error", &error))
+                    .with_limitation("reactive transport did not execute; no column result was computed")
+                    .emit_validated();
+            }
+        };
+        let finished_at = chrono::Utc::now().to_rfc3339();
+        let audit_event = crate::computation::record_json(&crate::computation::ComputationRecord {
+            run_id: format!("transport-{}", &run.database_sha256[..16]),
+            software: "phreeqc".to_string(),
+            software_version: "TRANSPORT".to_string(),
+            tool_name: "reactive_transport".to_string(),
+            arguments: serde_json::to_value(&p).unwrap_or(serde_json::Value::Null),
+            input_sha256s: vec![run.database_sha256.clone()],
+            output_sha256s: vec![],
+            exit_code: 0,
+            started_at,
+            finished_at,
+        });
+
+        let final_ph = run.outlet_series.last().map(|step| step.ph).unwrap_or(0.0);
+        let mut result = ScientificResult::new("reactive_transport_outlet_ph", final_ph, "pH")
+            .with_status(crate::honesty::to_result_status(crate::honesty::MaturityLevel::Screening))
+            .with_provenance(Provenance::new("model", &format!("phreeqc_transport/{}", run.database), &chrono::Utc::now().to_rfc3339()))
+            .with_claim(Claim::new("database_sha256", &run.database_sha256))
+            .with_claim(Claim::new("audit_event", &audit_event))
+            .with_claim(Claim::new("outlet_series", &serde_json::to_string(&run.outlet_series).unwrap_or_default()))
+            .with_claim(Claim::new("pore_volumes_flushed", &format!("{:.3}", run.guards.pore_volumes_flushed)))
+            .with_limitation("1D column model: no 3D groundwater-flow coupling, preferential flow, or kinetic limitation")
+            .with_limitation("Each cell is assumed to reach full thermodynamic equilibrium at every advective shift");
+
+        if run.guards.numerical_dispersion_dominates {
+            result = result.with_limitation(&format!(
+                "numerical dispersion dominates: grid Peclet {:?} exceeds limit {:.1}; refine cells or increase physical dispersivity",
+                run.guards.grid_peclet, run.guards.grid_peclet_limit
+            ));
+        }
+        if !run.guards.front_traversed_column {
+            result = result.with_limitation("influent front did not traverse the column; a clean outlet means the simulation was too short, not that the barrier works");
+        }
+        if run.guards.buffer_exhausted {
+            result = result
+                .with_claim(Claim::new("buffer_exhausted", &run.guards.exhausted_phases.join(", ")))
+                .with_limitation("reactive buffer exhausted at the outlet; barrier breakthrough is a real result");
+        }
+        result.emit_validated()
+    }
+
+    #[tool(description = "Execute a REAL MODFLOW 6 groundwater flow model via FloPy (aquifer drawdown, wellfield sustainability, landfill/tailings groundwater). Units are fixed: metres and days; hydraulic conductivity is m/day. Reports heads, the volumetric budget, and four gates: convergence, MODFLOW's own percent discrepancy, dry-cell count (sentinel heads are excluded, not averaged), and whether wells were silently curtailed because their cell went dry. There is NO analytical fallback: a failed model is an error, never a substituted Theis estimate. Capped at screening_only.")]
+    async fn modflow_groundwater(&self, Parameters(p): Parameters<crate::modflow_runner::ModflowRequest>) -> String {
+        use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let run = match crate::modflow_runner::run_modflow(&p).await {
+            Ok(run) => run,
+            Err(error) => {
+                return ScientificResult::new("modflow_groundwater_error", 0.0, "dimensionless")
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_claim(Claim::new("modflow_error", &error))
+                    .with_limitation("MODFLOW did not execute; no groundwater head was computed")
+                    .emit_validated();
+            }
+        };
+        let finished_at = chrono::Utc::now().to_rfc3339();
+
+        let arguments = serde_json::to_value(&p).unwrap_or(serde_json::Value::Null);
+        let mut argument_hasher = <sha2::Sha256 as sha2::Digest>::new();
+        sha2::Digest::update(&mut argument_hasher, arguments.to_string().as_bytes());
+        let argument_sha256 = format!("{:x}", sha2::Digest::finalize(argument_hasher));
+
+        let audit_event = crate::computation::record_json(&crate::computation::ComputationRecord {
+            run_id: format!("modflow-{}", &argument_sha256[..16]),
+            software: "modflow6".to_string(),
+            software_version: run.mf6_version.clone(),
+            tool_name: "modflow_groundwater".to_string(),
+            arguments,
+            input_sha256s: vec![argument_sha256],
+            output_sha256s: vec![],
+            exit_code: 0,
+            started_at,
+            finished_at,
+        });
+
+        // Report the largest drawdown across wells; fall back to 0 when every
+        // well cell dried out (in which case the gate has already failed).
+        let drawdown = run
+            .wells
+            .iter()
+            .filter_map(|well| well.drawdown_m)
+            .fold(f64::NEG_INFINITY, f64::max);
+        let reported = if drawdown.is_finite() { drawdown } else { 0.0 };
+
+        let mut result = ScientificResult::new("modflow_max_drawdown", reported, "m")
+            .with_status(crate::honesty::to_result_status(
+                crate::honesty::MaturityLevel::Screening,
+            ))
+            .with_provenance(Provenance::new(
+                "model",
+                &format!("modflow6/{}", run.mf6_version),
+                &chrono::Utc::now().to_rfc3339(),
+            ))
+            .with_claim(Claim::new("converged", &run.converged.to_string()))
+            .with_claim(Claim::new("units", &format!("{} / {}", run.units.length, run.units.time)))
+            .with_claim(Claim::new("audit_event", &audit_event))
+            .with_claim(Claim::new(
+                "budget_gate",
+                &format!(
+                    "percent_discrepancy = {:?} (tolerance {:.3}%), gate_passed = {}",
+                    run.gate.percent_discrepancy, run.gate.tolerance_pct, run.gate.gate_passed
+                ),
+            ))
+            .with_claim(Claim::new(
+                "dry_cells",
+                &format!(
+                    "{} dry / {} active",
+                    run.heads.dry_cell_count, run.heads.active_cell_count
+                ),
+            ))
+            .with_claim(Claim::new(
+                "wells",
+                &serde_json::to_string(&run.wells).unwrap_or_default(),
+            ))
+            .with_limitation(
+                "Uncalibrated groundwater model: hydraulic conductivity, storage, and boundary heads were supplied, not fitted to observed heads",
+            );
+
+        if !run.converged {
+            result = result.with_limitation(
+                "MODFLOW did NOT converge; the reported heads are numerically meaningless and must not be used",
+            );
+        }
+        if run.gate.wells_curtailed == Some(true) {
+            result = result.with_limitation(&format!(
+                "wells were curtailed because their cell went dry: {:?} m3 requested vs {:?} m3 delivered, so the requested extraction scenario never ran",
+                run.gate.requested_extraction_m3, run.gate.delivered_extraction_m3
+            ));
+        }
+        if run.heads.dry_cell_count > 0 {
+            result = result.with_limitation(&format!(
+                "{} cells went dry; head statistics exclude their sentinel values",
+                run.heads.dry_cell_count
+            ));
+        }
+        if run.gate.boundary_controlled == Some(true) {
+            result = result.with_limitation(
+                "most inflow came from the constant-head boundary, so drawdown reflects the chosen boundary location more than the aquifer",
+            );
+        }
+        if let Some(discrepancy) = run.gate.percent_discrepancy {
+            if discrepancy.abs() > run.gate.tolerance_pct {
+                result = result.with_limitation(&format!(
+                    "volumetric budget discrepancy {:.3}% exceeds the {:.3}% tolerance",
+                    discrepancy, run.gate.tolerance_pct
+                ));
+            }
+        }
+        if !crate::modflow_runner::result_is_interpretable(&run) {
+            result = result.with_limitation(
+                "one or more MODFLOW gates failed; this result must not be interpreted as a groundwater prediction",
+            );
+        }
+        result.emit_validated()
+    }
+
+    #[tool(description = "Execute a REAL PHREEQC geochemical speciation and optional lime-neutralisation titration (acid mine drainage, landfill leachate, tailings leachate). Reports dissolved metals before and after treatment plus saturation indices. Three honesty guards travel with the result: elements with no master species in the database are listed as unsupported instead of silently reported as 0 mg/L; specific conductance is null when the database cannot compute it; and phases that are supersaturated but were not equilibrated are flagged, marking the concentrations as upper bounds. Capped at screening_only.")]
+    async fn phreeqc_speciation(&self, Parameters(p): Parameters<crate::phreeqc_runner::PhreeqcRequest>) -> String {
+        use crate::result_contract::{Claim, Provenance, ResultStatus, ScientificResult};
+
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let run = match crate::phreeqc_runner::run_phreeqc(&p).await {
+            Ok(run) => run,
+            Err(error) => {
+                return ScientificResult::new("phreeqc_speciation_error", 0.0, "dimensionless")
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_claim(Claim::new("phreeqc_error", &error))
+                    .with_limitation("PHREEQC did not execute; no geochemistry was computed")
+                    .emit_validated();
+            }
+        };
+        let finished_at = chrono::Utc::now().to_rfc3339();
+
+        // Record the external PHREEQC invocation in the tamper-evident audit chain.
+        let audit_event = crate::computation::record_json(&crate::computation::ComputationRecord {
+            run_id: format!("phreeqc-{}", &run.database_sha256[..16]),
+            software: "phreeqc".to_string(),
+            software_version: format!("phreeqpython/{}", run.database),
+            tool_name: "phreeqc_speciation".to_string(),
+            arguments: serde_json::to_value(&p).unwrap_or(serde_json::Value::Null),
+            input_sha256s: vec![run.database_sha256.clone()],
+            output_sha256s: vec![],
+            exit_code: 0,
+            started_at,
+            finished_at,
+        });
+
+        // The reported value is the treated pH when a titration ran, else the raw pH.
+        let (reported_ph, stage) = match &run.treated {
+            Some(treated) => (treated.ph, "after_lime_treatment"),
+            None => (run.raw.ph, "raw_solution"),
+        };
+        let state = run.treated.as_ref().unwrap_or(&run.raw);
+
+        let mut result = ScientificResult::new("phreeqc_ph", reported_ph, "pH")
+            .with_status(crate::honesty::to_result_status(
+                crate::honesty::MaturityLevel::Screening,
+            ))
+            .with_provenance(Provenance::new(
+                "model",
+                &format!("phreeqc/{}", run.database),
+                &chrono::Utc::now().to_rfc3339(),
+            ))
+            .with_claim(Claim::new("stage", stage))
+            .with_claim(Claim::new("database_sha256", &run.database_sha256))
+            .with_claim(Claim::new("audit_event", &audit_event))
+            .with_claim(Claim::new(
+                "dissolved_metals_mg_l",
+                &serde_json::to_string(&state.elements_mg_l).unwrap_or_default(),
+            ))
+            .with_claim(Claim::new(
+                "saturation_indices",
+                &serde_json::to_string(&state.saturation_indices).unwrap_or_default(),
+            ))
+            .with_claim(Claim::new(
+                "lime_added_mmol",
+                &format!("{:.3}", run.lime_added_mmol),
+            ))
+            .with_limitation(
+                "Equilibrium thermodynamics only: no reaction kinetics, no reactive transport, no field validation",
+            );
+
+        if !run.unsupported_elements.is_empty() {
+            result = result
+                .with_claim(Claim::new(
+                    "unsupported_elements",
+                    &run.unsupported_elements.join(", "),
+                ))
+                .with_limitation(&format!(
+                    "these elements have no master species in {} and were NOT modelled (reported 0 mg/L means not computed, not immobile): {}",
+                    run.database,
+                    run.unsupported_elements.join(", ")
+                ));
+        }
+        if state.concentrations_are_upper_bounds {
+            let phases: Vec<String> = state
+                .supersaturated_but_unmodelled
+                .iter()
+                .map(|entry| format!("{} (SI {:.2})", entry.phase, entry.si))
+                .collect();
+            result = result
+                .with_claim(Claim::new("supersaturated_but_unmodelled", &phases.join(", ")))
+                .with_limitation(
+                    "dissolved concentrations are UPPER BOUNDS: supersaturated phases were not equilibrated, so real precipitation would lower them",
+                );
+        }
+        if let Some(note) = &state.sc_note {
+            result = result.with_limitation(note);
+        }
+        if let Some(treated) = &run.treated {
+            if treated.reached_target == Some(false) {
+                result = result.with_limitation(
+                    "lime titration did not reach the target pH within the step budget",
+                );
+            }
+        }
+        result.emit_validated()
+    }
+
+    #[tool(description = "Earned split-sample validation: contiguously split paired predicted/observed series (Klemes 1986), compute Moriasi et al. 2007 metrics on train and test partitions separately, and derive the maturity level the model actually EARNS (validated requires test NSE > 0.5, |PBIAS| < 25%, and at least 5 test points). Attaches a prediction interval from test residuals. A declared availability can only lower the result, never raise it.")]
+    async fn calibrate_and_validate(&self, Parameters(p): Parameters<CalibrateValidateParam>) -> String {
+        use crate::result_contract::{
+            Claim, Provenance, ResultStatus, ScientificResult, Uncertainty, UncertaintyType,
+        };
+
+        let train_fraction = p.train_fraction.unwrap_or(0.7);
+        let confidence_level = p.confidence_level.unwrap_or(0.95);
+        let evidence = match crate::calibration::validate_split_sample(
+            &p.predicted,
+            &p.observed,
+            train_fraction,
+            confidence_level,
+        ) {
+            Ok(evidence) => evidence,
+            Err(error) => {
+                return ScientificResult::new("validation_error", 0.0, &p.unit)
+                    .with_status(ResultStatus::ValidationFailed)
+                    .with_claim(Claim::new("validation_error", &error))
+                    .with_limitation("split-sample validation did not execute")
+                    .emit_validated();
+            }
+        };
+
+        let earned = crate::calibration::earned_level(&evidence);
+        let level = match &p.availability {
+            Some(availability) => {
+                crate::honesty::assess_level_with_evidence(availability, Some(earned))
+            }
+            None => earned,
+        };
+
+        let point_estimate = p.point_estimate.unwrap_or_else(|| {
+            let train_n = (p.predicted.len() as f64 * train_fraction).floor() as usize;
+            let test = &p.predicted[train_n..];
+            if test.is_empty() { 0.0 } else { test.iter().sum::<f64>() / test.len() as f64 }
+        });
+        let (lower, upper) = crate::calibration::prediction_interval(point_estimate, &evidence);
+
+        let mut result = ScientificResult::new("validated_prediction", point_estimate, &p.unit)
+            .with_status(crate::honesty::to_result_status(level))
+            .with_uncertainty(Uncertainty {
+                uncertainty_type: UncertaintyType::PredictionInterval,
+                lower,
+                upper,
+                method: evidence.split_method.clone(),
+                confidence_level: Some(confidence_level),
+                seed: None,
+            })
+            .with_provenance(Provenance::new(
+                "model_validation",
+                &p.model_name,
+                &chrono::Utc::now().to_rfc3339(),
+            ))
+            .with_claim(Claim::new("earned_level", &format!("{:?}", earned).to_lowercase()))
+            .with_claim(Claim::new(
+                "test_partition",
+                &format!(
+                    "n={} NSE={:.4} PBIAS={:.2}% RMSE={:.4} KGE={:.4}",
+                    evidence.test.n, evidence.test.nse, evidence.test.pbias, evidence.test.rmse, evidence.test.kge
+                ),
+            ))
+            .with_claim(Claim::new(
+                "train_partition",
+                &format!(
+                    "n={} NSE={:.4} PBIAS={:.2}%",
+                    evidence.train.n, evidence.train.nse, evidence.train.pbias
+                ),
+            ))
+            .with_claim(Claim::new("thresholds", &evidence.thresholds))
+            .with_limitation("Metrics assume paired observations at matching time and location")
+            .with_limitation("No temporal or spatial autocorrelation diagnostic was performed");
+
+        if earned != crate::honesty::MaturityLevel::Validated {
+            result = result.with_limitation(
+                "test partition did not clear the Moriasi satisfactory bar; result is not independently validated",
+            );
+        }
+        result.emit_validated()
+    }
+
+    #[tool(description = "1D->2D flood coupling: run a real EPA SWMM model, convert each flooding node's surcharge volume into an equivalent steady 2D point inflow, solve the 2D shallow-water equations, then apply a mass-balance gate comparing 1D surcharge volume against 2D injected volume. Result is capped at screening_only (never valid) because the overland extent is not validated against observed flood extent. A failed gate is reported with an explicit do-not-use limitation.")]
+    async fn swmm_1d2d_coupling(&self, Parameters(p): Parameters<SwmmCouplingParam>) -> String {
+        // DEM orientation matches integrated_study::run_flood: outer index is y (rows), inner is x.
+        let ny = p.dem.len();
+        let nx = p.dem.first().map_or(0, Vec::len);
+        if nx < 3 || ny < 3 || p.dem.iter().any(|row| row.len() != nx) {
+            return crate::coupling::coupling_failure(
+                "DEM must be a rectangular grid with at least 3x3 cells",
+            )
+            .emit_validated();
+        }
+
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let run = match crate::swmm_runner::run_swmm(&p.inp_path, p.timeout_secs.unwrap_or(120)).await {
+            Ok(run) => run,
+            Err(error) => return crate::coupling::coupling_failure(&error).emit_validated(),
+        };
+        let finished_at = chrono::Utc::now().to_rfc3339();
+
+        // Record the external SWMM invocation in the tamper-evident audit chain so
+        // the provenance claim on the coupled result is backed by a real event.
+        let audit_event = crate::computation::record_json(&crate::computation::ComputationRecord {
+            run_id: format!("swmm-{}", &run.inp_sha256[..16]),
+            software: "epa_swmm".to_string(),
+            software_version: format!("pyswmm {}", run.pyswmm_version),
+            tool_name: "swmm_1d2d_coupling".to_string(),
+            arguments: serde_json::json!({
+                "inp_path": p.inp_path,
+                "duration_s": p.duration_s,
+                "dx_m": p.dx_m,
+                "node_mapping_count": p.node_mapping.len(),
+            }),
+            input_sha256s: vec![run.inp_sha256.clone()],
+            output_sha256s: vec![],
+            exit_code: 0,
+            started_at,
+            finished_at,
+        });
+
+        let sources = match crate::coupling::build_sources(&run, &p.node_mapping, p.duration_s) {
+            Ok(sources) => sources,
+            Err(error) => return crate::coupling::coupling_failure(&error).emit_validated(),
+        };
+
+        let params = tools::advanced_physics::swe_solver::SweParams {
+            nx,
+            ny,
+            dx: p.dx_m,
+            manning_n: p.manning_n,
+            duration_s: p.duration_s,
+            dt_max: p.dt_max_s,
+            second_order: false,
+        };
+        // duty_fraction = 1.0: the equivalent discharge was derived over the full
+        // window, so injecting for the whole window reproduces the 1D volume.
+        let swe = tools::advanced_physics::swe_solver::solve_multi_source(&p.dem, &params, &sources, 1.0);
+
+        let tolerance = p
+            .mass_tolerance_pct
+            .unwrap_or(crate::coupling::DEFAULT_MASS_TOLERANCE_PCT);
+        let gate = crate::coupling::check_mass_balance(
+            run.routing.flooding_m3,
+            swe.total_volume_m3,
+            tolerance,
+        );
+
+        crate::coupling::coupling_result(&gate, swe.max_depth, swe.flooded_cells)
+            .with_claim(crate::result_contract::Claim::new("audit_event", &audit_event))
+            .with_claim(crate::result_contract::Claim::new(
+                "routing_continuity",
+                &format!("swmm routing_error_pct = {:.4}", run.routing.routing_error_pct),
+            ))
+            .emit_validated()
+    }
+
     #[tool(description = "BMKG 15 latest earthquakes near Indonesia")]
     async fn bmkg_earthquake(&self) -> String {
         tools::data::bmkg::earthquake(&HTTP).await
@@ -3401,7 +3975,7 @@ impl EnvIndonesiaServer {
 
     #[tool(description = "Download and hash one STAC raster asset. Retrieval is validated; scientific interpretation is not performed.")]
     async fn stac_download_asset(&self, Parameters(p): Parameters<StacDownloadParam>) -> String {
-        tools::satellite::stac::download_asset(&HTTP, p.api.as_deref().unwrap_or("mpc"), &p.collection, &p.item_id, &p.asset_key, &p.output_dir).await
+        tools::satellite::stac::download_asset(&HTTP, p.api.as_deref().unwrap_or("mpc"), &p.collection, &p.item_id, &p.asset_key, &p.output_dir).await.unwrap_or_else(|e| e)
     }
 
 
