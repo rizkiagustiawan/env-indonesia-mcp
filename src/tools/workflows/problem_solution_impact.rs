@@ -86,8 +86,9 @@ fn river_workflow(out: &mut String) {
 
     out.push_str("PHASE 2 - SOLUTION (DAYA TAMPUNG & IPAL)\n");
     out.push_str("  1. Panggil `streeter_phelps` untuk mencari titik defisit Oksigen Kritis (DO Sag Curve).\n");
-    out.push_str("  2. Panggil `daya_tampung` untuk menghitung kuota sisa pembuangan limbah (Mass Balance).\n");
-    out.push_str("  3. Rekomendasikan teknologi IPAL (misal panggil `activated_sludge_design` atau `uasb_design`) untuk mencapai baku mutu efluen.\n\n");
+    out.push_str("  2. Panggil `flow_duration_curve` atas seri debit terukur untuk mendapat Q95/Q7,10 sebagai debit rancangan. Tanpa ini `daya_tampung` terkunci di screening_only.\n");
+    out.push_str("  3. Panggil `daya_tampung` dengan `design_flow_basis` dinyatakan untuk menghitung kuota sisa pembuangan limbah (neraca massa titik campur).\n");
+    out.push_str("  4. Rekomendasikan teknologi IPAL (misal panggil `activated_sludge_design` atau `uasb_design`) untuk mencapai baku mutu efluen.\n\n");
 
     out.push_str("PHASE 3 - IMPACT (EKONOMI LINGKUNGAN)\n");
     out.push_str("  1. Panggil `sanksi_administratif` jika terjadi pelanggaran baku mutu efluen.\n");

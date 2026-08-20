@@ -179,6 +179,27 @@ async fn main() -> Result<()> {
                     );
                     println!("{}", res);
                 },
+                "daya_tampung" => {
+                    let p: server::DayaTampungParam = serde_json::from_str(tool_args)?;
+                    let res = tools::compliance::daya_tampung::calculate(
+                        p.q_river_m3s, p.c_upstream_mgl, p.c_standard_mgl,
+                        p.q_waste_m3s, p.c_waste_mgl, &p.parameter, p.design_flow_basis
+                    );
+                    println!("{}", res);
+                },
+                "flow_duration_curve" => {
+                    let p: server::FlowDurationParam = serde_json::from_str(tool_args)?;
+                    let res = tools::water::flow_duration::calculate(&p.flows_json);
+                    println!("{}", res);
+                },
+                "daya_dukung" => {
+                    let p: server::DayaDukungParam = serde_json::from_str(tool_args)?;
+                    let res = tools::compliance::daya_dukung::calculate(
+                        &p.approach, p.population, p.supply,
+                        p.demand_per_capita, p.demand_basis
+                    );
+                    println!("{}", res);
+                },
                 "integrated_environment_study" => {
                     let p: tools::integrated_study::IntegratedStudyRequest = serde_json::from_str(tool_args)?;
                     let plan = tools::integrated_study::plan_study(&p)

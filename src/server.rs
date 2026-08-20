@@ -676,16 +676,22 @@ pub struct RiskClassParam {
 }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct DayaDukungParam {
-    #[schemars(description = "Pendekatan: population/water/food")]
+    #[schemars(description = "Pendekatan: land/lahan, water/air, food/pangan")]
     pub approach: String,
-    #[schemars(description = "Luas wilayah (ha)")]
-    pub area_ha: f64,
-    #[schemars(description = "Jumlah penduduk")]
+    #[schemars(description = "Jumlah penduduk (jiwa)")]
     pub population: f64,
-    pub water_supply_m3_yr: Option<f64>,
-    pub water_demand_m3_yr: Option<f64>,
-    pub food_production_ton_yr: Option<f64>,
-    pub food_demand_ton_yr: Option<f64>,
+    #[schemars(
+        description = "Ketersediaan sumber daya: luas lahan (ha), pasokan air (m³/tahun), atau produksi pangan (ton/tahun) sesuai pendekatan"
+    )]
+    pub supply: f64,
+    #[schemars(
+        description = "WAJIB. Kebutuhan per kapita: ha/kapita, m³/kapita/tahun, atau ton/kapita/tahun sesuai pendekatan. Tidak ada nilai bawaan — angka ini menentukan hasilnya."
+    )]
+    pub demand_per_capita: Option<f64>,
+    #[schemars(
+        description = "WAJIB. Sumber acuan kebutuhan per kapita (nomor peraturan, SNI, atau dokumen perencanaan) agar hasilnya dapat diperiksa."
+    )]
+    pub demand_basis: Option<String>,
 }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct DayaTampungParam {
@@ -701,6 +707,10 @@ pub struct DayaTampungParam {
     pub c_waste_mgl: f64,
     #[schemars(description = "Nama parameter (BOD/COD/TSS/dll)")]
     pub parameter: String,
+    #[schemars(
+        description = "Dasar statistik debit sungai: q95 / q7_10 (debit rendah, layak untuk persetujuan teknis) atau mean (rata-rata tahunan, hanya screening). Kosong = tidak dinyatakan, hasil diturunkan ke screening_only."
+    )]
+    pub design_flow_basis: Option<String>,
 }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct GhgInventoryParam {
@@ -3188,6 +3198,14 @@ pub struct RiverApportionmentParam {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct FlowDurationParam {
+    #[schemars(
+        description = "JSON array debit m³/s, satu nilai per periode pencatatan, urutan bebas: [12.4, 11.8, 9.2, ...]. Rumpang data harus dibuang dari seri, tidak diisi angka semu."
+    )]
+    pub flows_json: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct CoastalErosionParam {
     pub shoreline_length_km: f64,
     pub sea_level_rise_m: f64,
@@ -5289,17 +5307,15 @@ impl EnvIndonesiaServer {
     }
 
     #[tool(
-        description = "Daya Dukung Lingkungan Hidup. Ref: PermenLH 17/2009. Pendekatan: populasi/air/pangan."
+        description = "Daya Dukung Lingkungan Hidup (rasio ketersediaan-kebutuhan). Ref: PermenLH 17/2009. Pendekatan: land/lahan, water/air, food/pangan. `demand_per_capita` dan `demand_basis` WAJIB — kebutuhan per kapita adalah masukan kebijakan yang menentukan hasilnya, jadi tidak disediakan sebagai nilai bawaan. Hasil screening_only, bukan penetapan status DDL wilayah."
     )]
     fn daya_dukung(&self, Parameters(p): Parameters<DayaDukungParam>) -> String {
         tools::compliance::daya_dukung::calculate(
             &p.approach,
-            p.area_ha,
             p.population,
-            p.water_supply_m3_yr,
-            p.water_demand_m3_yr,
-            p.food_production_ton_yr,
-            p.food_demand_ton_yr,
+            p.supply,
+            p.demand_per_capita,
+            p.demand_basis,
         )
     }
 
@@ -5312,6 +5328,7 @@ impl EnvIndonesiaServer {
             p.q_waste_m3s,
             p.c_waste_mgl,
             &p.parameter,
+            p.design_flow_basis,
         )
     }
 
@@ -7163,6 +7180,11 @@ impl EnvIndonesiaServer {
         tools::water::river_source_apportionment::apportion(
             p.river_length_km, p.flow_m3_s, &p.sources_json
         )
+    }
+
+    #[tool(description = "Flow Duration Curve dari seri debit terukur (posisi plot Weibull p=m/(n+1)). Menghasilkan Q50/Q80/Q90/Q95 sebagai debit rancangan untuk daya_tampung (DTBP). Persentil di luar rentang catatan tidak dilaporkan, bukan diekstrapolasi. Catatan < 1 tahun harian dikunci di insufficient_data.")]
+    fn flow_duration_curve(&self, Parameters(p): Parameters<FlowDurationParam>) -> String {
+        tools::water::flow_duration::calculate(&p.flows_json)
     }
 
     #[tool(description = "Pantura Coastal Erosion (Bruun + CERC longshore + sand mining + mangrove loss). Net shoreline recession rate m/yr. Risk class. Pantura context (Pekalongan, Semarang, Demak, Indramayu). Ref: Bruun 1962; USACE CERC SPM 1984; van Rijn 2014; Marfai et al.")]

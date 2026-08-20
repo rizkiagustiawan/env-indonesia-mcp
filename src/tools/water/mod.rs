@@ -28,3 +28,4 @@ pub mod struvite;
 pub mod chlorine_demand;
 pub mod remediation_target;
 pub mod river_source_apportionment;
+pub mod flow_duration;
