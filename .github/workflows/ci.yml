@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Cache Cargo
-          uses: actions/cache@v6
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/bin/
@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Setup Python
-          uses: actions/setup-python@v7
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - name: Install dependencies
