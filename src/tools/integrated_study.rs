@@ -161,6 +161,7 @@ mod tests {
                 inflow_x: 0,
                 inflow_y: 0,
                 inflow_width: 1,
+                history_interval_s: None,
                 synthetic: false,
             }),
             leachate: None,
@@ -191,6 +192,7 @@ mod tests {
                 inflow_x: 2,
                 inflow_y: 2,
                 inflow_width: 1,
+                history_interval_s: None,
                 synthetic: false,
             }),
             leachate: None,
@@ -215,7 +217,8 @@ mod tests {
                 dem: vec![vec![10.0; 5]; 5],
                 dx_m: 10.0, manning_n: 0.03, duration_s: 10.0, dt_max_s: 0.1,
                 second_order: false, inflow_discharge_m3s: 1.0,
-                inflow_x: 2, inflow_y: 2, inflow_width: 1, synthetic: false,
+                inflow_x: 2, inflow_y: 2, inflow_width: 1, history_interval_s: None,
+                synthetic: false,
             }),
             data_availability: Some(crate::honesty::DataAvailability {
                 satellite_context: true, ..Default::default()
@@ -257,6 +260,12 @@ pub struct FloodBaselineInput {
     pub inflow_x: usize,
     pub inflow_y: usize,
     pub inflow_width: usize,
+    /// Emit a depth snapshot every this many seconds of simulated time.
+    /// Omit for final-state-only. Required for any temporal animation: without
+    /// it, downstream visualisations only have the final field and must not
+    /// present a scaled version of it as time evolution.
+    #[serde(default)]
+    pub history_interval_s: Option<f64>,
     #[serde(default)]
     pub synthetic: bool,
 }
@@ -493,13 +502,75 @@ fn run_flood(input: &FloodBaselineInput) -> DomainResult {
     }
     let result = swe_solver::solve(
         &input.dem,
-        &swe_solver::SweParams { nx, ny, dx: input.dx_m, manning_n: input.manning_n, duration_s: input.duration_s, dt_max: input.dt_max_s, second_order: input.second_order },
+        &swe_solver::SweParams { nx, ny, dx: input.dx_m, manning_n: input.manning_n, duration_s: input.duration_s, dt_max: input.dt_max_s, second_order: input.second_order, history_interval_s: input.history_interval_s },
         input.inflow_discharge_m3s,
         input.inflow_x,
         input.inflow_y,
         input.inflow_width,
     );
-    let mut domain_result = DomainResult { domain: "urban_flood".into(), status: "screening_only".into(), method: "2D SWE HLLC/MUSCL baseline".into(), output: Some(result.summary), summary: serde_json::json!({"max_depth_m": result.max_depth, "flooded_cells": result.flooded_cells, "total_cells": result.total_cells, "flooded_area_m2": result.flooded_area_m2, "total_volume_m3": result.total_volume_m3}), limitations: vec!["No observed flood extent/depth validation".into(), "No 1D sewer or rainfall-runoff coupling in this baseline; use swmm_1d2d_coupling for sewer surcharge".into()] };
+    let mut domain_result = DomainResult { domain: "urban_flood".into(), status: "screening_only".into(), method: "2D SWE HLLC/MUSCL baseline".into(), output: Some(result.summary), summary: serde_json::json!({"max_depth_m": result.max_depth, "flooded_cells": result.flooded_cells, "total_cells": result.total_cells, "flooded_area_m2": result.flooded_area_m2, "total_volume_m3": result.total_volume_m3, "depth_grid_m": result.depth_grid_m}), limitations: vec!["No observed flood extent/depth validation".into(), "No 1D sewer or rainfall-runoff coupling in this baseline; use swmm_1d2d_coupling for sewer surcharge".into()] };
+
+    // Timestep history, when requested. Exported as (time_s, volume_m3, depth field)
+    // so downstream animation shows the states the solver actually passed through.
+    if result.history.is_empty() {
+        domain_result.summary["timestep_history"] = serde_json::Value::Null;
+        domain_result.limitations.push(
+            "No timestep history exported (history_interval_s not set): only the final \
+             depth field is available, so any animation must NOT be presented as temporal \
+             evolution".into(),
+        );
+    } else {
+        domain_result.summary["timestep_history"] = serde_json::json!(
+            result
+                .history
+                .iter()
+                .map(|s| serde_json::json!({
+                    "time_s": s.time_s,
+                    "volume_m3": s.volume_m3,
+                    "depth_grid_m": s.depth_grid_m,
+                }))
+                .collect::<Vec<_>>()
+        );
+        domain_result.summary["timestep_count"] = serde_json::json!(result.history.len());
+    }
+
+    // Mass-balance gate. Volume and depth are only reportable if the water in
+    // the domain matches what the sources injected; the walls are reflective and
+    // there is no outflow boundary, so any difference is numerical.
+    if let Some(mb) = &result.mass_balance {
+        domain_result.summary["mass_balance"] = serde_json::json!({
+            "injected_m3": mb.injected_m3,
+            "final_m3": mb.final_m3,
+            "error_pct": mb.error_pct,
+            "tolerance_pct": mb.tolerance_pct,
+            "within_tolerance": mb.within_tolerance,
+            "clipped_creation_m3_cumulative": mb.clipped_creation_m3,
+            "correction_churn_m3_cumulative": mb.correction_churn_m3,
+            "note": "clipped_creation and correction_churn are cumulative over all timesteps, not the final error; high values relative to injected_m3 indicate the grid/dt is coarse for this terrain"
+        });
+        if !mb.within_tolerance {
+            domain_result.status = "insufficient_data".into();
+            domain_result.limitations.push(format!(
+                "MASS BALANCE FAILED: {:.3}% error against injected volume (tolerance {:.1}%).                  Depth and volume are not usable; reduce dx or dt_max",
+                mb.error_pct, mb.tolerance_pct
+            ));
+        }
+    }
+
+    // Flood-depth bias disclosure. Sahid 2024 (Ciberes, Cirebon,
+    // DOI 10.23917/forgeo.v38i1.1839) measured +11.67% depth accuracy from DEM
+    // filtering alone and +24.98% when measured river cross-sections were fused
+    // in. Without bathymetry, depths are expected to be biased low — the same
+    // direction van Rutten et al. 2025 (DOI 10.3390/rs17132171) found for
+    // Sentinel-1 + FABDEM flood depths in Vietnam.
+    domain_result.limitations.push(
+        "No measured river cross-section supplied: flood depth is expected to be biased LOW. \
+         Sahid 2024 (DOI 10.23917/forgeo.v38i1.1839) reports +11.67% depth accuracy from DEM \
+         filtering vs +24.98% with cross-sections fused, i.e. over half the attainable \
+         improvement is unrealised. van Rutten et al. 2025 (DOI 10.3390/rs17132171) found the \
+         same underestimation direction".into(),
+    );
+
     if input.synthetic {
         domain_result.limitations.push("synthetic field data flagged; cannot be validated".into());
         domain_result.summary["synthetic"] = serde_json::json!(true);

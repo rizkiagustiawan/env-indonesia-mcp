@@ -13,6 +13,10 @@ def olofsson_area_ci(mapped_areas, confusion_matrix, class_names, z=1.96):
     """Olofsson et al. 2014 area-weighted accuracy and unbiased area estimates.
     Equations 4, 9, 10 from the paper.
     Ref: Remote Sensing of Environment, 148, 42-57.
+
+    The confusion matrix MUST come from a real stratified reference sample.
+    Feeding it a fabricated or assumed matrix produces adjusted areas and
+    confidence intervals that describe the assumption, not the landscape.
     """
     n_classes = len(class_names)
     W = np.array(mapped_areas) / sum(mapped_areas)  # area proportions
@@ -60,6 +64,86 @@ def olofsson_area_ci(mapped_areas, confusion_matrix, class_names, z=1.96):
     oa = sum(p_hat[i][i] for i in range(n_classes))
 
     return results, oa
+
+
+# Independently measured per-class accuracy for global 10 m LULC products.
+# Ref: Venter, Barton, Chakraborty, Simensen & Singh (2022), Remote Sensing
+# 14(16):4101, DOI 10.3390/rs14164101 — global ground-truth assessment,
+# minimum mapping unit 250 m2. Overall accuracy: Esri 75%, Dynamic World 72%,
+# ESA WorldCover 65%.
+#
+# These are the published bounds for the product this engine consumes. They are
+# NOT a substitute for a local accuracy assessment, but they are the honest
+# ceiling to quote when no local reference sample exists.
+VENTER_2022_CLASS_ACCURACY = {
+    'water': 0.92,
+    'built': 0.83,
+    'trees': 0.81,
+    'crops': 0.78,
+    'bare': 0.57,
+    'flooded_vegetation': 0.53,
+    'shrub_and_scrub': 0.47,
+    'grass': 0.34,
+}
+VENTER_2022_OVERALL = {'esri': 0.75, 'dynamic_world': 0.72, 'esa_worldcover': 0.65}
+VENTER_2022_CITATION = (
+    "Venter et al. (2022) Remote Sensing 14(16):4101, DOI 10.3390/rs14164101"
+)
+
+
+def report_class_accuracy_bounds():
+    """Published per-class accuracy for Dynamic World-class products.
+
+    Returned as text so every land-cover output carries the measured ceiling
+    instead of a single flattering overall figure.
+    """
+    lines = [
+        "Batas ketelitian terpublikasi (bukan akurasi lokal):",
+        f"  Overall: Dynamic World {VENTER_2022_OVERALL['dynamic_world']*100:.0f}%, "
+        f"Esri {VENTER_2022_OVERALL['esri']*100:.0f}%, "
+        f"ESA WorldCover {VENTER_2022_OVERALL['esa_worldcover']*100:.0f}%",
+        "  Per kelas:",
+    ]
+    for dw_name, acc in sorted(
+        VENTER_2022_CLASS_ACCURACY.items(), key=lambda kv: kv[1], reverse=True
+    ):
+        sni = next(
+            (v['sni_name'] for v in DW_TO_SNI.values() if v['dw'] == dw_name), dw_name
+        )
+        flag = "  <-- rendah" if acc < 0.60 else ""
+        lines.append(f"    {sni:<38} {acc*100:>3.0f}%{flag}")
+    lines.append(
+        "  Kelas 'Hutan Rawa' (flooded vegetation) hanya 53% dan 'Padang Rumput' 34%: "
+    )
+    lines.append(
+        "  analisis mangrove, lahan basah, dan savana harus memperhitungkan batas ini."
+    )
+    lines.append(f"  Ref: {VENTER_2022_CITATION}")
+    return "\n".join(lines)
+
+
+def report_area_accuracy_unavailable(class_names):
+    """Explain why corrected-area estimates are withheld, and what unlocks them."""
+    lines = [
+        "STATUS: insufficient_data — estimasi area terkoreksi TIDAK dihitung.",
+        "",
+        "Alasan: metode Olofsson et al. (2014) menghasilkan estimasi area tak-bias",
+        "dari sampel referensi berstratifikasi yang NYATA. Tanpa sampel itu, kolom",
+        "'adjusted area', SE, dan 95% CI hanya mencerminkan asumsi yang dibuat",
+        "sendiri, bukan kondisi lapangan. Angka semacam itu tidak dikeluarkan.",
+        "",
+        f"Area terpetakan (mapped area) di atas tetap sah sebagai hitungan piksel",
+        f"untuk {len(class_names)} kelas, tetapi belum dikoreksi bias klasifikasi.",
+        "",
+        "Untuk membuka estimasi terkoreksi: sediakan confusion matrix dari sampel",
+        "referensi berstratifikasi (design-based), lalu panggil olofsson_area_ci().",
+        "Venter et al. (2022) secara eksplisit menyarankan tidak mengestimasi area",
+        "dari pixel-counting semata, melainkan memakai design-based inference.",
+        "",
+        report_class_accuracy_bounds(),
+    ]
+    return "\n".join(lines)
+
 
 # Dynamic World → SNI 7645:2014 mapping
 DW_TO_SNI = {
@@ -220,40 +304,20 @@ def change_detection(lat, lon, buffer_km, date1_start, date1_end, date2_start, d
         if abs(diff) > 0.1:
             print(f"{info['sni_name']:<35} {a1:<15.1f} {a2:<15.1f} {sign}{diff:<15.1f}")
 
-    # === Olofsson area-weighted accuracy (simulated confusion matrix) ===
-    # Simulated based on Dynamic World tropical accuracy ~0.85 OA (Brown et al. 2022)
-    # Diagonal = 85% correct, off-diagonal errors distributed uniformly
+    # === Area accuracy: refused without a real reference sample ===
+    # A simulated confusion matrix used to be fabricated here (85% diagonal) and
+    # fed to olofsson_area_ci(), producing "adjusted area", SE and 95% CI columns.
+    # Those numbers measured the fabricated assumption, not the ground: the entire
+    # point of Olofsson et al. (2014) is an unbiased area estimate derived from a
+    # real stratified reference sample. Fabricating the matrix inverts the method.
+    #
+    # Venter et al. (2022) also show a single overall-accuracy figure is misleading
+    # for these products: per-class accuracy spans 34%-92%.
     present_classes = sorted(all_classes)
-    n_cls = len(present_classes)
-    if n_cls > 1:
-        sim_samples_per_class = 100
-        sim_cm = []
-        for i in range(n_cls):
-            row = []
-            correct = int(sim_samples_per_class * 0.85)
-            errors_total = sim_samples_per_class - correct
-            for j in range(n_cls):
-                if i == j:
-                    row.append(correct)
-                else:
-                    row.append(max(1, errors_total // (n_cls - 1)))
-            sim_cm.append(row)
-
-        # Use Period 2 mapped areas (ha) for Olofsson
-        mapped_ha = [d2.get(cls, 0) for cls in present_classes]
-        cls_names = [DW_TO_SNI.get(cls, {'sni_name': f'Class_{cls}'})['sni_name'] for cls in present_classes]
-
-        olof_results, olof_oa = olofsson_area_ci(mapped_ha, sim_cm, cls_names)
-
-        print(f"\n══ Olofsson Area-Weighted Accuracy (Olofsson et al. 2014) ══")
-        print(f"Overall Accuracy (area-weighted): {olof_oa*100:.1f}%")
-        print(f"Catatan: Confusion matrix disimulasikan (OA=85%, Brown et al. 2022 untuk Dynamic World tropis)")
-        print("CATATAN: Confusion matrix disimulasikan (OA=85%). Untuk akurasi sebenarnya, gunakan ground truth sampling. Ref: CEOS WGCV LPV Protocol v0.1 (Olofsson et al. 2025).")
-        print(f"\n{'Kelas':<30} {'Mapped (ha)':<14} {'Adjusted (ha)':<16} {'SE (ha)':<12} {'95% CI (ha)':<20}")
-        print("-" * 92)
-        for name in cls_names:
-            r = olof_results[name]
-            print(f"{name:<30} {r['mapped_area']:<14.1f} {r['adjusted_area']:<16.1f} {r['se']:<12.1f} [{r['ci_lower']:.1f}, {r['ci_upper']:.1f}]")
+    print(f"\n══ Estimasi Area Terkoreksi (Olofsson et al. 2014) ══")
+    print(report_area_accuracy_unavailable(
+        [DW_TO_SNI.get(c, {'sni_name': f'Class_{c}'})['sni_name'] for c in present_classes]
+    ))
 
     # === Full Transition Matrix (dari → ke) ===
     # Penting untuk AMDAL: menunjukkan konversi hutan→perkebunan, mangrove→tambak, dll.
@@ -304,8 +368,12 @@ def change_detection(lat, lon, buffer_km, date1_start, date1_end, date2_start, d
         parameters={'buffer_km': buffer_km,
                     'period1': [date1_start, date1_end],
                     'period2': [date2_start, date2_end]},
-        algorithms=['Dynamic World mode composite', 'Transition matrix', 'Olofsson area-weighted accuracy'],
-        references=['Brown et al. 2022 (Dynamic World)', 'Olofsson et al. 2014'],
+        algorithms=['Dynamic World mode composite', 'Transition matrix'],
+        references=[
+            'Brown et al. 2022 (Dynamic World), DOI 10.1038/s41597-022-01307-4',
+            'Venter et al. 2022 (per-class accuracy), DOI 10.3390/rs14164101',
+            'Olofsson et al. 2014 (area estimator; requires real reference sample)',
+        ],
         classification='SNI 7645:2014 mapping',
         crs='EPSG:4326',
         scale_m=10)
@@ -938,6 +1006,19 @@ def format_scientific_result(parameter, class_hist, adjusted_areas=None, sensor=
         claims.append({"claim_type": "accuracy", "description": "Area adjusted via Olofsson 2014 robust estimator."})
     else:
         claims.append({"claim_type": "warning", "description": "Raw pixel count used. Subject to allocation disagreement bias."})
+        # Published accuracy ceiling for this product class, so a caller reading
+        # only the JSON still sees the measured bounds rather than assuming the
+        # pixel count is exact.
+        claims.append({
+            "claim_type": "accuracy_bound",
+            "description": (
+                "Batas ketelitian terpublikasi (Venter et al. 2022, "
+                "DOI 10.3390/rs14164101): overall Dynamic World 72%; per kelas "
+                "air 92%, terbangun 83%, pohon 81%, tanaman 78%, tanah terbuka 57%, "
+                "hutan rawa/flooded vegetation 53%, semak 47%, rumput 34%. "
+                "Bukan akurasi lokal."
+            ),
+        })
         
     res = {
         "parameter": parameter,

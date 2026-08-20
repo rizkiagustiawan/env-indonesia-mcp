@@ -3904,6 +3904,7 @@ impl EnvIndonesiaServer {
             duration_s: p.duration_s,
             dt_max: p.dt_max_s,
             second_order: false,
+            history_interval_s: None,
         };
         // duty_fraction = 1.0: the equivalent discharge was derived over the full
         // window, so injecting for the whole window reproduces the 1D volume.
@@ -6536,7 +6537,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "MintPy InSAR SBAS Displacement. Sentinel-1 time series → mm/yr subsidence/uplift. Ref: Yunjun 2019; Widiarso 2026 (Semarang); Umarhadi 2026 (peatland); Pratama 2026 (Jatiluhur). Install: conda install mintpy isce2.")]
+    #[tool(description = "MintPy InSAR SBAS Displacement. Sentinel-1 time series → mm/yr subsidence/uplift. Emits the ISCE2/MintPy command sequence plus published subsidence rates; does NOT run InSAR. Ref: Yunjun 2019; Umarhadi & Siegert 2026 DOI 10.1088/2515-7620/ae43ab (peat Kalimantan, -1.72 cm/yr). Install: conda install mintpy isce2.")]
     fn mintpy_insar(&self, Parameters(p): Parameters<MintpyInsarParam>) -> String {
         if let Err(e) = crate::indonesia::validate_coords(p.lat, p.lon) {
             return format!("ERROR [E101]: {}", e);
@@ -6546,7 +6547,7 @@ impl EnvIndonesiaServer {
         )
     }
 
-    #[tool(description = "EnKF Data Assimilation. Ensemble Kalman Filter for IoT sensor fusion. Forecast → Update → Uncertainty reduction. Ref: Evensen 1994; Sun 2026 (ADAPT); Sahar 2026; Zhao 2026. Input: model_states_json, observations_json, noise_std.")]
+    #[tool(description = "EnKF Data Assimilation. Ensemble Kalman Filter for IoT sensor fusion. Forecast → Update → Uncertainty reduction. Ref: Evensen 1994 DOI 10.1029/94JC00572. Operates on caller-supplied ensembles; not coupled to the SWE/MODFLOW/PHREEQC runners. Input: model_states_json, observations_json, noise_std.")]
     fn enkf_data_assimilation(&self, Parameters(p): Parameters<EnkfParam>) -> String {
         tools::advanced_physics::enkf::assimilate(
             &p.model_states_json, &p.observations_json,

@@ -1,10 +1,15 @@
 /// MintPy InSAR — SBAS/PSI Time Series Displacement
-/// 2026 SOTA: Widiarso 2026 (Semarang), Umarhadi 2026 (peatland Kalimantan),
-///   Setyaningrum 2026 (Central Kalimantan), Pratama 2026 (Jatiluhur Dam),
-///   Oh 2026 (Bangkok, refs Semarang Indonesia)
-/// Ref: Yunjun et al. 2019 (MintPy v1); Berardino et al. 2002 (SBAS)
+///
+/// This tool emits the ISCE2/MintPy command sequence and reports published
+/// subsidence rates. It does NOT run InSAR processing itself.
+///
+/// Verified references:
+///   Yunjun et al. 2019 (MintPy v1); Berardino et al. 2002 (SBAS)
+///   Umarhadi & Siegert 2026, Environ. Res. Commun. 8:025025,
+///     DOI 10.1088/2515-7620/ae43ab — SBAS InSAR + Random Forest Regression
+///     over the ex-Mega Rice Project peatlands, Central Kalimantan
+///
 /// Python package: mintpy (SBAS processing Sentinel-1 SLC → displacement)
-
 use std::process::Command;
 
 pub fn assess(
@@ -14,8 +19,9 @@ pub fn assess(
 ) -> String {
     let mut out = String::from("=== MintPy InSAR (SBAS Displacement) ===\n");
     out.push_str("Ref: Yunjun et al. 2019 (MintPy); Berardino et al. 2002 (SBAS)\n");
-    out.push_str("2026 SOTA: Widiarso 2026 (Semarang); Umarhadi 2026 (peatland);\n");
-    out.push_str("  Setyaningrum 2026 (Kalimantan); Pratama 2026 (Jatiluhur Dam)\n\n");
+    out.push_str("     Umarhadi & Siegert 2026, DOI 10.1088/2515-7620/ae43ab (gambut Kalimantan)\n");
+    out.push_str("CATATAN: tool ini menghasilkan urutan perintah dan angka pustaka;\n");
+    out.push_str("         pemrosesan InSAR tidak dijalankan di sini.\n\n");
 
     // Convert lat/lon + bbox to geographic bounds
     let half_lat = bbox_km / 111.0 / 2.0;
@@ -161,25 +167,59 @@ print(json.dumps({'error': 'No velocity file found. Run SBAS pipeline first.'}))
             out.push_str("4. View results:\n");
             out.push_str("   view.py velocity.h5  # displacement rate map\n\n");
 
-            // Known subsidence for Indonesia cities (literature values)
-            out.push_str("═══ KNOWN SUBSIDENCE (Indonesia, 2026 literature) ═══\n\n");
-            out.push_str("Ref: Science Advances 2024 (Java InSAR 2017-2023); Widiarso 2026 (Semarang),\n");
-            out.push_str("     Umarhadi 2026 (peatland), Bott 2021 (Jakarta/Semarang)\n\n");
+            // Published subsidence rates for Indonesia. Every entry must be
+            // traceable to a citation whose reported value it actually matches.
+            //
+            // The Central Kalimantan peatland entry previously read -50 mm/yr
+            // attributed to Umarhadi 2026. That paper reports mean rates of
+            // -1.72 +/- 1.57 cm/yr (Block B) and -1.55 +/- 2.27 cm/yr (Block C),
+            // i.e. roughly -17 mm/yr. The -50 figure does not appear in it.
+            out.push_str("═══ LAJU PENURUNAN TANAH TERPUBLIKASI (Indonesia) ═══\n\n");
+            out.push_str("Nilai di bawah adalah angka yang DILAPORKAN dalam pustaka,\n");
+            out.push_str("bukan hasil pengukuran tool ini pada AOI Anda.\n\n");
 
-            // Rates are max-velocity spot values (mm/yr), not basin averages.
-            let known: [(&str, f64, &str); 6] = [
-                ("Jakarta", -36.0, "Land subsidence, groundwater extraction (SciAdv 2024 max 3.6 cm/yr)"),
-                ("Semarang", -80.0, "Coastal subsidence, fault-controlled (SciAdv 2024 max 8 cm/yr; Widiarso 2026)"),
-                ("Pekalongan", -100.0, "Worst hotspot on Java (SciAdv 2024 max 10 cm/yr)"),
-                ("Bandung", -30.0, "Land subsidence, industrial groundwater"),
-                ("Central Kalimantan (peatland)", -50.0, "Peat consolidation, drying (Umarhadi 2026)"),
-                ("Jatiluhur Dam", -5.0, "Dam structure stability (Pratama 2026)"),
+            // (label, rate mm/yr, kind, description incl. source)
+            let known: [(&str, f64, &str, &str); 6] = [
+                ("Jakarta", -36.0, "maksimum",
+                 "Ekstraksi air tanah (Science Advances 2024, Java InSAR 2017-2023: maks 3.6 cm/yr)"),
+                ("Semarang", -80.0, "maksimum",
+                 "Penurunan pesisir, terkontrol sesar (Science Advances 2024: maks 8 cm/yr)"),
+                ("Pekalongan", -100.0, "maksimum",
+                 "Hotspot terparah di Jawa (Science Advances 2024: maks 10 cm/yr)"),
+                ("Bandung", -30.0, "maksimum",
+                 "Penurunan tanah, air tanah industri — sumber belum diverifikasi ulang"),
+                ("Kalimantan Tengah (gambut, ex-MRP Blok B)", -17.2, "rata-rata",
+                 "Konsolidasi gambut terdrainase; SBAS InSAR + Random Forest Regression. \
+                  Umarhadi & Siegert 2026, Environ. Res. Commun. 8:025025, \
+                  DOI 10.1088/2515-7620/ae43ab: -1.72 +/- 1.57 cm/yr"),
+                ("Kalimantan Tengah (gambut, ex-MRP Blok C)", -15.5, "rata-rata",
+                 "Idem, Blok C: -1.55 +/- 2.27 cm/yr (Umarhadi & Siegert 2026)"),
             ];
 
-            for (city, rate, desc) in &known {
-                let indicator = if *rate < -50.0 { "🔴" } else if *rate < -20.0 { "🟠" } else if *rate < -10.0 { "🟡" } else { "🟢" };
-                out.push_str(&format!("  {} {}: {:.0} mm/yr — {}\n", indicator, city, rate, desc));
+            for (city, rate, kind, desc) in &known {
+                let indicator = if *rate < -50.0 {
+                    "[SANGAT TINGGI]"
+                } else if *rate < -20.0 {
+                    "[TINGGI]"
+                } else if *rate < -10.0 {
+                    "[SEDANG]"
+                } else {
+                    "[RENDAH]"
+                };
+                out.push_str(&format!(
+                    "  {} {}: {:.1} mm/yr ({})\n      {}\n",
+                    indicator, city, rate, kind, desc
+                ));
             }
+            out.push_str(
+                "\n  Perhatikan pembeda 'maksimum' vs 'rata-rata': nilai maksimum adalah\n  \
+                 kecepatan titik terburuk, rata-rata adalah nilai area. Keduanya tidak\n  \
+                 sebanding secara langsung.\n",
+            );
+            out.push_str(
+                "\n  Prediktor kunci penurunan gambut menurut Umarhadi & Siegert 2026:\n  \
+                 kedalaman gambut, kejadian kebakaran terakhir, dan jarak ke tepi gambut.\n",
+            );
         }
     }
 

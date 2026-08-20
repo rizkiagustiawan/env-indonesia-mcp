@@ -1,8 +1,17 @@
 /// Ensemble Kalman Filter (EnKF) — Data Assimilation
-/// 2026 SOTA: Sun 2026 (IoT water quality ADAPT, beats EnKF),
-///   Sahar 2026 (fault detection EnKF), Zhao 2026 (soil-water DA),
-///   Sandu 2026 (atmospheric composition DA), Hammoud 2026 (RL+Bayesian)
-/// Ref: Evensen 1994 (EnKF); Burgers et al. 1998 (analysis scheme)
+///
+/// Verified references:
+///   Evensen 1994, DOI 10.1029/94JC00572 (EnKF)
+///   Burgers, van Leeuwen & Evensen 1998 (analysis scheme)
+///
+/// Earlier versions of this file cited five "2026 state of the art" works that
+/// could not be located in Crossref, OpenAlex or arXiv and carried no DOI, so
+/// the claims were removed rather than left standing. The tokens are recorded in
+/// `citations::UNVERIFIED` with the reason for each.
+///
+/// NOTE ON SCOPE: this function assimilates caller-supplied state ensembles and
+/// observations. It is not wired into the SWE, MODFLOW or PHREEQC runners, so it
+/// does not currently assimilate observations into those solvers.
 /// EnKF: x_a = x_f + K(y - Hx_f), K = P_f H^T (H P_f H^T + R)^{-1}
 
 pub fn assimilate(
@@ -13,7 +22,7 @@ pub fn assimilate(
 ) -> String {
     let mut out = String::from("=== Ensemble Kalman Filter (EnKF) ===\n");
     out.push_str("Ref: Evensen 1994; Burgers et al. 1998\n");
-    out.push_str("2026 SOTA: Sun 2026; Sahar 2026; Zhao 2026; Sandu 2026\n\n");
+    out.push_str("Ref: Evensen 1994, DOI 10.1029/94JC00572\n\n");
 
     let model_states: Vec<Vec<f64>> = match serde_json::from_str(model_states_json) {
         Ok(v) => v,
@@ -245,15 +254,16 @@ pub fn assimilate(
     out.push_str(&format!("  Innovation: {:.4}\n", mean_innovation));
     out.push_str(&format!("  σ reduction: {:.1}%\n", reduction));
 
-    out.push_str("\n  Ref: Sun 2026 (ADAPT IoT water quality); Sahar 2026 (fault detection);\n");
-    out.push_str("       Zhao 2026 (soil-water DA); Sandu 2026 (atmospheric composition)\n");
+    out.push_str("\n  Ref: Evensen 1994, DOI 10.1029/94JC00572;\n");
+    out.push_str("       Burgers, van Leeuwen & Evensen 1998 (analysis scheme)\n");
 
     // Honest limitation
     out.push_str("\n── Limitations (honest) ──\n");
     out.push_str("  • Assumes Gaussian distributions (particle filter for non-Gaussian)\n");
     out.push_str("  • H = identity (simplified — real H may be nonlinear)\n");
     out.push_str("  • For production: use PDAF (Parallel Data Assimilation Framework)\n");
-    out.push_str("  • ADAPT (Sun 2026) outperforms EnKF for water quality forecasting\n");
+    out.push_str("  • Not coupled to the SWE/MODFLOW/PHREEQC runners: this assimilates\n");
+    out.push_str("    caller-supplied ensembles, not solver state\n");
 
     // Return updated JSON for downstream use
     let updated_json = serde_json::to_string(&posterior_mean).unwrap_or_default();

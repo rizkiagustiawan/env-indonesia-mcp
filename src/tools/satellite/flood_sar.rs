@@ -3,28 +3,36 @@ use serde_json::{json, Value};
 
 const MPC_STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1";
 
-/// Flood SAR Mapping — Sentinel-1 scene search (2026 SOTA DL methods referenced)
+/// Flood SAR Mapping — Sentinel-1 scene search.
 ///
 /// IMPORTANT: This tool ONLY searches for Sentinel-1 GRD scenes (pre/post flood)
-/// via Planetary Computer STAC. It does NOT run any deep-learning flood-segmentation
-/// model. The F1=96% / 98.1% / IoU figures in the "2026 SOTA" table below are
-/// ACCURACIES REPORTED IN THE CITED PAPERS, NOT results achievable by or produced
-/// by this tool. This tool finds candidate scenes; the DL methods listed must be
-/// run separately (external training/inference) to obtain those accuracies.
+/// via Planetary Computer STAC. It does NOT run any flood-segmentation model.
+/// Accuracy figures in the output are values REPORTED IN THE CITED PAPERS on
+/// their own datasets, not results produced by or achievable through this tool.
 ///
-/// Methodology (described, not all executed here): download S1 GRD pre/post flood,
-/// VV threshold, change detection.
-/// Ref: Clement et al. 2025; Twele et al. 2016; Cian et al. 2018
-/// 2026 SOTA (Literature Reference — NOT this tool's performance):
-///   Siamese U-Net (Kacmaz 2026, F1=96%); TLE-FEDformer (Ahmadi 2026, 98.1%)
-///   LightFloodNet (Kinalioglu 2026, 1.57M params); CMFS-UNet Mamba (Wei 2025)
-///   FloodsNet (Wu 2025); RS-Mamba (Gierszewska 2026)
+/// Methodology (described, not all executed here): download S1 GRD pre/post
+/// flood, VV threshold, change detection.
+///
+/// Verified benchmarks quoted in the output (see `src/citations.rs`):
+///   Bonafilia et al. 2020 Sen1Floods11, DOI 10.1109/cvprw50498.2020.00113
+///   Bai et al. 2021 S1+S2 fusion, DOI 10.3390/rs13112220
+///   Aldiansyah et al. 2024 Kendari, DOI 10.23960/jgrs.ft.unila.205
+///   Bereczky et al. 2022 CNN vs rule-based, DOI 10.1109/jstars.2022.3152127
+///   Amitrano et al. 2024 review, DOI 10.3390/rs16040656
+///
+/// Previously this file quoted F1 96.1% (Siamese U-Net) and 98.1%
+/// (TLE-FEDformer) attributed to citations that could not be located in
+/// Crossref, OpenAlex or arXiv, and which exceeded every verified benchmark.
+/// Those rows were removed; the tokens are recorded in `citations::UNVERIFIED`.
 ///
 /// LIMITATION:
 /// - 6-day revisit (not real-time)
 /// - VV threshold -17dB is generic; adaptive Otsu better for Indonesia (rice fields, mangrove)
 /// - False positive: rice paddies, shadows, wind-roughened water
 /// - Cannot detect flooding under dense vegetation canopy (radar penetration limited)
+/// - No radiometric terrain correction and no speckle filter are applied here;
+///   on sloping terrain, radar shadow and layover can read as water. Correction
+///   module: Vollrath, Mullissa & Reiche 2020, DOI 10.3390/rs12111867
 
 pub async fn search_flood_scenes(
     client: &Client,
@@ -92,24 +100,42 @@ pub async fn search_flood_scenes(
     out.push_str("6. Mask permanent water (DEMNAS + JRC Global Surface Water)\n");
     out.push_str("7. Overlay OSM settlements within flood extent\n");
     out.push_str("\n");
-    out.push_str("2026 SOTA DEEP LEARNING METHODS (Literature Reference — NOT this tool's performance):\n");
-    out.push_str("  [These F1/IoU figures are from the cited papers, NOT produced by this tool.\n");
-    out.push_str("   This tool finds scenes; the DL models must be run separately.]\n");
-    out.push_str("  Method              F1/IoU     Params    Ref\n");
-    out.push_str("  ------              ------     ------    ---\n");
-    out.push_str("  Siamese U-Net       F1=96.1%   -         Kacmaz 2026 (Earth 7(3))\n");
-    out.push_str("  TLE-FEDformer       98.1%/97.4% -        Ahmadi 2026 (RS 18(6))\n");
-    out.push_str("  LightFloodNet       IoU=0.54   1.57M     Kinalioglu 2026 (Tuzal)\n");
-    out.push_str("  CMFS-UNet Mamba     mIoU=79.4% -         Wei 2025 (PIERS)\n");
-    out.push_str("  FloodsNet           F1+1-2%    -         Wu 2025 (RS 17(16))\n");
-    out.push_str("  RS-Mamba            mIoU=56.6% -         Gierszewska 2026 (JSTARS)\n");
-    out.push_str("  RF VH/VV ratio      94% acc    -         Amer 2025 (RS 17(11))\n");
-    out.push_str("  DAM-Net             IoU=93.2%  -         benchmark (S1GFloods)\n");
+    out.push_str("BENCHMARK TERVERIFIKASI (bukan performa tool ini):\n");
+    out.push_str("  Angka di bawah berasal dari paper yang dapat ditelusuri lewat DOI.\n");
+    out.push_str("  Tool ini hanya mencari scene; model harus dijalankan terpisah.\n\n");
+    out.push_str("  Metode / produk                          Skor                    Setting\n");
+    out.push_str("  ------------------------------------     --------------------    -------\n");
+    out.push_str("  Sen1Floods11 semi-supervised ensemble    IoU 0.7654              open area\n");
+    out.push_str("    Paul & Ganju 2021, arXiv 2107.08369\n");
+    out.push_str("  Sen1Floods11 fusi S1+S2                  mIoU 52.99%, OA 92.81%  open area\n");
+    out.push_str("    Bai et al. 2021, DOI 10.3390/rs13112220\n");
+    out.push_str("  Kendari, S1 + Otsu (area tergenang)      OA 95.81%, Kappa 0.86   open area\n");
+    out.push_str("    Aldiansyah et al. 2024, DOI 10.23960/jgrs.ft.unila.205\n");
+    out.push_str("  UFO, model tersegmentasi terlatih         mIoU 77.3               URBAN\n");
+    out.push_str("    Mukherjee et al. 2026, arXiv 2604.23066\n");
+    out.push_str("  Google Dynamic World, kelas air          IoU 48.1                URBAN\n");
+    out.push_str("    Mukherjee et al. 2026, arXiv 2604.23066\n");
+    out.push_str("  NASA IMPACT (Sentinel-1)                 IoU 44.1                URBAN\n");
+    out.push_str("    Mukherjee et al. 2026, arXiv 2604.23066\n");
     out.push_str("\n");
-    out.push_str("  Recommended (external — NOT run by this tool):\n");
-    out.push_str("  Recommended: Siamese U-Net for emergency response (high recall)\n");
-    out.push_str("  Recommended: TLE-FEDformer for accuracy (multi-sensor fusion)\n");
-    out.push_str("  Recommended: LightFloodNet for edge deployment (1.57M params)\n");
+    out.push_str("  Untuk AOI perkotaan Indonesia (Jakarta, Semarang, Surabaya), pakai\n");
+    out.push_str("  batas URBAN: produk siap pakai hanya mencapai IoU 44-48, artinya\n");
+    out.push_str("  sekitar separuh piksel air salah klasifikasi.\n\n");
+    out.push_str("  Temuan pendukung:\n");
+    out.push_str("  - Zhao, Xiong & Zhu 2024 (UrbanSARFloods, arXiv 2406.04111): 8.879 chip,\n");
+    out.push_str("    807.500 km2, 20 kelas tutupan lahan, 5 benua. Weighted cross-entropy\n");
+    out.push_str("    dan transfer learning TIDAK cukup mengatasi data tak seimbang;\n");
+    out.push_str("    deteksi banjir urban tetap sulit.\n");
+    out.push_str("  - Amitrano et al. 2024 (DOI 10.3390/rs16040656): SAR masih terbatas berat\n");
+    out.push_str("    di area bervegetasi dan urban karena mekanisme hamburan kompleks.\n");
+    out.push_str("  - Bereczky et al. 2022 (DOI 10.1109/jstars.2022.3152127): dual-pol VV+VH\n");
+    out.push_str("    mengalahkan single-pol 5% IoU; augmentasi radiometrik membantu,\n");
+    out.push_str("    augmentasi geometrik menurunkan performa.\n");
+    out.push_str("\n");
+    out.push_str("  Klaim F1 96-98% yang sebelumnya dicantumkan di sini (Siamese U-Net,\n");
+    out.push_str("  TLE-FEDformer) DIHAPUS: sitasinya tidak dapat diverifikasi di Crossref,\n");
+    out.push_str("  OpenAlex, maupun arXiv, dan angkanya melampaui setiap benchmark yang\n");
+    out.push_str("  terverifikasi di atas. Lihat src/citations.rs (UNVERIFIED).\n");
     out.push_str("\n");
 
     if pre_count > 0 && post_count > 0 {

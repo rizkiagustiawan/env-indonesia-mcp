@@ -2,7 +2,12 @@ use crate::indonesia;
 use reqwest::Client;
 
 pub async fn weather(client: &Client, location: &str) -> String {
-    let adm4 = indonesia::bmkg_adm4(location);
+    // Ambiguous Kota/Kabupaten names are refused rather than silently resolved:
+    // a wrong adm4 code returns a forecast for the wrong territory with no error.
+    let adm4 = match indonesia::resolve_adm4(location) {
+        Ok(code) => code,
+        Err(e) => return format!("ERROR [E102]: {}", e),
+    };
 
     let url = format!(
         "https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={}",

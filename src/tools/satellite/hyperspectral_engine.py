@@ -723,13 +723,29 @@ def extract_hyperspectral_map(lon, lat, buffer_km, output_tif_path, output_img_p
         return f"ERROR pada extract_hyperspectral_map: {str(e)}"
 
 # ==============================================================================
-# XAI MINERAL PROSPECTIVITY MAPPING (XGBOOST/MACHINE LEARNING)
-# Berdasarkan paper: Shirkhani & Ghaderi (2026), "Integrated machine learning..."
+# MINERAL PROSPECTIVITY MAPPING — Spatial Multi-Criteria Evaluation (SMCE)
+#
+# This is NOT machine learning. No model is trained, no gradient boosting runs,
+# and no Shapley values are computed. It is a weighted linear sum of three
+# normalised indices with fixed expert weights (45/30/25). It was previously
+# labelled "XGBoost/SHAP proxy" on the output figure, which misrepresented the
+# method to anyone reading the map.
+#
+# Method: SMCE / weighted linear combination.
+# Inputs:  hydrothermal alteration (clay) index, iron-oxide index,
+#          slope as a fault/lineament proxy.
+# Weights: expert-assigned, NOT fitted to any observation.
 # ==============================================================================
+SMCE_WEIGHTS = {'clay_alteration': 0.45, 'iron_oxide': 0.30, 'structure_slope': 0.25}
+
+
 def extract_prospectivity_map(lon, lat, buffer_km, output_tif_path, output_img_path):
-    """Mineral Prospectivity Mapping menggunakan proksi XGBoost/Machine Learning.
-    Menerapkan integrasi fitur struktur (patahan/slope) dan alterasi hidrotermal."""
-    
+    """Mineral prospectivity via Spatial Multi-Criteria Evaluation (SMCE).
+
+    Weighted linear combination of alteration, iron-oxide and slope-as-structure
+    proxies. Expert weights, not fitted parameters. Output is a relative
+    prioritisation surface, not a probability of ore occurrence.
+    """
     try:
         import os
         import urllib.request
@@ -780,12 +796,10 @@ def extract_prospectivity_map(lon, lat, buffer_km, output_tif_path, output_img_p
         # Simplify the gradient math to prevent timeout
         fault_proxy = slope.rename('fault_proxy')
         
-        # 3. MACHINE LEARNING PREDICTION (XGBoost/Random Forest Simulation in GEE)
-        # Dalam lingkungan server-side GEE murni, menjalankan XGBoost langsung tidak dimungkinkan
-        # tanpa upload model via Vertex AI. 
-        # Sebagai implementasi "Physics-Informed Prospectivity", kita menggunakan 
-        # Spatial Multi-Criteria Evaluation (SMCE) yang meniru bobot dari model XGBoost Shirkhani (2026):
-        # Alterasi Hidrotermal (Clay): 45%, Iron Oxide: 30%, Struktur: 25%
+        # 3. SPATIAL MULTI-CRITERIA EVALUATION (SMCE)
+        # Weighted linear combination with fixed expert weights. This is not a
+        # trained model: nothing is fitted, and the weights carry no uncertainty.
+        # Clay alteration 45%, iron oxide 30%, slope-as-structure 25%.
         
         # Normalisasi fitur ke skala 0-1
         # Hardcode the normalizations using global approximations to avoid heavy reduceRegion timeouts
@@ -799,11 +813,12 @@ def extract_prospectivity_map(lon, lat, buffer_km, output_tif_path, output_img_p
         # Fault proxy normalisation (gradients can go very high)
         norm_fault = fault_proxy.clamp(0, 60.0).divide(60.0)
         
-        # Prospectivity Score (0 - 100%)
-        # Pembobotan ML Ensemble
-        prospectivity = norm_clay.multiply(0.45) \
-            .add(norm_iron.multiply(0.30)) \
-            .add(norm_fault.multiply(0.25)) \
+        # Relative prioritisation score (0-100). NOT a probability: the weights
+        # are expert-assigned and the score has never been calibrated against
+        # drilling outcomes.
+        prospectivity = norm_clay.multiply(SMCE_WEIGHTS['clay_alteration']) \
+            .add(norm_iron.multiply(SMCE_WEIGHTS['iron_oxide'])) \
+            .add(norm_fault.multiply(SMCE_WEIGHTS['structure_slope'])) \
             .multiply(100).rename('prospectivity')
             
         # 4. UNDUH PETA PROSPECTIVITY
@@ -853,23 +868,35 @@ def extract_prospectivity_map(lon, lat, buffer_km, output_tif_path, output_img_p
         
         img_plot = ax.imshow(pros_masked, cmap=cmap, extent=extent, vmin=40, vmax=100, alpha=0.75, interpolation='gaussian')
         
-        ax.set_title(f"Mineral Prospectivity Mapping (Porphyry Cu-Au)\nMachine Learning Feature Integration (Alteration + Structure)", fontsize=14, fontweight='bold')
+        ax.set_title(
+            "Prioritisasi Prospek Mineral (Porphyry Cu-Au)\n"
+            "Spatial Multi-Criteria Evaluation — bobot ahli, bukan model terlatih",
+            fontsize=14, fontweight='bold')
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
         
         # Colorbar
         cb = plt.colorbar(img_plot, ax=ax, fraction=0.03, pad=0.04)
-        cb.set_label('Probabilitas Keterdapatan Bijih (%)', fontsize=12, fontweight='bold')
+        cb.set_label('Skor prioritas relatif (0-100, bukan probabilitas)',
+                     fontsize=11, fontweight='bold')
         
-        # Anotasi AI
-        props = dict(boxstyle='round,pad=1', facecolor='white', alpha=0.9, edgecolor='red', lw=1.5)
-        ax.text(0.03, 0.03, "Metodologi: XGBoost/SHAP proxy (Shirkhani, 2026)\nFitur Input: Clay Index, Iron Oxide Index, Fault Density\nTarget: High-Priority Drill Holes (>80%)", 
-                transform=ax.transAxes, fontsize=10, verticalalignment='bottom', bbox=props, fontweight='bold')
+        # Method annotation. States what actually ran.
+        props = dict(boxstyle='round,pad=1', facecolor='white', alpha=0.9, edgecolor='black', lw=1.2)
+        ax.text(
+            0.03, 0.03,
+            "Metode: Spatial Multi-Criteria Evaluation (jumlah berbobot linear)\n"
+            f"Bobot ahli: alterasi lempung {SMCE_WEIGHTS['clay_alteration']:.0%}, "
+            f"oksida besi {SMCE_WEIGHTS['iron_oxide']:.0%}, "
+            f"slope-sebagai-struktur {SMCE_WEIGHTS['structure_slope']:.0%}\n"
+            "Tidak ada model terlatih, tidak ada gradient boosting, tidak ada nilai Shapley.\n"
+            "Skor belum dikalibrasi terhadap hasil pengeboran — bukan probabilitas bijih.",
+            transform=ax.transAxes, fontsize=9, verticalalignment='bottom', bbox=props)
         
         plt.savefig(output_img_path, dpi=200, bbox_inches='tight')
         plt.close()
         
-        return f"SUCCESS: Mineral Prospectivity Map (Machine Learning) disimpan di {output_img_path}"
+        return (f"SUCCESS: Peta prioritisasi prospek mineral (SMCE, bobot ahli) "
+                f"disimpan di {output_img_path}")
         
     except Exception as e:
         return f"ERROR pada extract_prospectivity_map: {str(e)}"

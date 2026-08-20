@@ -25,6 +25,7 @@ ENV/
 # Output artifacts
 output_amdal/
 output_maps/
+output_bima/
 downloads/
 *.tif
 *.png

@@ -11,6 +11,7 @@ mod tools;
 mod validation;
 pub mod artifacts;
 pub mod calibration;
+pub mod citations;
 pub mod phreeqc_runner;
 pub mod modflow_runner;
 pub mod pyrite_kinetics;
@@ -265,6 +266,7 @@ async fn main() -> Result<()> {
                                     let params = tools::advanced_physics::swe_solver::SweParams {
                                         nx, ny, dx: p.dx_m, manning_n: p.manning_n,
                                         duration_s: p.duration_s, dt_max: p.dt_max_s, second_order: false,
+                                        history_interval_s: None,
                                     };
                                     let swe = tools::advanced_physics::swe_solver::solve_multi_source(&p.dem, &params, &sources, 1.0);
                                     let tolerance = p.mass_tolerance_pct.unwrap_or(coupling::DEFAULT_MASS_TOLERANCE_PCT);

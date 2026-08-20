@@ -41,3 +41,18 @@ jobs:
           pip install fastapi httpx pytest pytest-asyncio numpy pandas geopandas shapely rasterio xarray rioxarray
       - name: Run Pytest
         run: python -m pytest tests/test_*.py tests/microservices -v
+
+  # Blocks reintroduction of literature claims that cannot be traced to a
+  # resolvable DOI. --strict fails if any citation recorded as UNVERIFIED is
+  # referenced as a claim. --max-unregistered is a ratchet: lower it as tokens
+  # get verified and moved into the registry, never raise it.
+  audit-citations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Audit citations
+        run: python3 scripts/audit_citations.py --strict --max-unregistered 437

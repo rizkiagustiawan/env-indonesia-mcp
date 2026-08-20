@@ -38,6 +38,95 @@ def make_roi(lat, lon, buffer_km):
     return point.buffer(buffer_km * 1000).bounds()
 
 
+def otsu_threshold_array(values, nbins=256):
+    """Otsu (1979) threshold on a 1-D array: maximise between-class variance.
+
+    Distinct from the median, which is simply the 50th percentile and carries no
+    class-separation property. The local-raster path used to call a median
+    "Otsu-like"; this is the actual criterion.
+    """
+    values = np.asarray(values, dtype=float).ravel()
+    values = values[np.isfinite(values)]
+    if values.size == 0:
+        raise ValueError("otsu_threshold_array: no finite values")
+    if np.allclose(values.min(), values.max()):
+        return float(values.min())
+
+    counts, edges = np.histogram(values, bins=nbins)
+    centres = (edges[:-1] + edges[1:]) / 2.0
+    total = counts.sum()
+    total_sum = float((counts * centres).sum())
+
+    best_thresh = float(centres[0])
+    best_variance = -1.0
+    w0 = 0.0
+    sum0 = 0.0
+    for i in range(len(counts)):
+        w0 += counts[i]
+        if w0 == 0:
+            continue
+        w1 = total - w0
+        if w1 == 0:
+            break
+        sum0 += counts[i] * centres[i]
+        mu0 = sum0 / w0
+        mu1 = (total_sum - sum0) / w1
+        variance = w0 * w1 * (mu0 - mu1) ** 2
+        if variance > best_variance:
+            best_variance = variance
+            best_thresh = float(centres[i])
+    return best_thresh
+
+
+# Published accuracy for SAR flood mapping. Quoted as a spread, not a single
+# flattering figure, and split by setting because urban performance is far worse
+# than open-area performance.
+#
+#   Bonafilia et al. 2020, Sen1Floods11, DOI 10.1109/cvprw50498.2020.00113
+#   Paul & Ganju 2021, semi-supervised on Sen1Floods11, arXiv 2107.08369
+#   Bai et al. 2021, S1+S2 fusion on Sen1Floods11, DOI 10.3390/rs13112220
+#   Bereczky et al. 2022, CNN vs rule-based, DOI 10.1109/jstars.2022.3152127
+#   Aldiansyah et al. 2024, Kendari Indonesia, DOI 10.23960/jgrs.ft.unila.205
+#   Zhao, Xiong & Zhu 2024, UrbanSARFloods, arXiv 2406.04111
+#   Mukherjee et al. 2026, Urban Flood Observations, arXiv 2604.23066
+#   Amitrano et al. 2024, review, DOI 10.3390/rs16040656
+SAR_FLOOD_ACCURACY_BOUNDS = [
+    ("Sen1Floods11, semi-supervised ensemble", "IoU 0.7654", "open area", "Paul & Ganju 2021"),
+    ("Sen1Floods11, S1+S2 fusion", "mIoU 52.99%", "open area", "Bai et al. 2021"),
+    ("Kendari, S1 + Otsu (area tergenang)", "OA 95.81%, Kappa 0.86", "open area", "Aldiansyah et al. 2024"),
+    ("UFO, model tersegmentasi terlatih", "mIoU 77.3", "urban", "Mukherjee et al. 2026"),
+    ("Google Dynamic World, kelas air", "IoU 48.1", "urban", "Mukherjee et al. 2026"),
+    ("NASA IMPACT (Sentinel-1)", "IoU 44.1", "urban", "Mukherjee et al. 2026"),
+]
+
+
+def report_sar_flood_bounds():
+    """Text block stating what SAR flood mapping actually achieves."""
+    lines = [
+        "Batas ketelitian terpublikasi untuk pemetaan banjir SAR:",
+        f"  {'Metode / produk':<42} {'Skor':<24} {'Setting'}",
+    ]
+    for name, score, setting, ref in SAR_FLOOD_ACCURACY_BOUNDS:
+        lines.append(f"  {name:<42} {score:<24} {setting}  [{ref}]")
+    lines += [
+        "",
+        "  Catatan penting:",
+        "  - Angka urban jauh lebih rendah daripada open-area. Untuk Jakarta, Semarang,",
+        "    atau kota lain, pakai batas urban (IoU 44-48 untuk produk siap pakai).",
+        "  - Zhao, Xiong & Zhu 2024 (UrbanSARFloods, arXiv 2406.04111): weighted",
+        "    cross-entropy dan transfer learning TIDAK cukup mengatasi data tak seimbang;",
+        "    deteksi banjir urban tetap sulit.",
+        "  - Amitrano et al. 2024 (DOI 10.3390/rs16040656): SAR masih terbatas berat di",
+        "    area bervegetasi dan urban karena mekanisme hamburan kompleks.",
+        "  - Bereczky et al. 2022 (DOI 10.1109/jstars.2022.3152127): dual-pol VV+VH",
+        "    mengalahkan single-pol sebesar 5% IoU.",
+        "",
+        "  Angka di atas adalah performa yang dilaporkan pada dataset masing-masing,",
+        "  BUKAN akurasi keluaran tool ini pada AOI Anda.",
+    ]
+    return "\n".join(lines)
+
+
 def get_thumbnail(image, roi, vis_params, dimensions=800):
     """Get thumbnail URL for visualization."""
     vis = image.visualize(**vis_params)
@@ -173,7 +262,13 @@ def flood_detection(lat, lon, buffer_km, pre_date, post_date, output_path):
                 f"Post-event: {post_date} - {post_end}\n"
                 f"Estimasi area tergenang: {flood_ha:.1f} Ha\n"
                 f"Visualisasi: R=pre-VV, G=post-VV, B=pre-VV (area hijau = banjir)\n"
-                f"Threshold: VV < {vv_threshold:.1f} dB (Otsu adaptive) dan perubahan > 3 dB")
+                f"Threshold: VV < {vv_threshold:.1f} dB (Otsu adaptive) dan perubahan > 3 dB\n"
+                f"\nBELUM DITERAPKAN pada pipeline ini: radiometric terrain correction\n"
+                f"(koreksi lereng) dan speckle filter. Di medan berlereng, backscatter\n"
+                f"belum dikoreksi sehingga bayangan dan layover radar dapat terbaca\n"
+                f"sebagai air. Rujukan koreksi: Vollrath, Mullissa & Reiche 2020,\n"
+                f"DOI 10.3390/rs12111867 (modul GEE angular-based slope correction).\n"
+                f"\n{report_sar_flood_bounds()}")
     return "ERROR: Gagal mengunduh hasil deteksi banjir."
 
 
@@ -553,12 +648,20 @@ def local_analysis(input_path, output_path, analysis_type):
                     bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 
         elif analysis_type == "threshold":
-            # Binary classification with auto-threshold (Otsu-like)
+            # Binary classification via Otsu (1979): maximises between-class
+            # variance. Previously this computed a median and labelled it
+            # "Otsu-like", which are different criteria and give different cuts.
             valid = data[data != src.nodata] if src.nodata is not None else data.flatten()
-            threshold = np.median(valid)
+            try:
+                threshold = otsu_threshold_array(valid)
+                method_label = "Otsu 1979"
+            except ValueError:
+                threshold = float(np.median(valid))
+                method_label = "median (fallback: Otsu gagal)"
             binary = np.where(data > threshold, 1, 0)
             ax.imshow(binary, cmap='RdYlGn')
-            ax.set_title(f"Threshold Analysis (T={threshold:.2f})", fontweight='bold')
+            ax.set_title(f"Threshold Analysis (T={threshold:.2f}, {method_label})",
+                         fontweight='bold')
 
         else:  # Default: visualization
             vmin = np.percentile(data[data != 0], 2) if np.any(data != 0) else data.min()

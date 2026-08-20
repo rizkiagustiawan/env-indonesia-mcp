@@ -327,6 +327,110 @@ pub fn find_province(query: &str) -> Option<&'static Province> {
 /// BMKG city → adm4 code mapping (Indonesian cities)
 /// Format: PP.KK.CC.DDDD (provinsi.kab_kota.kecamatan.kelurahan)
 /// Ref: Keputusan Mendagri No. 100.1.1-6117 Tahun 2022
+/// Place names that exist BOTH as a Kota and as a Kabupaten in Indonesia.
+///
+/// A bare name like "bima" is genuinely ambiguous: Kota Bima (BPS 52.72) and
+/// Kabupaten Bima (BPS 52.06) are different administrative entities covering
+/// different territory. Silently resolving to one of them produces analysis for
+/// the wrong area with no error, so `resolve_adm4` refuses these bare names and
+/// requires an explicit "kota <name>" or "kabupaten <name>" prefix.
+///
+/// This list is deliberately conservative: it contains only pairs verified to
+/// share an identical name. It is NOT exhaustive — additions are welcome, but
+/// each entry must be checked against the BPS/Kemendagri register first.
+pub const AMBIGUOUS_KOTA_KABUPATEN: &[&str] = &[
+    "bandung",
+    "bekasi",
+    "bima",
+    "blitar",
+    "bogor",
+    "cirebon",
+    "gorontalo",
+    "jayapura",
+    "kediri",
+    "kupang",
+    "madiun",
+    "magelang",
+    "malang",
+    "mojokerto",
+    "pasuruan",
+    "pekalongan",
+    "probolinggo",
+    "semarang",
+    "serang",
+    "solok",
+    "sorong",
+    "sukabumi",
+    "tangerang",
+    "tasikmalaya",
+    "tegal",
+];
+
+/// Resolve a place name to a BMKG adm4 code, refusing ambiguous input.
+///
+/// Returns `Err` when the name is shared by a Kota and a Kabupaten and no
+/// explicit prefix was given, and when a Kabupaten was requested whose adm4
+/// code has not been verified in this codebase. Guessing a code would silently
+/// point the analysis at the wrong territory, so we surface the gap instead.
+pub fn resolve_adm4(location: &str) -> Result<String, String> {
+    let raw = location.trim();
+    let lower = raw.to_lowercase();
+
+    // Already a raw adm4 code (e.g. "52.72.01.1001") — pass through untouched.
+    if lower
+        .chars()
+        .all(|c| c.is_ascii_digit() || c == '.')
+        && lower.contains('.')
+    {
+        return Ok(raw.to_string());
+    }
+
+    if let Some(rest) = lower.strip_prefix("kabupaten ").or(lower.strip_prefix("kab. ")).or(lower.strip_prefix("kab ")) {
+        let name = rest.trim();
+        return match kabupaten_adm4(name) {
+            Some(code) => Ok(code.to_string()),
+            None => Err(format!(
+                "Kode adm4 untuk Kabupaten {} belum terverifikasi di basis data ini. \
+                 Berikan kode adm4 mentah (format 99.99.99.9999) dari register BPS/Kemendagri. \
+                 Kode tidak ditebak karena salah kode berarti analisis untuk wilayah yang salah.",
+                name
+            )),
+        };
+    }
+
+    let city_key = lower
+        .strip_prefix("kota ")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| lower.clone());
+    let explicit_kota = lower.starts_with("kota ");
+
+    if !explicit_kota && AMBIGUOUS_KOTA_KABUPATEN.contains(&city_key.as_str()) {
+        return Err(format!(
+            "Nama '{}' ambigu: ada Kota {} dan Kabupaten {} sebagai wilayah administratif berbeda. \
+             Sebutkan salah satu secara eksplisit: 'kota {}' atau 'kabupaten {}'.",
+            raw, raw, raw, city_key, city_key
+        ));
+    }
+
+    Ok(bmkg_adm4(&city_key).to_string())
+}
+
+/// Verified Kabupaten adm4 codes. Only entries checked against the BPS register
+/// belong here; an unknown name returns `None` so the caller can ask for a raw
+/// code rather than receive a guess.
+fn kabupaten_adm4(name: &str) -> Option<&'static str> {
+    match name {
+        "bima" => Some(BIMA_KAB_ADM4),
+        "dompu" => Some(DOMPU_ADM4),
+        "sumbawa" => Some(SUMBAWA_ADM4),
+        "lombok barat" => Some(LOMBOK_BARAT_ADM4),
+        _ => None,
+    }
+}
+
+/// Low-level name → adm4 lookup. Every entry here is a **Kota** unless the code
+/// carries a `.0x` regency segment. Prefer [`resolve_adm4`], which rejects names
+/// that are ambiguous between Kota and Kabupaten.
 pub fn bmkg_adm4<'a>(city: &'a str) -> &'a str {
     match city.to_lowercase().as_str() {
         // === JAWA ===
@@ -369,6 +473,8 @@ pub fn bmkg_adm4<'a>(city: &'a str) -> &'a str {
         "denpasar" => "51.71.01.1001",
         "mataram" => "52.71.01.1004", // Verified: 1004
         "kupang" => "53.71.01.1001",
+        // Kota Bima (BPS 52.72) — NOT Kabupaten Bima (52.06). Reach the regency
+        // via `resolve_adm4("kabupaten bima")`.
         "bima" => "52.72.01.1001",
         "sumbawa" | "sumbawa besar" => "52.04.01.2001",
         // === KALIMANTAN ===
@@ -412,8 +518,65 @@ pub const NTB_PROVINCE_CODE: &str = "52";
 pub const MATARAM_ADM4: &str = "52.71.01.1004";
 pub const LOMBOK_BARAT_ADM4: &str = "52.01.01.2001";
 pub const SUMBAWA_ADM4: &str = "52.04.01.2001";
-pub const BIMA_ADM4: &str = "52.06.01.2001";
+
+/// Kabupaten Bima (BPS 52.06) — the regency.
+pub const BIMA_KAB_ADM4: &str = "52.06.01.2001";
+/// Kota Bima (BPS 52.72) — the city, a separate administrative entity.
+pub const BIMA_KOTA_ADM4: &str = "52.72.01.1001";
+/// Deprecated: ambiguous name. Points at Kabupaten Bima for backward
+/// compatibility; use [`BIMA_KAB_ADM4`] or [`BIMA_KOTA_ADM4`] explicitly.
+#[deprecated(note = "ambiguous: use BIMA_KAB_ADM4 or BIMA_KOTA_ADM4")]
+pub const BIMA_ADM4: &str = BIMA_KAB_ADM4;
 pub const DOMPU_ADM4: &str = "52.05.01.2001";
+
+#[cfg(test)]
+mod adm4_tests {
+    use super::*;
+
+    #[test]
+    fn bare_ambiguous_name_is_rejected() {
+        let err = resolve_adm4("bima").unwrap_err();
+        assert!(err.contains("ambigu"), "unexpected message: {err}");
+        assert!(err.contains("kota bima"));
+        assert!(err.contains("kabupaten bima"));
+    }
+
+    #[test]
+    fn explicit_kota_and_kabupaten_resolve_differently() {
+        let kota = resolve_adm4("kota bima").unwrap();
+        let kab = resolve_adm4("kabupaten bima").unwrap();
+        assert_eq!(kota, BIMA_KOTA_ADM4);
+        assert_eq!(kab, BIMA_KAB_ADM4);
+        assert_ne!(kota, kab, "Kota and Kabupaten Bima must not collapse");
+    }
+
+    #[test]
+    fn unambiguous_name_still_resolves() {
+        assert_eq!(resolve_adm4("mataram").unwrap(), MATARAM_ADM4);
+        assert_eq!(resolve_adm4("surabaya").unwrap(), "35.78.01.1001");
+    }
+
+    #[test]
+    fn raw_adm4_code_passes_through() {
+        assert_eq!(resolve_adm4("52.72.01.1001").unwrap(), "52.72.01.1001");
+    }
+
+    #[test]
+    fn unverified_kabupaten_is_refused_not_guessed() {
+        let err = resolve_adm4("kabupaten sukabumi").unwrap_err();
+        assert!(err.contains("belum terverifikasi"), "unexpected: {err}");
+    }
+
+    #[test]
+    fn every_ambiguous_name_is_actually_rejected() {
+        for name in AMBIGUOUS_KOTA_KABUPATEN {
+            assert!(
+                resolve_adm4(name).is_err(),
+                "'{name}' is listed as ambiguous but resolved anyway"
+            );
+        }
+    }
+}
 
 /// Indonesian-specific environmental parameters (from peer-reviewed papers)
 pub mod env_params {
