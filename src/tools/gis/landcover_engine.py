@@ -343,7 +343,8 @@ def accuracy_assessment(predicted_json, actual_json):
     print(f"SUCCESS: Accuracy Assessment")
     print(f"Total samples: {n} | Classes: {n_classes}")
     print(f"\nConfusion Matrix:")
-    header = f"{'Actual\\Predicted':<15}" + "".join(f"{c:<10}" for c in classes) + f"{'Total':<10}"
+    matrix_header = "Actual\\Predicted"
+    header = f"{matrix_header:<15}" + "".join(f"{c:<10}" for c in classes) + f"{'Total':<10}"
     print(header)
     print("-" * len(header))
     for i, c in enumerate(classes):
