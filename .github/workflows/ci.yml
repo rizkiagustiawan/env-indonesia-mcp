@@ -10,9 +10,9 @@ jobs:
   test-rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Cache Cargo
-        uses: actions/cache@v3
+          uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/bin/
@@ -31,13 +31,13 @@ jobs:
   test-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup Python
-        uses: actions/setup-python@v5
+          uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          pip install httpx pytest pytest-asyncio
+          pip install fastapi httpx pytest pytest-asyncio numpy pandas geopandas shapely rasterio xarray rioxarray
       - name: Run Pytest
-        run: python -m pytest tests/ -v
+        run: python -m pytest tests/test_*.py tests/microservices -v

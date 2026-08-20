@@ -101,10 +101,10 @@ pub fn routing_error_acceptable(error_pct: f64, tolerance_pct: f64) -> bool {
 
 /// Run a SWMM model to completion and return its routing/node statistics.
 pub async fn run_swmm(inp_path: &str, timeout_secs: u64) -> Result<SwmmRunResult, String> {
-    let validated = validate_inp_path(inp_path)?;
     if timeout_secs == 0 {
         return Err("SWMM timeout_secs must be greater than zero".to_string());
     }
+    let validated = validate_inp_path(inp_path)?;
 
     let python = swmm_python();
     let script = swmm_script();

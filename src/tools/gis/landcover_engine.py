@@ -282,7 +282,8 @@ def change_detection(lat, lon, buffer_km, date1_start, date1_end, date2_start, d
     # Print transition matrix
     print(f"\nMatriks Transisi Penggunaan Lahan (Ha):")
     all_trans_classes = sorted(set(k for row in matrix.values() for k in row))
-    print(f"{'Dari \\ Ke':<30}", end='')
+    transition_header = "Dari \\ Ke"
+    print(f"{transition_header:<30}", end='')
     for c in all_trans_classes:
         print(f"{c[:12]:>14}", end='')
     print()

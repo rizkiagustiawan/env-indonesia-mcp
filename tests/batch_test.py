@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import sys, json, subprocess, time, os
+from pathlib import Path
 
-BINARY = "/home/awan/Documents/env-indonesia-mcp/target/release/env-indonesia-mcp"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BINARY = str(PROJECT_ROOT / "target" / "release" / "env-indonesia-mcp")
 SUCCESS, FAILED, TIMEOUT = 0, 0, 0
 
 # Sample valid inputs for different param types
@@ -32,7 +34,7 @@ PARAMS_MAP = {
 
 # 1. Extract tools and their param structs
 tools = []
-with open("/home/awan/Documents/env-indonesia-mcp/src/server.rs", "r") as f:
+with open(PROJECT_ROOT / "src" / "server.rs", "r") as f:
     lines = f.readlines()
     for i, line in enumerate(lines):
         if "#[tool(" in line:
