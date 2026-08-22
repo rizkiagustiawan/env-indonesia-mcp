@@ -229,6 +229,11 @@ async fn main() -> Result<()> {
                     let p: evidence::EvidenceAssessmentRequest = serde_json::from_str(tool_args)?;
                     println!("{}", evidence::assess_request(&p));
                 },
+                "independent_result_validation" => {
+                    let p: server::IndependentValidationParam = serde_json::from_str(tool_args)?;
+                    let payload: serde_json::Value = serde_json::from_str(&p.result_json)?;
+                    println!("{}", validation::independent::validate_result(&payload));
+                },
                 "pyrite_oxidation_kinetics" => {
                     let p: pyrite_kinetics::PyriteKineticsRequest = serde_json::from_str(tool_args)?;
                     match pyrite_kinetics::run_pyrite_kinetics(&p).await {
@@ -409,6 +414,25 @@ async fn main() -> Result<()> {
                     let res = tools::satellite::flood_sar::search_flood_scenes(
                         &client, p.lat, p.lon, p.buffer_km.unwrap_or(10.0), &p.flood_date
                     ).await;
+                    println!("{}", res);
+                },
+                "dem_gravity_network" => {
+                    let p: server::GravityNetworkParam = serde_json::from_str(tool_args)?;
+                    let res = tools::gis::route_tools::build_gravity_network(
+                        &p.dem_path,
+                        &p.nodes_csv,
+                        &p.edges_csv,
+                        &p.output_edges_csv,
+                    );
+                    println!("{}", res);
+                },
+                "qgis_route_export" => {
+                    let p: server::QgisRouteExportParam = serde_json::from_str(tool_args)?;
+                    let res = tools::gis::route_tools::export_qgis_route(
+                        &p.shp_path,
+                        &p.route,
+                        &p.output_geojson,
+                    );
                     println!("{}", res);
                 },
                 "karhutla_assessment" => {

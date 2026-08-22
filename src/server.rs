@@ -284,6 +284,26 @@ pub struct WatershedParam {
     pub output_path: String,
 }
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct GravityNetworkParam {
+    #[schemars(description = "Input DEM GeoTIFF path")]
+    pub dem_path: String,
+    #[schemars(description = "CSV with id,name,lon,lat columns")]
+    pub nodes_csv: String,
+    #[schemars(description = "CSV with source,target,weight columns; weight is distance in km")]
+    pub edges_csv: String,
+    #[schemars(description = "New output CSV path for downhill directed edges")]
+    pub output_edges_csv: String,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct QgisRouteExportParam {
+    #[schemars(description = "Input Shapefile path containing NOMOR_PETA")]
+    pub shp_path: String,
+    #[schemars(description = "Unique route node IDs separated by '->'")]
+    pub route: String,
+    #[schemars(description = "New output GeoJSON path")]
+    pub output_geojson: String,
+}
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct IdwParam {
     pub points: Vec<Vec<f64>>,
     pub target_x: f64,
@@ -582,6 +602,12 @@ pub struct ValidatorV3Param {
     pub slope_angle_deg: f64,
     #[schemars(description = "Kedalaman material (m)")]
     pub depth_m: f64,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct IndependentValidationParam {
+    #[schemars(description = "Structured scientific result envelope as a JSON object")]
+    pub result_json: String,
 }
 
 // ====== GOD TIER: New Compliance Params ======
@@ -4762,6 +4788,29 @@ impl EnvIndonesiaServer {
         tools::processing::watershed::delineate(&p.dem_path, p.pour_x, p.pour_y, &p.output_path)
     }
 
+    #[tool(
+        description = "Build a DEM-derived downhill candidate network from node/edge CSVs. Screening routing only, not a hydraulic solver. Creates directed edge CSV plus a 3D node CSV."
+    )]
+    fn dem_gravity_network(&self, Parameters(p): Parameters<GravityNetworkParam>) -> String {
+        tools::gis::route_tools::build_gravity_network(
+            &p.dem_path,
+            &p.nodes_csv,
+            &p.edges_csv,
+            &p.output_edges_csv,
+        )
+    }
+
+    #[tool(
+        description = "Export a route from a Shapefile with NOMOR_PETA to GeoJSON polygons plus a centroid LineString. Cartographic route export only."
+    )]
+    fn qgis_route_export(&self, Parameters(p): Parameters<QgisRouteExportParam>) -> String {
+        tools::gis::route_tools::export_qgis_route(
+            &p.shp_path,
+            &p.route,
+            &p.output_geojson,
+        )
+    }
+
     #[tool(description = "IDW Spatial Interpolation. Interpolasi data titik ke lokasi target.")]
     fn spatial_interpolation_idw(&self, Parameters(p): Parameters<IdwParam>) -> String {
         let points: Vec<(f64, f64, f64)> =
@@ -6098,6 +6147,15 @@ impl EnvIndonesiaServer {
     )]
     fn qaqc_validation(&self, Parameters(p): Parameters<QaqcParam>) -> String {
         tools::biodiversity::qaqc::validate(&p.data_json)
+    }
+
+    #[tool(description = "Independent hard validation of a scientific result envelope. Checks provenance, uncertainty, CRS/bbox/resolution, mass balance, and execution receipts. Never promotes screening_only to validated.")]
+    fn independent_result_validation(&self, Parameters(p): Parameters<IndependentValidationParam>) -> String {
+        let payload: serde_json::Value = match serde_json::from_str(&p.result_json) {
+            Ok(payload) => payload,
+            Err(error) => return serde_json::json!({"validation_status":"reject", "errors":[format!("Invalid result JSON: {error}")]}).to_string(),
+        };
+        crate::validation::independent::validate_result(&payload).to_string()
     }
 
     #[tool(
