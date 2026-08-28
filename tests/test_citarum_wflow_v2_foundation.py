@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from tools.wflow_env.validate_wflow_forcing import validate_forcing
@@ -386,4 +387,99 @@ def test_cli_returns_nonzero_for_invalid_forcing_without_receipt(tmp_path):
 
     assert result.returncode != 0
     assert json.loads(result.stdout)["status"] == "invalid"
+    assert not receipt.exists()
+
+
+@pytest.mark.parametrize("alias", ("forcing", "staticmaps", "outlet"))
+def test_cli_rejects_receipt_path_aliasing_input_without_modifying_it(tmp_path, alias):
+    forcing = tmp_path / "forcing.nc"
+    staticmaps = tmp_path / "staticmaps.nc"
+    outlet = ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json"
+    _write_forcing(forcing)
+    _write_staticmaps(staticmaps)
+    inputs = {"forcing": forcing, "staticmaps": staticmaps, "outlet": outlet}
+    before = {name: path.read_bytes() for name, path in inputs.items()}
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--staticmaps",
+            str(staticmaps),
+            "--outlet",
+            str(outlet),
+            "--receipt",
+            str(inputs[alias]),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert json.loads(result.stdout)["status"] == "invalid"
+    assert result.stderr == ""
+    assert {name: path.read_bytes() for name, path in inputs.items()} == before
+
+
+def test_cli_rejects_nan_outlet_without_nonstandard_json_stdout(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    outlet = tmp_path / "nan-outlet.json"
+    _write_forcing(forcing)
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload["longitude"] = float("nan")
+    outlet.write_text(json.dumps(payload))
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--outlet",
+            str(outlet),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    report = json.loads(
+        result.stdout,
+        parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)),
+    )
+    assert report["status"] == "invalid"
+    assert any("outlet" in error.lower() for error in report["errors"])
+    assert result.stderr == ""
+
+
+def test_cli_reports_receipt_write_failure_as_json_without_traceback(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    receipt = tmp_path / "missing-parent" / "receipt.json"
+    _write_forcing(forcing)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--receipt",
+            str(receipt),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    report = json.loads(result.stdout)
+    assert report["status"] == "invalid"
+    assert any("receipt" in error.lower() for error in report["errors"])
+    assert result.stderr == ""
     assert not receipt.exists()

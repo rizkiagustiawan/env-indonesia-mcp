@@ -32,6 +32,10 @@ _STRING_FIELDS = (
 )
 
 
+def _reject_nonfinite_json(value):
+    raise ValueError(f"non-finite JSON value {value} is not allowed")
+
+
 def _report(path):
     return {
         "status": "invalid",
@@ -90,8 +94,8 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
 
     try:
         with open(outlet_path, encoding="utf-8") as handle:
-            payload = json.load(handle)
-    except (FileNotFoundError, OSError, json.JSONDecodeError) as exc:
+            payload = json.load(handle, parse_constant=_reject_nonfinite_json)
+    except (OSError, ValueError) as exc:
         errors.append(f"unable to read outlet metadata: {exc}")
         return report
 

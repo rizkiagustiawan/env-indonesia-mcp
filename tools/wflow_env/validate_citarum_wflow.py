@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -21,6 +22,32 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _invalid_report(error: str) -> dict[str, object]:
+    return {
+        "status": "invalid",
+        "screening_status": "screening_only",
+        "errors": [error],
+        "warnings": [],
+    }
+
+
+def _receipt_alias(receipt_path: Path, input_paths: dict[str, Path | None]) -> str | None:
+    resolved_receipt = receipt_path.resolve()
+    for name, input_path in input_paths.items():
+        if input_path is None:
+            continue
+        if resolved_receipt == input_path.resolve():
+            return name
+        try:
+            if receipt_path.exists() and input_path.exists() and os.path.samefile(
+                receipt_path, input_path
+            ):
+                return name
+        except OSError:
+            continue
+    return None
 
 
 def _report(forcing_path: Path, staticmaps_path: Path | None, outlet_path: Path | None):
@@ -80,10 +107,30 @@ def main(argv=None) -> int:
     parser.add_argument("--receipt", type=Path)
     args = parser.parse_args(argv)
 
-    report = _report(args.forcing, args.staticmaps, args.outlet)
+    input_paths = {
+        "forcing": args.forcing,
+        "staticmaps": args.staticmaps,
+        "outlet": args.outlet,
+    }
+    alias = (
+        _receipt_alias(args.receipt, input_paths)
+        if args.receipt is not None
+        else None
+    )
+    if alias is not None:
+        report = _invalid_report(
+            f"receipt path must not alias the {alias} input path"
+        )
+    else:
+        report = _report(args.forcing, args.staticmaps, args.outlet)
+
     if report["status"] == "valid" and args.receipt is not None:
-        _write_receipt(args.receipt, args.forcing, args.staticmaps, args.outlet)
-    print(json.dumps(report, indent=2))
+        try:
+            _write_receipt(args.receipt, args.forcing, args.staticmaps, args.outlet)
+        except OSError as exc:
+            report["status"] = "invalid"
+            report["errors"].append(f"unable to write receipt: {exc}")
+    print(json.dumps(report, indent=2, allow_nan=False))
     return 0 if report["status"] == "valid" else 1
 
 
