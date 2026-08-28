@@ -303,3 +303,28 @@ def test_outlet_validation_does_not_modify_metadata():
 
     assert report["status"] == "valid"
     assert _sha256(outlet) == before
+
+
+def test_list_validation_state_returns_invalid_report(tmp_path):
+    outlet = tmp_path / "list-state-outlet.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    payload["validation_state"] = ["provisional"]
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("validation_state" in error for error in report["errors"])
+
+
+def test_extremely_large_integer_coordinates_return_invalid_report(tmp_path):
+    for coordinate in ("longitude", "latitude"):
+        outlet = tmp_path / f"large-{coordinate}.json"
+        payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+        payload[coordinate] = 10**400
+        outlet.write_text(json.dumps(payload))
+
+        report = validate_outlet(outlet)
+
+        assert report["status"] == "invalid"
+        assert any(coordinate in error for error in report["errors"])

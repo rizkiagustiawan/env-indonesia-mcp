@@ -46,7 +46,14 @@ def _finite_coordinate(value, name, minimum, maximum, errors):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         errors.append(f"{name} must be a finite number")
         return
-    if not math.isfinite(value) or not minimum <= value <= maximum:
+    if isinstance(value, int):
+        in_range = minimum <= value <= maximum
+    else:
+        try:
+            in_range = math.isfinite(value) and minimum <= value <= maximum
+        except (OverflowError, ValueError):
+            in_range = False
+    if not in_range:
         errors.append(f"{name} must be finite and between {minimum} and {maximum}")
 
 
@@ -107,7 +114,7 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
         _finite_coordinate(payload["latitude"], "latitude", -90, 90, errors)
 
     validation_state = payload.get("validation_state")
-    if validation_state not in _VALIDATION_STATES:
+    if not isinstance(validation_state, str) or validation_state not in _VALIDATION_STATES:
         errors.append("validation_state must be provisional or resolved")
 
     row = payload.get("grid_row")
