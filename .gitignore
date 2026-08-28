@@ -1,6 +1,7 @@
 # Codebase Memory / Knowledge Graph artifacts
 .codebase-memory/
 .superpowers/
+.worktrees/
 
 # Documentation planning artifacts (AI generated)
 docs/superpowers/
