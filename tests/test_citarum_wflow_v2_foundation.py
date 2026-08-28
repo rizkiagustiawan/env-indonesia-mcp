@@ -483,3 +483,34 @@ def test_cli_reports_receipt_write_failure_as_json_without_traceback(tmp_path):
     assert any("receipt" in error.lower() for error in report["errors"])
     assert result.stderr == ""
     assert not receipt.exists()
+
+
+@pytest.mark.parametrize("coordinate", ("lat", "lon"))
+def test_cli_reports_nan_forcing_coordinate_as_strict_json(tmp_path, coordinate):
+    forcing = tmp_path / f"nan-{coordinate}.nc"
+    _write_forcing(forcing)
+    with xr.open_dataset(forcing) as dataset:
+        updated = dataset.load()
+    updated[coordinate].values[0] = np.nan
+    updated.to_netcdf(forcing, mode="w")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    report = json.loads(
+        result.stdout,
+        parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)),
+    )
+    assert report["status"] == "invalid"
+    assert any(coordinate in error for error in report["errors"])
+    assert result.stderr == ""

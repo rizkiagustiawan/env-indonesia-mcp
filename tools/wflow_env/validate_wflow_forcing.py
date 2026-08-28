@@ -91,15 +91,21 @@ def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
                     errors.append(f"time coordinate is not decodable as dates: {exc}")
 
             if lat_values is not None:
-                summary["lat_range"] = [
-                    float(np.min(lat_values)),
-                    float(np.max(lat_values)),
-                ]
+                if np.all(np.isfinite(lat_values)):
+                    summary["lat_range"] = [
+                        float(np.min(lat_values)),
+                        float(np.max(lat_values)),
+                    ]
+                else:
+                    errors.append("lat coordinates must be finite")
             if lon_values is not None:
-                summary["lon_range"] = [
-                    float(np.min(lon_values)),
-                    float(np.max(lon_values)),
-                ]
+                if np.all(np.isfinite(lon_values)):
+                    summary["lon_range"] = [
+                        float(np.min(lon_values)),
+                        float(np.max(lon_values)),
+                    ]
+                else:
+                    errors.append("lon coordinates must be finite")
 
             for name, expected_units in _UNITS.items():
                 if name not in forcing:
