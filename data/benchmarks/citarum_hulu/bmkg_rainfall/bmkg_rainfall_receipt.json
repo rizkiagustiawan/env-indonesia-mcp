@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1.0",
+  "source": "BMKG Data Online",
+  "source_url": "https://dataonline.bmkg.go.id/data-bulanan",
+  "retrieved_at": "2026-08-24",
+  "account": "redacted",
+  "station": {
+    "wmo_id": "96783",
+    "name": "Stasiun Geofisika Bandung",
+    "latitude": -6.88356,
+    "longitude": 107.59733,
+    "elevation_m": 791,
+    "province": "Jawa Barat",
+    "regency": "Kota Bandung"
+  },
+  "parameter": "rainfall",
+  "unit": "mm",
+  "aggregation": "monthly_total",
+  "data": {
+    "2025-03": {
+      "value_mm": 274.1,
+      "status": "downloaded",
+      "file": "bmkg_rr_96783_bandung_202503.xlsx",
+      "sha256": "33e959845b729368f6eca0975fe9d2679d8bba832bfc67e2acd7af172facb78d",
+      "notes": "Single monthly accumulation value. BMKG data bulanan."
+    },
+    "2016-03": {
+      "status": "access_denied_historical",
+      "reason": "BMKG restricts free Data Online access to the last 2 years per Peraturan BMKG No 4/2022.",
+      "alternative": "PTSP BMKG (ptsp.bmkg.go.id) for paid historical data >2 years."
+    }
+  },
+  "sisa_kuota": 22,
+  "limitations": [
+    "Data bulanan dari BMKG adalah satu nilai akumulasi bulanan, bukan deret harian.",
+    "Satu stasiun titik tidak mewakili variabilitas spasial curah hujan DAS Citarum Hulu (~2315 km2).",
+    "Untuk rainfall-runoff modeling, diperlukan curah hujan harian; BMKG menyediakan akses ini via menu Data Harian di portal yang sama.",
+    "Data 2016 tidak dapat diakses melalui portal gratis; gunakan jalur BMKG/PTSP untuk data historis.",
+    "Data ini adalah observasi ground truth untuk validasi titik, bukan forcing spasial model hidrologi."
+  ]
+}

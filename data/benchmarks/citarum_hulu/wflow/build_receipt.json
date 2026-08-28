@@ -1,0 +1,50 @@
+{
+  "schema_version": "0.1.0",
+  "status": "screening_only",
+  "build_time_utc": "2026-08-24T07:13:11Z",
+  "inputs": {
+    "dem": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/conditioning/dem_citarum_hulu_conditioned_streamburn5m.tif",
+    "dem_sha256": "13c9b2fc28abc0cb9d845ede788b512929af3d016135cec1e20ee86a7418b017",
+    "forcing": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/forcing_open_meteo_2016-03-10_2016-03-16.json"
+  },
+  "parameters": {
+    "resolution_deg": 0.005,
+    "resolution_m_approx": 552.4678883253505,
+    "river_threshold_cells": 108,
+    "crs": "EPSG:4326",
+    "soil_model": "literature_defaults_tropical_clay_loam",
+    "landcover_model": "literature_defaults_tropical_forest",
+    "forcing_method": "spatially_uniform_open_meteo",
+    "forcing_period": "2016-03-10/2016-03-16",
+    "precip_range_mm_per_day": [
+      1.399999976158142,
+      29.799999237060547
+    ]
+  },
+  "outputs": {
+    "staticmaps": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/staticmaps.nc",
+    "forcing": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016.nc",
+    "config": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/citarum_sbm.toml",
+    "grid_shape": [
+      106,
+      139
+    ],
+    "valid_cells": 7581,
+    "river_cells": 359,
+    "subcatchments": 1
+  },
+  "hashes_sha256": {
+    "staticmaps.nc": "09a3490d75dbc4d2cbefe2e5c9ba9b37d4d02ffa484adb01c462e6e6af81a601",
+    "forcing_2016.nc": "f5a9d01dcab1141e8fa7b38e90906f2a5577b9cc7fe910a485209868449154d8",
+    "citarum_sbm.toml": "2e38bd341fa298896777c1d840a98016eb2b8f9425bafaf56190e06f54793229"
+  },
+  "limitations": [
+    "Soil and landcover parameters are literature defaults, not local survey or ISRIC/ESA CCI.",
+    "Forcing is spatially uniform from a single Open-Meteo grid cell; no rainfall spatial variability.",
+    "PET is approximate (Hargreaves or constant), not Penman-Monteith.",
+    "No river cross-sections, reservoir, lake, or groundwater module.",
+    "No calibration or validation has been performed.",
+    "30m DEM was resampled to ~557m; sub-grid topographic effects are lost.",
+    "This is a screening-level simulation only."
+  ]
+}

@@ -28,6 +28,12 @@ output_maps/
 output_bima/
 downloads/
 *.tif
+data/benchmarks/citarum_hulu/**/*.geojson
+data/benchmarks/citarum_hulu/**/*.gpkg
+data/benchmarks/citarum_hulu/rbi_sungai_page_*.geojson
+tools/wflow_env/data/
+tools/wflow_env/*.log
+*.nc
 *.png
 *.gif
 *.pdf

@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1.0",
+  "status": "smoke_test_passed",
+  "runtime": {
+    "julia_version": "1.12.7",
+    "machine": "x86_64-pc-linux-gnu",
+    "wflow_version": "1.0.4",
+    "ncdatasets_version": "0.14.15"
+  },
+  "environment": {
+    "project": "Project.toml",
+    "manifest": "Manifest.toml",
+    "project_sha256": "6ae1c1e9f99ba78ee44624308f8291d53b389886f3dc120e58f575910ecafd13",
+    "manifest_sha256": "931fe43e157967c96e4860220fc7d25e0274d98865ab22aff7a8a6f9f1e7086b"
+  },
+  "smoke_test": {
+    "script": "smoke_test.jl",
+    "config": "smoke.toml",
+    "model": "sbm",
+    "grid": [2, 2],
+    "forcing_timesteps": 3,
+    "output": "data/output/smoke.csv",
+    "config_sha256": "adc0f9bd40abea35d2f3340e568e798b7940229274321a0afc436d775d8064cf",
+    "output_sha256": "45bde8dcf42c8a62e891de4349dd15a8064b126266201a14aae48b7635469d67",
+    "output_rows": 2
+  },
+  "limitations": [
+    "The fixture verifies package execution and output creation only.",
+    "No Citarum spatial model or rainfall-runoff calibration has been run.",
+    "HydroMT-Wflow remains a separate Python environment and is not installed by this smoke test."
+  ]
+}
