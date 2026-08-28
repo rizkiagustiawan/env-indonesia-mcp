@@ -235,3 +235,71 @@ def test_outlet_grid_indices_must_fit_grid(tmp_path):
     report = validate_outlet(outlet, grid_shape=(106, 139))
     assert report["status"] == "invalid"
     assert any("grid_row" in error or "grid_col" in error for error in report["errors"])
+
+
+def test_provisional_partial_indices_reject_invalid_supplied_index(tmp_path):
+    outlet = tmp_path / "partial-outlet.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    payload.update({"grid_row": "not-an-index", "grid_col": None})
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("grid_row" in error and "integer" in error for error in report["errors"])
+
+
+def test_resolved_non_integer_indices_are_invalid_without_grid_shape(tmp_path):
+    outlet = tmp_path / "non-integer-outlet.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    payload.update({"validation_state": "resolved", "grid_row": 1.5, "grid_col": 2})
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("grid_row" in error and "integer" in error for error in report["errors"])
+
+
+def test_malformed_grid_shape_returns_invalid_report(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet, grid_shape=106)
+
+    assert report["status"] == "invalid"
+    assert any("grid_shape" in error for error in report["errors"])
+
+
+def test_malformed_required_field_types_and_content_are_invalid(tmp_path):
+    outlet = tmp_path / "malformed-outlet.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    payload.update({
+        "schema_version": 1,
+        "outlet_id": "",
+        "name": 42,
+        "description": "",
+        "source": ["benchmark"],
+        "discharge_variable": "",
+        "extraction_rule": None,
+        "limitations": "none",
+    })
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    for field in ("schema_version", "outlet_id", "name", "description", "source",
+                  "discharge_variable", "extraction_rule", "limitations"):
+        assert any(field in error for error in report["errors"])
+
+
+def test_outlet_validation_does_not_modify_metadata():
+    outlet = ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json"
+    before = _sha256(outlet)
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "valid"
+    assert _sha256(outlet) == before

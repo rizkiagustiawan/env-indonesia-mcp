@@ -21,6 +21,15 @@ _REQUIRED_FIELDS = (
     "limitations",
 )
 _VALIDATION_STATES = {"provisional", "resolved"}
+_STRING_FIELDS = (
+    "schema_version",
+    "outlet_id",
+    "name",
+    "description",
+    "source",
+    "discharge_variable",
+    "extraction_rule",
+)
 
 
 def _report(path):
@@ -45,8 +54,25 @@ def _grid_index(value, name, limit, errors):
     if isinstance(value, bool) or not isinstance(value, int):
         errors.append(f"{name} must be an integer")
         return
+    if limit is None:
+        return
     if value < 0 or value >= limit:
         errors.append(f"{name} must fit grid bounds 0 <= {name} < {limit}")
+
+
+def _validate_required_fields(payload, errors):
+    for field in _STRING_FIELDS:
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{field} must be a non-empty string")
+
+    limitations = payload.get("limitations")
+    if (
+        not isinstance(limitations, list)
+        or not limitations
+        or any(not isinstance(value, str) or not value.strip() for value in limitations)
+    ):
+        errors.append("limitations must be a non-empty list of non-empty strings")
 
 
 def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
@@ -70,6 +96,7 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
     for field in _REQUIRED_FIELDS:
         if field not in payload:
             errors.append(f"missing required field: {field}")
+    _validate_required_fields(payload, errors)
 
     if payload.get("status") != "screening_only":
         errors.append("status must be screening_only")
@@ -90,16 +117,25 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
     elif row is None or col is None:
         errors.append("grid_row and grid_col may be null only for provisional metadata")
 
+    if row is not None:
+        _grid_index(row, "grid_row", None, errors)
+    if col is not None:
+        _grid_index(col, "grid_col", None, errors)
+
     if grid_shape is not None:
         if (
-            isinstance(grid_shape, (str, bytes))
+            not isinstance(grid_shape, (tuple, list))
             or len(grid_shape) != 2
             or any(isinstance(size, bool) or not isinstance(size, int) or size <= 0 for size in grid_shape)
         ):
             errors.append("grid_shape must contain two positive integers")
         elif row is not None and col is not None:
-            _grid_index(row, "grid_row", grid_shape[0], errors)
-            _grid_index(col, "grid_col", grid_shape[1], errors)
+            if isinstance(row, int) and not isinstance(row, bool):
+                if row < 0 or row >= grid_shape[0]:
+                    errors.append(f"grid_row must fit grid bounds 0 <= grid_row < {grid_shape[0]}")
+            if isinstance(col, int) and not isinstance(col, bool):
+                if col < 0 or col >= grid_shape[1]:
+                    errors.append(f"grid_col must fit grid bounds 0 <= grid_col < {grid_shape[1]}")
 
     if not errors:
         report["status"] = "valid"
