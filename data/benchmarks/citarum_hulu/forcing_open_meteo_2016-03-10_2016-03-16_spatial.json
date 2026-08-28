@@ -1,0 +1,27 @@
+{
+  "source": "Open-Meteo Historical Weather API",
+  "source_url": "https://archive-api.open-meteo.com/v1/archive?latitude=-7.3%2C-7.3%2C-7.3%2C-7.0%2C-7.0%2C-7.0%2C-6.7%2C-6.7%2C-6.7&longitude=107.2%2C107.6%2C108.0%2C107.2%2C107.6%2C108.0%2C107.2%2C107.6%2C108.0&start_date=2016-03-10&end_date=2016-03-16&daily=precipitation_sum%2Ctemperature_2m_mean%2Cet0_fao_evapotranspiration&timezone=Asia%2FBangkok",
+  "retrieved_at": "2026-08-28T08:08:25.264562+00:00",
+  "role": "spatial_forcing_input",
+  "ground_truth": false,
+  "grid_latitude": [
+    -7.3,
+    -7.0,
+    -6.7
+  ],
+  "grid_longitude": [
+    107.2,
+    107.6,
+    108.0
+  ],
+  "variables": [
+    "precipitation_sum_mm",
+    "temperature_2m_mean_degC",
+    "et0_fao_evapotranspiration_mm"
+  ],
+  "raw_response": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/forcing_open_meteo_2016-03-10_2016-03-16_spatial.raw.json",
+  "limitations": [
+    "Open-Meteo is a model/reanalysis-derived forcing product, not BMKG station truth.",
+    "The source grid is interpolated to the Wflow grid; no station bias correction is applied."
+  ]
+}

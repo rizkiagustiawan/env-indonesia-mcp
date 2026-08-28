@@ -1,0 +1,487 @@
+[
+  {
+    "latitude": -7.346221,
+    "longitude": 107.16101,
+    "generationtime_ms": 11.075139045715332,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 314.0,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        15.5,
+        18.8,
+        21.7,
+        11.4,
+        0.9,
+        0.0,
+        0.5
+      ],
+      "temperature_2m_mean": [
+        25.8,
+        25.6,
+        25.5,
+        25.8,
+        26.0,
+        26.3,
+        26.1
+      ],
+      "et0_fao_evapotranspiration": [
+        3.98,
+        3.31,
+        3.56,
+        3.74,
+        4.63,
+        5.13,
+        4.41
+      ]
+    }
+  },
+  {
+    "latitude": -7.2759223,
+    "longitude": 107.60372,
+    "generationtime_ms": 1.920461654663086,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 1836.0,
+    "location_id": 1,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        12.3,
+        16.7,
+        15.2,
+        13.4,
+        0.7,
+        0.7,
+        1.1
+      ],
+      "temperature_2m_mean": [
+        18.2,
+        18.2,
+        17.9,
+        18.1,
+        18.6,
+        18.8,
+        18.5
+      ],
+      "et0_fao_evapotranspiration": [
+        3.61,
+        2.85,
+        3.16,
+        3.33,
+        4.18,
+        4.57,
+        3.81
+      ]
+    }
+  },
+  {
+    "latitude": -7.2759223,
+    "longitude": 107.98476,
+    "generationtime_ms": 1.5337467193603516,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 993.0,
+    "location_id": 2,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        10.0,
+        5.3,
+        8.9,
+        2.4,
+        0.0,
+        0.1,
+        1.5
+      ],
+      "temperature_2m_mean": [
+        21.9,
+        21.9,
+        21.8,
+        22.1,
+        22.4,
+        22.6,
+        22.3
+      ],
+      "et0_fao_evapotranspiration": [
+        3.85,
+        2.75,
+        3.48,
+        3.67,
+        4.28,
+        4.78,
+        3.88
+      ]
+    }
+  },
+  {
+    "latitude": -6.9244285,
+    "longitude": 107.22597,
+    "generationtime_ms": 12.44664192199707,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 0.0,
+    "location_id": 3,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        14.1,
+        11.3,
+        15.6,
+        17.1,
+        1.0,
+        0.0,
+        0.4
+      ],
+      "temperature_2m_mean": [
+        27.4,
+        27.4,
+        27.3,
+        27.3,
+        27.8,
+        28.4,
+        28.2
+      ],
+      "et0_fao_evapotranspiration": [
+        4.02,
+        3.3,
+        3.58,
+        3.59,
+        4.56,
+        5.17,
+        4.36
+      ]
+    }
+  },
+  {
+    "latitude": -6.994727,
+    "longitude": 107.62025,
+    "generationtime_ms": 4.8416852951049805,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 0.0,
+    "location_id": 4,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        17.0,
+        13.7,
+        21.5,
+        29.8,
+        1.4,
+        2.0,
+        2.3
+      ],
+      "temperature_2m_mean": [
+        28.6,
+        28.5,
+        28.4,
+        28.6,
+        29.1,
+        29.4,
+        28.9
+      ],
+      "et0_fao_evapotranspiration": [
+        4.06,
+        3.2,
+        3.64,
+        3.64,
+        4.7,
+        5.08,
+        4.2
+      ]
+    }
+  },
+  {
+    "latitude": -6.994727,
+    "longitude": 107.99999,
+    "generationtime_ms": 3.199458122253418,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 0.0,
+    "location_id": 5,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        17.4,
+        6.1,
+        12.5,
+        2.3,
+        0.3,
+        0.4,
+        3.8
+      ],
+      "temperature_2m_mean": [
+        28.2,
+        28.1,
+        28.1,
+        28.5,
+        28.9,
+        29.1,
+        28.4
+      ],
+      "et0_fao_evapotranspiration": [
+        4.17,
+        3.07,
+        3.75,
+        3.95,
+        4.55,
+        4.99,
+        4.0
+      ]
+    }
+  },
+  {
+    "latitude": -6.7135324,
+    "longitude": 107.18251,
+    "generationtime_ms": 10.01274585723877,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 381.0,
+    "location_id": 6,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        8.9,
+        7.4,
+        12.3,
+        17.7,
+        2.2,
+        0.8,
+        1.9
+      ],
+      "temperature_2m_mean": [
+        24.6,
+        24.5,
+        24.6,
+        24.5,
+        24.8,
+        25.2,
+        25.0
+      ],
+      "et0_fao_evapotranspiration": [
+        3.88,
+        3.23,
+        3.43,
+        3.31,
+        4.15,
+        4.7,
+        3.91
+      ]
+    }
+  },
+  {
+    "latitude": -6.7135324,
+    "longitude": 107.560974,
+    "generationtime_ms": 0.2835988998413086,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 860.0,
+    "location_id": 7,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        11.5,
+        9.0,
+        19.6,
+        30.1,
+        2.7,
+        2.7,
+        4.2
+      ],
+      "temperature_2m_mean": [
+        22.8,
+        22.8,
+        22.7,
+        22.6,
+        22.7,
+        22.8,
+        22.6
+      ],
+      "et0_fao_evapotranspiration": [
+        3.77,
+        3.06,
+        3.38,
+        3.23,
+        4.09,
+        4.34,
+        3.59
+      ]
+    }
+  },
+  {
+    "latitude": -6.7135324,
+    "longitude": 108.01514,
+    "generationtime_ms": 3.497600555419922,
+    "utc_offset_seconds": 25200,
+    "timezone": "Asia/Bangkok",
+    "timezone_abbreviation": "GMT+7",
+    "elevation": 154.0,
+    "location_id": 8,
+    "daily_units": {
+      "time": "iso8601",
+      "precipitation_sum": "mm",
+      "temperature_2m_mean": "\u00b0C",
+      "et0_fao_evapotranspiration": "mm"
+    },
+    "daily": {
+      "time": [
+        "2016-03-10",
+        "2016-03-11",
+        "2016-03-12",
+        "2016-03-13",
+        "2016-03-14",
+        "2016-03-15",
+        "2016-03-16"
+      ],
+      "precipitation_sum": [
+        13.2,
+        8.7,
+        19.0,
+        7.6,
+        2.5,
+        1.1,
+        5.5
+      ],
+      "temperature_2m_mean": [
+        26.1,
+        25.8,
+        25.8,
+        26.0,
+        26.3,
+        26.5,
+        25.8
+      ],
+      "et0_fao_evapotranspiration": [
+        4.07,
+        3.18,
+        3.65,
+        3.75,
+        4.17,
+        4.52,
+        3.63
+      ]
+    }
+  }
+]

@@ -5,11 +5,11 @@
     "engine": "Wflow.jl",
     "wflow_version": "1.0.4",
     "julia_version": "1.12.7",
-    "simulation_duration": "12 seconds, 454 milliseconds"
+    "simulation_duration": "11 seconds, 28 milliseconds"
   },
   "inputs": {
-    "build_receipt": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/build_receipt.json",
-    "build_receipt_sha256": "7db5efcc15eed10eb1d71a112feae3862c52fb8d2f283ca8f81ad36c4f6558ba",
+    "source_receipt": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/build_receipt.json",
+    "source_receipt_sha256": "7db5efcc15eed10eb1d71a112feae3862c52fb8d2f283ca8f81ad36c4f6558ba",
     "staticmaps": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/staticmaps.nc",
     "forcing": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016.nc",
     "config": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/citarum_sbm.toml"
@@ -34,15 +34,15 @@
     "hydrograph_csv": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/output.csv",
     "log": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/log.txt",
     "hydrograph_sha256": "a061e4190d80ea7c66b7d6d99d3919f1999e0f9eab629fb92fae45bfb957f8ee",
-    "log_sha256": "7ac51d54ac6da4eb7b3c2aaf6d77dea98922d3b6d79d1bdcfcac012e9754f047"
+    "log_sha256": "b5845aa527108b9c3af50fc8df362c6cda2b8661977f3c8dddc923bccb61e529"
   },
   "limitations": [
     "The run is a technical and screening execution, not calibration or validation.",
-    "Rainfall is spatially uniform from one Open-Meteo source record.",
+    "Rainfall forcing is either spatially uniform or spatially interpolated Open-Meteo data, not BMKG observation.",
     "Soil and landcover parameters are literature defaults.",
     "PET and temperature are approximations.",
     "The CSV records the maximum active-cell river discharge, not an independently observed gauge discharge.",
     "The seven-day forcing window is not sufficient for event calibration or model skill assessment."
   ],
-  "created_at_utc": "2026-08-24T07:14:44.308463+00:00"
+  "created_at_utc": "2026-08-28T08:10:02.536980+00:00"
 }

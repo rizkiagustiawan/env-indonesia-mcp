@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,12 +27,23 @@ def sha256(path: Path) -> str:
 
 
 def main() -> None:
-    build = json.loads(BUILD.read_text())
-    with OUTPUT.open(newline="") as stream:
+    output_name = sys.argv[1] if len(sys.argv) > 1 else "output.csv"
+    receipt_name = sys.argv[2] if len(sys.argv) > 2 else "run_receipt.json"
+    source_receipt_name = sys.argv[3] if len(sys.argv) > 3 else "build_receipt.json"
+    config_name = sys.argv[4] if len(sys.argv) > 4 else "citarum_sbm.toml"
+    log_name = sys.argv[5] if len(sys.argv) > 5 else "log.txt"
+    output_path = MODEL / output_name
+    receipt_path = MODEL / receipt_name
+    source_receipt_path = MODEL / source_receipt_name
+    source = json.loads(source_receipt_path.read_text())
+    forcing_path = source.get("outputs", {}).get("forcing", source.get("output"))
+    staticmaps_path = source.get("outputs", {}).get("staticmaps", str(MODEL / "staticmaps.nc"))
+    with output_path.open(newline="") as stream:
         rows = list(csv.DictReader(stream))
     discharge = [float(row["Q"]) for row in rows]
 
-    log_text = LOG.read_text()
+    log_path = MODEL / log_name
+    log_text = log_path.read_text()
     duration = re.search(r"Simulation duration: (.+)", log_text)
     receipt = {
         "schema_version": "0.1.0",
@@ -43,18 +55,21 @@ def main() -> None:
             "simulation_duration": duration.group(1).strip() if duration else None,
         },
         "inputs": {
-            "build_receipt": str(BUILD),
-            "build_receipt_sha256": sha256(BUILD),
-            "staticmaps": build["outputs"]["staticmaps"],
-            "forcing": build["outputs"]["forcing"],
-            "config": build["outputs"]["config"],
+            "source_receipt": str(source_receipt_path),
+            "source_receipt_sha256": sha256(source_receipt_path),
+            "staticmaps": staticmaps_path,
+            "forcing": forcing_path,
+            "config": str(MODEL / config_name),
         },
         "simulation": {
             "model": "sbm",
             "start": rows[0]["time"] if rows else None,
             "end": rows[-1]["time"] if rows else None,
             "output_rows": len(rows),
-            "precipitation_range_mm_per_day": build["parameters"]["precip_range_mm_per_day"],
+            "precipitation_range_mm_per_day": source.get("parameters", {}).get(
+                "precip_range_mm_per_day",
+                source.get("variables", {}).get("precip", {}).get("min_mm_per_day"),
+            ),
             "discharge_parameter": "river_water__volume_flow_rate",
             "discharge_unit": "m3/s",
             "discharge_reducer": "maximum",
@@ -63,14 +78,14 @@ def main() -> None:
             "discharge_last_m3_per_s": discharge[-1] if discharge else None,
         },
         "outputs": {
-            "hydrograph_csv": str(OUTPUT),
-            "log": str(LOG),
-            "hydrograph_sha256": sha256(OUTPUT),
-            "log_sha256": sha256(LOG),
+            "hydrograph_csv": str(output_path),
+            "log": str(log_path),
+            "hydrograph_sha256": sha256(output_path),
+            "log_sha256": sha256(log_path),
         },
         "limitations": [
             "The run is a technical and screening execution, not calibration or validation.",
-            "Rainfall is spatially uniform from one Open-Meteo source record.",
+            "Rainfall forcing is either spatially uniform or spatially interpolated Open-Meteo data, not BMKG observation.",
             "Soil and landcover parameters are literature defaults.",
             "PET and temperature are approximations.",
             "The CSV records the maximum active-cell river discharge, not an independently observed gauge discharge.",
@@ -78,7 +93,7 @@ def main() -> None:
         ],
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
     }
-    RECEIPT.write_text(json.dumps(receipt, indent=2) + "\n")
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, indent=2))
 
 

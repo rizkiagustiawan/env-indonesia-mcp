@@ -1,7 +1,7 @@
 [ Info: Wflow version `v1.0.4`
 [ Info: Initialize model variables for model type `sbm`.
 [ Info: Cyclic parameters are provided by `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/staticmaps.nc`.
-[ Info: Forcing parameters are provided by `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016.nc`.
+[ Info: Forcing parameters are provided by `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016_spatial.nc`.
 [ Info: Set `atmosphere_water__precipitation_volume_flux` using netCDF variable `precip` as forcing parameter.
 [ Info: Set `atmosphere_air__temperature` using netCDF variable `temp` as forcing parameter.
 [ Info: Set `land_surface_water__potential_evaporation_volume_flux` using netCDF variable `pet` as forcing parameter.
@@ -57,7 +57,7 @@
 [ Info: Set `river_water_flow__manning_n_parameter` using netCDF variable `N_River`.
 [ Info: Set `river_bank_water__depth` using default value `1.0`.
 [ Info: Set `river_water__external_inflow_volume_flow_rate` using default value `0.0`.
-[ Info: Create an output CSV file `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/output.csv` for scalar data.
+[ Info: Create an output CSV file `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/output_spatial.csv` for scalar data.
 ┌ Info: Adding scalar output of all active cells with reducer function.
 │   fileformat = "CSV"
 │   param = "river_water__volume_flow_rate"
@@ -70,4 +70,4 @@
 │   dt = 86400 seconds
 │   endtime = DateTimeStandard(2016-03-16T00:00:00)
 └   nthreads() = 1
-[ Info: Simulation duration: 11 seconds, 28 milliseconds
+[ Info: Simulation duration: 11 seconds, 195 milliseconds

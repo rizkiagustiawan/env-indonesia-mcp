@@ -38,6 +38,8 @@
     {"path": "scene_inventory.json", "type": "sentinel1_scene_inventory", "sha256": "4bd6a2c1bea2af57ea03c532cb5e4bb9ce9fbbfb0c2c82063fbb74d21e3b8b0f"},
     {"path": "forcing_open_meteo_2016-03-10_2016-03-16.json", "type": "forcing_input_not_ground_truth", "sha256": "248a3b41c0132f0834e9daf25d808e463da965c09f6b23e3e2390882fc24a216"},
     {"path": "forcing_open_meteo_2016-03-10_2016-03-16.raw.json", "type": "raw_forcing_api_response", "sha256": "b3e8e5582f10ab5d38cca9f2134e114ff3767714e530e91d23ce91b7d6cd62be"},
+    {"path": "forcing_open_meteo_2016-03-10_2016-03-16_spatial.json", "type": "spatial_forcing_metadata", "sha256": "8e0ca6c1af5bf7f33a683b1ef947449ee8e631b1827a39109a5facc5fe01e068"},
+    {"path": "forcing_open_meteo_2016-03-10_2016-03-16_spatial.raw.json", "type": "spatial_forcing_raw_api_response", "sha256": "66ead697fb56cd74d35574fc709032929c8953fd0c184ab6e4a52d554db2c96e"},
     {"path": "bmkg_station_rainfall_availability.json", "type": "bmkg_station_availability_metadata_not_observations", "sha256": "435a696993b4b451c2c9dfda399ace6e8bd03c1c10a19b48c8ff1ef2011281cf"},
     {"path": "bmkg_rainfall/bmkg_rr_96783_bandung_202503.xlsx", "type": "bmkg_station_observation_monthly_rainfall", "sha256": "33e959845b729368f6eca0975fe9d2679d8bba832bfc67e2acd7af172facb78d"},
     {"path": "bmkg_rainfall/bmkg_rainfall_receipt.json", "type": "bmkg_rainfall_receipt", "sha256": "e8de5d5b04ac7a1f2f15c3bcdc6f63549d2274e907c0850affc3982a13005d5d"},
@@ -69,10 +71,15 @@
     {"path": "sar/event_vv_flood_screening_mask.tif", "type": "sar_derived_flood_extent_screening_only", "sha256": "f41363ef4cd8a095b105a640500747c76a4545a7f9eb366e58415f5325354dd9"},
     {"path": "sar/holdout_vv_flood_screening_mask.tif", "type": "sar_derived_flood_extent_screening_only", "sha256": "a2919ae71a59e5a3bcea0844d548c9c789a281c50a8aafbd921c043d94ff5454"},
     {"path": "wflow/build_receipt.json", "type": "wflow_receipt", "sha256": "7db5efcc15eed10eb1d71a112feae3862c52fb8d2f283ca8f81ad36c4f6558ba"},
-    {"path": "wflow/run_receipt.json", "type": "wflow_receipt", "sha256": "bdc91fc2519a4cb039a4cd9039c5f5ba6849cc86c171ca7b3df61327327474ce"},
+    {"path": "wflow/run_receipt.json", "type": "wflow_receipt", "sha256": "bd2584cfd12de0a597ec72091bc165d1322352932d5074162c020f1011827f47"},
+    {"path": "wflow/run_receipt_spatial.json", "type": "wflow_receipt", "sha256": "061d6cb4c6a9476378ea84dd8881f12f9e1cb19ec14767848553064fcb722b09"},
+    {"path": "wflow/spatial_forcing_receipt.json", "type": "wflow_receipt", "sha256": "a9d428eab5812c938d48d433803d47d848099c27f168e4aa9820cb8c2cf28d6f"},
     {"path": "wflow/citarum_sbm.toml", "type": "wflow_config", "sha256": "2e38bd341fa298896777c1d840a98016eb2b8f9425bafaf56190e06f54793229"},
+    {"path": "wflow/citarum_sbm_spatial.toml", "type": "wflow_config", "sha256": "49c967a8dafb7f79e3dcbad9d2ccd84907b3df8549865b3f49ce962d0ed2dc6c"},
     {"path": "wflow/output.csv", "type": "wflow_hydrograph", "sha256": "a061e4190d80ea7c66b7d6d99d3919f1999e0f9eab629fb92fae45bfb957f8ee"},
-    {"path": "wflow/log.txt", "type": "wflow_log", "sha256": "85f2158710f703b3888951b580e18d1803ab6906d9647d0fdba0349f0d96ed63"},
+    {"path": "wflow/output_spatial.csv", "type": "wflow_hydrograph", "sha256": "cf753da2b5cb799175fc5522b39676f2a541db278bd0bf5ba002a826bf383c8c"},
+    {"path": "wflow/log.txt", "type": "wflow_log", "sha256": "b5845aa527108b9c3af50fc8df362c6cda2b8661977f3c8dddc923bccb61e529"},
+    {"path": "wflow/log_spatial.txt", "type": "wflow_log", "sha256": "50f995e48e8fe9385917807e468b01d7dcee428e8f367b2a3259a3639c74b15d"},
     {"path": "../../../tools/wflow_env/runtime_receipt.json", "type": "wflow_runtime_receipt", "sha256": "7c36a22c28c8e0d8e7ff7ce69fac710e9ae3714b1140279b2d6a5c4a0595c520"},
     {"path": "../../../tools/wflow_env/Project.toml", "type": "wflow_julia_project", "sha256": "6ae1c1e9f99ba78ee44624308f8291d53b389886f3dc120e58f575910ecafd13"},
     {"path": "../../../tools/wflow_env/Manifest.toml", "type": "wflow_julia_manifest", "sha256": "931fe43e157967c96e4860220fc7d25e0274d98865ab22aff7a8a6f9f1e7086b"}
@@ -81,7 +88,7 @@
     "DIBI/BNPB machine-readable event record for exact 2016 event",
     "official independent flood extent polygon for validation (SAR-derived masks are screening observations only)",
     "BMKG 2016 rainfall: access denied (2-year limit); 2025 data available (274.1 mm March). Use PTSP BMKG for historical daily data.",
-    "Wflow Citarum runs but is screening_only: spatially uniform Open-Meteo forcing, literature soil/landcover defaults, no calibration, no gauge validation.",
+    "Wflow Citarum runs but is screening_only: Open-Meteo forcing (uniform baseline and spatially interpolated comparison), literature soil/landcover defaults, no calibration, no gauge validation.",
     "Hydrograph records maximum river_water__volume_flow_rate over active cells; not yet routed to hydraulic solver or compared against independent gauge discharge."
   ]
 }

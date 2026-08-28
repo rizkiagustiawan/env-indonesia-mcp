@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1.0",
+  "status": "screening_only",
+  "source": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/forcing_open_meteo_2016-03-10_2016-03-16_spatial.json",
+  "source_sha256": "8e0ca6c1af5bf7f33a683b1ef947449ee8e631b1827a39109a5facc5fe01e068",
+  "raw_source": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/forcing_open_meteo_2016-03-10_2016-03-16_spatial.raw.json",
+  "raw_source_sha256": "66ead697fb56cd74d35574fc709032929c8953fd0c184ab6e4a52d554db2c96e",
+  "output": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016_spatial.nc",
+  "output_sha256": "52515a530c8d39f5765182d013f698cd8647891b23649d5375381e57a9f5512a",
+  "config": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/citarum_sbm_spatial.toml",
+  "grid_shape": [
+    7,
+    106,
+    139
+  ],
+  "source_grid": {
+    "lat": [
+      -7.3,
+      -7.0,
+      -6.7
+    ],
+    "lon": [
+      107.2,
+      107.6,
+      108.0
+    ]
+  },
+  "period": [
+    "2016-03-10",
+    "2016-03-16"
+  ],
+  "variables": {
+    "precip": {
+      "min_mm_per_day": 0.4614572525024414,
+      "max_mm_per_day": 30.015928268432617
+    },
+    "pet": {
+      "min_mm_per_day": 2.895428419113159,
+      "max_mm_per_day": 5.1456804275512695
+    },
+    "temp": {
+      "min_degC": 20.449464797973633,
+      "max_degC": 29.358745574951172
+    }
+  },
+  "limitations": [
+    "Open-Meteo is not BMKG observation and has no station bias correction.",
+    "The 3x3 source grid is interpolated spatially; it is not a new observation.",
+    "No calibration, validation, or independent discharge comparison is implied."
+  ]
+}

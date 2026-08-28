@@ -2,7 +2,9 @@
 using Dates, SHA, Wflow
 
 const BENCH = realpath(joinpath(@__DIR__, "..", "..", "data", "benchmarks", "citarum_hulu", "wflow"))
-config_path = joinpath(BENCH, "citarum_sbm.toml")
+config_name = length(ARGS) >= 1 ? ARGS[1] : "citarum_sbm.toml"
+output_name = length(ARGS) >= 2 ? ARGS[2] : "output.csv"
+config_path = joinpath(BENCH, config_name)
 println("Working dir: ", BENCH)
 println("Config: ", config_path)
 cd(BENCH) do
@@ -15,7 +17,7 @@ cd(BENCH) do
     end
 end
 
-output_csv = joinpath(BENCH, "output.csv")
+output_csv = joinpath(BENCH, output_name)
 if isfile(output_csv)
     lines = readlines(output_csv)
     println("Output rows: ", length(lines) - 1)
