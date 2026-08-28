@@ -78,7 +78,9 @@ def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
                     ]
                     summary["period"] = period
                     summary["time_count"] = int(days.size)
-                    if days.size > 1:
+                    if np.any(np.isnat(days)):
+                        errors.append("time coordinates must not contain NaT")
+                    elif days.size > 1:
                         deltas = np.diff(days)
                         if np.any(deltas != np.timedelta64(1, "D")):
                             errors.append(
