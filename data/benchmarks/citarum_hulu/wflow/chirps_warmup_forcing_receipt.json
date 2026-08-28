@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1.0",
+  "status": "screening_only",
+  "source": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/forcing_chirps_2016-01-01_2016-03-16_chirps_warmup.json",
+  "source_sha256": "a749be668417dc218a9b499c85529f5c353b8b6b4a6a3bc903db42dc29eab9a3",
+  "output": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016-01-01_2016-03-16_chirps_warmup.nc",
+  "output_sha256": "e685ce435027c00a546e0f07e9e910fd94c728f56df0ae82e7e96077f1a68136",
+  "config": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/citarum_sbm_chirps_warmup.toml",
+  "grid_shape": [
+    76,
+    106,
+    139
+  ],
+  "period": [
+    "2016-01-01",
+    "2016-03-16"
+  ],
+  "precipitation_range_mm_per_day": [
+    0.0,
+    41.7302131652832
+  ],
+  "limitations": [
+    "CHIRPS is not BMKG observation and is not a legal/regulatory measurement.",
+    "Temperature and ET0 use Open-Meteo at one point.",
+    "Results remain screening_only until independent discharge validation exists."
+  ]
+}

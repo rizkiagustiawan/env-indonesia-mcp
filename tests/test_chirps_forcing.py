@@ -2,7 +2,7 @@ import numpy as np
 import csv
 from pathlib import Path
 
-from tools.wflow_env.build_chirps_forcing import build_forcing_dataset, chirps_url
+from tools.wflow_env.build_chirps_forcing import artifact_paths, build_forcing_dataset, chirps_url, date_range
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,22 @@ def test_chirps_filename_uses_dotted_date():
     )
 
 
+def test_date_range_is_inclusive():
+    assert date_range("2016-01-01", "2016-01-03") == [
+        "2016-01-01",
+        "2016-01-02",
+        "2016-01-03",
+    ]
+
+
+def test_default_artifact_names_remain_stable():
+    output, source, receipt, config = artifact_paths("2016-03-10", "2016-03-16", "chirps")
+    assert output.name == "forcing_2016_chirps.nc"
+    assert source.name == "forcing_chirps_2016-03-10_2016-03-16.json"
+    assert receipt.name == "chirps_forcing_receipt.json"
+    assert config.name == "citarum_sbm_chirps.toml"
+
+
 def test_chirps_wflow_output_is_nonempty():
     assert CHIRPS_OUTPUT.is_file()
     rows = list(csv.DictReader(CHIRPS_OUTPUT.open()))
@@ -39,3 +55,14 @@ def test_chirps_wflow_output_is_nonempty():
     assert len(rows) == 6
     assert all(np.isfinite(values))
     assert max(values) > 0.0
+
+
+def test_warmup_artifacts_cover_more_than_event_window():
+    forcing = ROOT / "data/benchmarks/citarum_hulu/wflow/forcing_2016-01-01_2016-03-16_chirps_warmup.nc"
+    output = ROOT / "data/benchmarks/citarum_hulu/wflow/output_chirps_warmup.csv"
+    assert forcing.is_file()
+    assert output.is_file()
+    rows = list(csv.DictReader(output.open()))
+    assert len(rows) == 75
+    assert rows[0]["time"] == "2016-01-02T00:00:00"
+    assert rows[-1]["time"] == "2016-03-16T00:00:00"
