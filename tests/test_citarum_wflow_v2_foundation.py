@@ -1,6 +1,8 @@
 import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import numpy as np
 import xarray as xr
@@ -328,3 +330,60 @@ def test_extremely_large_integer_coordinates_return_invalid_report(tmp_path):
 
         assert report["status"] == "invalid"
         assert any(coordinate in error for error in report["errors"])
+
+
+def test_cli_returns_json_success_and_writes_receipt(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    _write_forcing(forcing)
+    outlet = ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json"
+    receipt = tmp_path / "receipt.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--outlet",
+            str(outlet),
+            "--receipt",
+            str(receipt),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    report = json.loads(result.stdout)
+    assert report["status"] == "valid"
+    assert report["screening_status"] == "screening_only"
+    receipt_data = json.loads(receipt.read_text())
+    assert receipt_data["forcing_sha256"] == _sha256(forcing)
+    assert receipt_data["outlet_sha256"] == _sha256(outlet)
+    assert receipt_data["staticmaps_sha256"] is None
+    assert "discharge" not in json.dumps(receipt_data).lower()
+
+
+def test_cli_returns_nonzero_for_invalid_forcing_without_receipt(tmp_path):
+    forcing = tmp_path / "invalid.nc"
+    _write_forcing(forcing, times=["2016-03-10", "2016-03-12"])
+    receipt = tmp_path / "receipt.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--receipt",
+            str(receipt),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert json.loads(result.stdout)["status"] == "invalid"
+    assert not receipt.exists()
