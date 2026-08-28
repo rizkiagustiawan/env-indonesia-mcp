@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "status": "screening_only",
+  "outlet_id": "citarum_hulu_provisional",
+  "name": "Citarum Hulu provisional outlet",
+  "description": "Provisional extraction target pending gauge confirmation.",
+  "longitude": 107.62025,
+  "latitude": -6.994727,
+  "grid_row": null,
+  "grid_col": null,
+  "source": "existing Citarum benchmark AOI target; not a gauge record",
+  "discharge_variable": "Q",
+  "extraction_rule": "explicit outlet cell when grid indices are resolved",
+  "validation_state": "provisional",
+  "limitations": [
+    "No independent discharge validation.",
+    "Coordinates are a provisional benchmark AOI target, not an independent gauge location."
+  ]
+}

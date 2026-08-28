@@ -1,9 +1,15 @@
 import hashlib
+import json
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
 
 from tools.wflow_env.validate_wflow_forcing import validate_forcing
+from tools.wflow_env.citarum_outlet import validate_outlet
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _write_forcing(path, *, times=None, include_pet=True, dims=("time", "lat", "lon"), units=None):
@@ -187,3 +193,45 @@ def test_validation_does_not_modify_forcing_or_staticmaps(tmp_path):
 
     assert report["status"] == "valid"
     assert {_path: _sha256(_path) for _path in (forcing, staticmaps)} == before
+
+
+def test_provisional_outlet_allows_null_grid_indices(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(json.dumps({
+        "schema_version": "1.0.0",
+        "status": "screening_only",
+        "outlet_id": "citarum_hulu_provisional",
+        "name": "Citarum Hulu provisional outlet",
+        "description": "Provisional extraction target pending gauge confirmation.",
+        "longitude": 107.62025,
+        "latitude": -6.994727,
+        "grid_row": None,
+        "grid_col": None,
+        "source": "existing Citarum benchmark AOI target; not a gauge record",
+        "discharge_variable": "Q",
+        "extraction_rule": "explicit outlet cell when grid indices are resolved",
+        "validation_state": "provisional",
+        "limitations": ["No independent discharge validation."]
+    }))
+    report = validate_outlet(outlet)
+    assert report["status"] == "valid"
+    assert report["normalized"]["validation_state"] == "provisional"
+    assert any("grid" in warning for warning in report["warnings"])
+
+
+def test_outlet_missing_identity_is_invalid(tmp_path):
+    outlet = tmp_path / "bad-outlet.json"
+    outlet.write_text(json.dumps({"status": "screening_only"}))
+    report = validate_outlet(outlet)
+    assert report["status"] == "invalid"
+    assert any("outlet_id" in error for error in report["errors"])
+
+
+def test_outlet_grid_indices_must_fit_grid(tmp_path):
+    outlet = tmp_path / "out-of-range.json"
+    payload = json.loads((ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text())
+    payload.update({"validation_state": "resolved", "grid_row": 106, "grid_col": 139})
+    outlet.write_text(json.dumps(payload))
+    report = validate_outlet(outlet, grid_shape=(106, 139))
+    assert report["status"] == "invalid"
+    assert any("grid_row" in error or "grid_col" in error for error in report["errors"])
