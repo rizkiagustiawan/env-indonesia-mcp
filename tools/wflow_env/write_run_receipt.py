@@ -68,7 +68,9 @@ def main() -> None:
             "output_rows": len(rows),
             "precipitation_range_mm_per_day": source.get("parameters", {}).get(
                 "precip_range_mm_per_day",
-                source.get("variables", {}).get("precip", {}).get("min_mm_per_day"),
+                source.get(
+                    "variables", {}
+                ).get("precip", {}).get("min_mm_per_day", source.get("precipitation_range_mm_per_day")),
             ),
             "discharge_parameter": "river_water__volume_flow_rate",
             "discharge_unit": "m3/s",
@@ -85,7 +87,7 @@ def main() -> None:
         },
         "limitations": [
             "The run is a technical and screening execution, not calibration or validation.",
-            "Rainfall forcing is either spatially uniform or spatially interpolated Open-Meteo data, not BMKG observation.",
+            "Rainfall forcing is an open gridded product, not BMKG station observation.",
             "Soil and landcover parameters are literature defaults.",
             "PET and temperature are approximations.",
             "The CSV records the maximum active-cell river discharge, not an independently observed gauge discharge.",

@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.1.0",
+  "status": "screening_only",
+  "runtime": {
+    "engine": "Wflow.jl",
+    "wflow_version": "1.0.4",
+    "julia_version": "1.12.7",
+    "simulation_duration": "16 seconds, 322 milliseconds"
+  },
+  "inputs": {
+    "source_receipt": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/chirps_forcing_receipt.json",
+    "source_receipt_sha256": "bd976c9576aac693a8d76803ad264ef55607331ece321622dadad9512d5bd009",
+    "staticmaps": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/staticmaps.nc",
+    "forcing": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016_chirps.nc",
+    "config": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/citarum_sbm_chirps.toml"
+  },
+  "simulation": {
+    "model": "sbm",
+    "start": "2016-03-11T00:00:00",
+    "end": "2016-03-16T00:00:00",
+    "output_rows": 6,
+    "precipitation_range_mm_per_day": [
+      0.0,
+      32.9398307800293
+    ],
+    "discharge_parameter": "river_water__volume_flow_rate",
+    "discharge_unit": "m3/s",
+    "discharge_reducer": "maximum",
+    "discharge_min_m3_per_s": 1.546119110952722,
+    "discharge_max_m3_per_s": 99.05641933297392,
+    "discharge_last_m3_per_s": 99.05641933297392
+  },
+  "outputs": {
+    "hydrograph_csv": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/output_chirps.csv",
+    "log": "/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/log_chirps.txt",
+    "hydrograph_sha256": "56b68609c00152ab1e2abf9aa6d8ba63cdee2d72aae7f3a1122e8787ecdd0c90",
+    "log_sha256": "f6e01ea40f47f3f4b87aa617d8b3227bc821dd933a3c4e5018377c16c13d909b"
+  },
+  "limitations": [
+    "The run is a technical and screening execution, not calibration or validation.",
+    "Rainfall forcing is an open gridded product, not BMKG station observation.",
+    "Soil and landcover parameters are literature defaults.",
+    "PET and temperature are approximations.",
+    "The CSV records the maximum active-cell river discharge, not an independently observed gauge discharge.",
+    "The seven-day forcing window is not sufficient for event calibration or model skill assessment."
+  ],
+  "created_at_utc": "2026-08-28T16:20:54.710085+00:00"
+}

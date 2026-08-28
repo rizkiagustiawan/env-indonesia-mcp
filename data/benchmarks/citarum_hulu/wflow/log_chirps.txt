@@ -1,0 +1,73 @@
+[ Info: Wflow version `v1.0.4`
+[ Info: Initialize model variables for model type `sbm`.
+[ Info: Cyclic parameters are provided by `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/staticmaps.nc`.
+[ Info: Forcing parameters are provided by `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/forcing_2016_chirps.nc`.
+[ Info: Set `atmosphere_water__precipitation_volume_flux` using netCDF variable `precip` as forcing parameter.
+[ Info: Set `atmosphere_air__temperature` using netCDF variable `temp` as forcing parameter.
+[ Info: Set `land_surface_water__potential_evaporation_volume_flux` using netCDF variable `pet` as forcing parameter.
+┌ Info: General model settings
+│   snow = false
+│   gravitational_snow_transport = false
+│   glacier = false
+│   reservoirs = false
+│   pits = false
+└   water_demand = false
+[ Info: Set `subbasin_location__count` using netCDF variable `wflow_subcatch`.
+[ Info: Set `basin__local_drain_direction` using netCDF variable `wflow_ldd`.
+[ Info: Set `land_surface__slope` using netCDF variable `Slope`.
+[ Info: Set `river_location__mask` using netCDF variable `wflow_river`.
+[ Info: Set `land_water_covered__area_fraction` using netCDF variable `WaterFrac`.
+[ Info: Set `river__length` using netCDF variable `wflow_riverlength`.
+[ Info: Set `river__width` using netCDF variable `wflow_riverwidth`.
+[ Info: Set `river__slope` using netCDF variable `RiverSlope`.
+[ Info: Set `vegetation_root__depth` using netCDF variable `RootingDepth`.
+[ Info: Set `vegetation__crop_factor` using default value `1.0`.
+[ Info: Set `vegetation_canopy__gap_fraction` using netCDF variable `CanopyGap`.
+[ Info: Set `vegetation_water__storage_capacity` using default value `1.0`.
+[ Info: Set `vegetation_canopy_water__mean_evaporation_to_mean_precipitation_ratio` using netCDF variable `EoverR`.
+[ Info: Using `3` soil layers with the following thickness: `[100, 300, 800]`
+[ Info: Set `soil_surface_temperature__weight_coefficient` using default value `0.1125`.
+[ Info: Set `soil_surface_water__infiltration_reduction_parameter` using netCDF variable `cf_soil`.
+[ Info: Set `soil_water__saturated_volume_fraction` using netCDF variable `thetaS`.
+[ Info: Set `soil_water__residual_volume_fraction` using netCDF variable `thetaR`.
+[ Info: Set `soil_surface_water__vertical_saturated_hydraulic_conductivity` using netCDF variable `KsatVer`.
+[ Info: Set `soil_water__vertical_saturated_hydraulic_conductivity_scale_parameter` using netCDF variable `f`.
+[ Info: Set `soil_water__air_entry_pressure_head` using default value `-10.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h1` using default value `0.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h2` using default value `-100.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h3_high` using default value `-400.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h3_low` using default value `-1000.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h4` using default value `-16000.0`.
+[ Info: Set `vegetation_root__feddes_critical_pressure_head_h1_reduction_coefficient` using default value `1.0`.
+[ Info: Set `soil__thickness` using netCDF variable `SoilThickness`.
+[ Info: Set `compacted_soil_surface_water__infiltration_capacity` using netCDF variable `InfiltCapPath`.
+[ Info: Set `soil_water_saturated_zone_bottom__max_leakage_volume_flux` using netCDF variable `MaxLeakage`.
+[ Info: Set `soil_layer_water__brooks_corey_exponent` using netCDF variable `c`.
+[ Info: Set `soil_layer_water__vertical_saturated_hydraulic_conductivity_factor` using default value `1.0`.
+[ Info: Set `compacted_soil__area_fraction` using netCDF variable `PathFrac`.
+[ Info: Set `soil_wet_root__sigmoid_function_shape_parameter` using netCDF variable `rootdistpar`.
+[ Info: Set `soil_water_saturated_zone_top__capillary_rise_max_water_table_depth` using default value `2000.0`.
+[ Info: Set `soil_water_saturated_zone_top__capillary_rise_averianov_exponent` using default value `2.0`.
+[ Info: Set `subsurface_water__horizontal_to_vertical_saturated_hydraulic_conductivity_ratio` using netCDF variable `KsatHorFrac`.
+[ Info: Set `land_surface_water_flow__manning_n_parameter` using netCDF variable `N`.
+[ Info: Kinematic wave approach is used for land flow, adaptive timestepping = false.
+[ Info: Using a fixed internal timestep (seconds) 3600.0 for kinematic wave land flow.
+[ Info: Kinematic wave approach is used for river flow, adaptive timestepping = false.
+[ Info: Using a fixed internal timestep (seconds) 900.0 for kinematic wave river flow.
+[ Info: Set `river_water_flow__manning_n_parameter` using netCDF variable `N_River`.
+[ Info: Set `river_bank_water__depth` using default value `1.0`.
+[ Info: Set `river_water__external_inflow_volume_flow_rate` using default value `0.0`.
+[ Info: Create an output CSV file `/home/awan/Documents/env-indonesia-mcp/data/benchmarks/citarum_hulu/wflow/output_chirps.csv` for scalar data.
+┌ Info: Adding scalar output of all active cells with reducer function.
+│   fileformat = "CSV"
+│   param = "river_water__volume_flow_rate"
+└   reducer_name = "maximum"
+[ Info: Set initial conditions from default values.
+[ Info: Initialized model
+┌ Info: Run information
+│   model_type = "sbm"
+│   starttime = DateTimeStandard(2016-03-10T00:00:00)
+│   dt = 86400 seconds
+│   endtime = DateTimeStandard(2016-03-16T00:00:00)
+└   nthreads() = 1
+[ Info: Simulation duration: 16 seconds, 322 milliseconds

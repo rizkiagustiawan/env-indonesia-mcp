@@ -1,0 +1,27 @@
+{
+  "source": "CHIRPS v2 daily + Open-Meteo daily",
+  "chirps_base_url": "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016",
+  "chirps_files": [
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.10.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.11.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.12.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.13.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.14.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.15.tif.gz",
+    "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05/2016/chirps-v2.0.2016.03.16.tif.gz"
+  ],
+  "open_meteo_url": "https://archive-api.open-meteo.com/v1/archive?latitude=-6.994727&longitude=107.62025&start_date=2016-03-10&end_date=2016-03-16&daily=temperature_2m_mean%2Cet0_fao_evapotranspiration&timezone=Asia%2FBangkok",
+  "retrieved_at": "2026-08-28T16:14:59.530299+00:00",
+  "period": [
+    "2016-03-10",
+    "2016-03-16"
+  ],
+  "chirps_resolution_deg": 0.05,
+  "temperature_pet_source": "Open-Meteo AOI centre",
+  "ground_truth": false,
+  "limitations": [
+    "CHIRPS is satellite/gauge blended rainfall, not BMKG station truth.",
+    "Temperature and ET0 are spatially uniform from one Open-Meteo point.",
+    "No gauge bias correction or hydrologic calibration is applied."
+  ]
+}
