@@ -35,5 +35,9 @@ python tools/wflow_env/validate_citarum_wflow.py \
   --outlet data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json
 ```
 
+The referenced NetCDF files are ignored/generated artifacts, not committed
+fixtures. They must already exist at the supplied paths before running this
+command; the validator does not download or create them.
+
 A valid report is `screening_only`: it proves structural readiness only. It does not
 prove calibration, independent discharge validation, or flood-hazard accuracy.

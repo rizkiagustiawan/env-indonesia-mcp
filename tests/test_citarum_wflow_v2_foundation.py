@@ -13,6 +13,7 @@ from tools.wflow_env.citarum_outlet import validate_outlet
 
 
 ROOT = Path(__file__).resolve().parents[1]
+_MISSING = object()
 
 
 def _write_forcing(path, *, times=None, include_pet=True, dims=("time", "lat", "lon"), units=None):
@@ -63,6 +64,17 @@ def _sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _rewrite_raw_time_metadata(path, *, units=_MISSING, calendar=_MISSING):
+    with xr.open_dataset(path, decode_times=False) as ds:
+        updated = ds.load()
+    for name, value in (("units", units), ("calendar", calendar)):
+        updated.time.attrs.pop(name, None)
+        updated.time.encoding.pop(name, None)
+        if value is not _MISSING:
+            updated.time.attrs[name] = value
+    updated.to_netcdf(path, mode="w")
+
+
 def test_valid_forcing_report_is_valid(tmp_path):
     forcing = tmp_path / "forcing.nc"
     _write_forcing(forcing)
@@ -96,6 +108,47 @@ def test_time_gap_is_invalid(tmp_path):
     report = validate_forcing(forcing)
     assert report["status"] == "invalid"
     assert any("daily" in error or "gap" in error for error in report["errors"])
+
+
+def test_time_units_must_be_raw_days_since_metadata(tmp_path):
+    forcing = tmp_path / "hours.nc"
+    _write_forcing(forcing)
+    _rewrite_raw_time_metadata(
+        forcing,
+        units="hours since 2000-01-01 00:00:00",
+        calendar="standard",
+    )
+
+    report = validate_forcing(forcing)
+
+    assert report["status"] == "invalid"
+    assert any("time units" in error for error in report["errors"])
+
+
+def test_time_calendar_attribute_is_required(tmp_path):
+    forcing = tmp_path / "missing-calendar.nc"
+    _write_forcing(forcing)
+    _rewrite_raw_time_metadata(forcing, units="days since 2000-01-01 00:00:00")
+
+    report = validate_forcing(forcing)
+
+    assert report["status"] == "invalid"
+    assert any("calendar" in error for error in report["errors"])
+
+
+def test_time_calendar_attribute_must_be_supported(tmp_path):
+    forcing = tmp_path / "bad-calendar.nc"
+    _write_forcing(forcing)
+    _rewrite_raw_time_metadata(
+        forcing,
+        units="days since 2000-01-01 00:00:00",
+        calendar="not-a-calendar",
+    )
+
+    report = validate_forcing(forcing)
+
+    assert report["status"] == "invalid"
+    assert any("calendar" in error for error in report["errors"])
 
 
 def test_wrong_units_are_invalid(tmp_path):
@@ -173,6 +226,22 @@ def test_staticmap_active_nonfinite_value_is_invalid(tmp_path):
     assert any("finite" in error for error in report["errors"])
 
 
+def test_staticmap_positive_inactive_value_is_invalid(tmp_path):
+    forcing = tmp_path / "forcing-with-inactive-positive.nc"
+    staticmaps = tmp_path / "staticmaps.nc"
+    _write_forcing(forcing)
+    _write_staticmaps(staticmaps, active=[[True, False], [True, True]])
+    with xr.open_dataset(forcing) as ds:
+        updated = ds.load()
+    updated["precip"].values[0, 0, 1] = 1.0
+    updated.to_netcdf(forcing, mode="w")
+
+    report = validate_forcing(forcing, staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("inactive" in error for error in report["errors"])
+
+
 def test_staticmap_incompatible_shape_is_invalid(tmp_path):
     forcing = tmp_path / "forcing.nc"
     staticmaps = tmp_path / "wrong-shape-staticmaps.nc"
@@ -190,6 +259,11 @@ def test_validation_does_not_modify_forcing_or_staticmaps(tmp_path):
     staticmaps = tmp_path / "staticmaps.nc"
     _write_forcing(forcing)
     _write_staticmaps(staticmaps, active=[[True, False], [True, True]])
+    with xr.open_dataset(forcing) as ds:
+        updated = ds.load()
+    for name in ("precip", "pet", "temp"):
+        updated[name].values[:, 0, 1] = -9999.0
+    updated.to_netcdf(forcing, mode="w")
     before = {_path: _sha256(_path) for _path in (forcing, staticmaps)}
 
     report = validate_forcing(forcing, staticmaps)
@@ -250,6 +324,48 @@ def test_provisional_partial_indices_reject_invalid_supplied_index(tmp_path):
 
     assert report["status"] == "invalid"
     assert any("grid_row" in error and "integer" in error for error in report["errors"])
+
+
+def test_unvalidated_outlet_allows_null_grid_indices(tmp_path):
+    outlet = tmp_path / "unvalidated-outlet.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload["validation_state"] = "unvalidated"
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "valid"
+    assert report["normalized"]["validation_state"] == "unvalidated"
+
+
+def test_resolved_outlet_requires_grid_indices(tmp_path):
+    outlet = tmp_path / "resolved-without-indices.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload["validation_state"] = "resolved"
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("may be null" in error for error in report["errors"])
+
+
+def test_negative_grid_indices_are_invalid_without_grid_shape(tmp_path):
+    outlet = tmp_path / "negative-index-outlet.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload.update({"grid_row": -1, "grid_col": 0})
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("grid_row" in error and "non-negative" in error for error in report["errors"])
 
 
 def test_resolved_non_integer_indices_are_invalid_without_grid_shape(tmp_path):
@@ -318,6 +434,24 @@ def test_list_validation_state_returns_invalid_report(tmp_path):
 
     assert report["status"] == "invalid"
     assert any("validation_state" in error for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    "extraction_rule",
+    ("maximum value over the grid", "ambiguous nearest outlet"),
+)
+def test_grid_wide_or_ambiguous_extraction_rules_are_invalid(tmp_path, extraction_rule):
+    outlet = tmp_path / "ambiguous-rule-outlet.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload["extraction_rule"] = extraction_rule
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("explicit" in error for error in report["errors"])
 
 
 def test_extremely_large_integer_coordinates_return_invalid_report(tmp_path):
@@ -483,6 +617,34 @@ def test_cli_reports_receipt_write_failure_as_json_without_traceback(tmp_path):
     assert any("receipt" in error.lower() for error in report["errors"])
     assert result.stderr == ""
     assert not receipt.exists()
+
+
+def test_cli_receipt_write_failure_does_not_replace_existing_directory(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    receipt = tmp_path / "receipt.json"
+    _write_forcing(forcing)
+    receipt.mkdir()
+    marker = receipt / "keep.txt"
+    marker.write_text("unchanged", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/wflow_env/validate_citarum_wflow.py",
+            "--forcing",
+            str(forcing),
+            "--receipt",
+            str(receipt),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert json.loads(result.stdout)["status"] == "invalid"
+    assert marker.read_text(encoding="utf-8") == "unchanged"
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["forcing.nc", "receipt.json"]
 
 
 @pytest.mark.parametrize("coordinate", ("lat", "lon"))

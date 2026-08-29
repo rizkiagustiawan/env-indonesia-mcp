@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -96,7 +97,28 @@ def _write_receipt(
         "staticmaps_sha256": _sha256(staticmaps_path) if staticmaps_path else None,
         "outlet_sha256": _sha256(outlet_path) if outlet_path else None,
     }
-    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=receipt_path.parent,
+            prefix=f".{receipt_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            temporary.write(json.dumps(receipt, indent=2) + "\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, receipt_path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def main(argv=None) -> int:

@@ -1,11 +1,27 @@
 """Read-only validation for Wflow forcing NetCDF files."""
 
+import re
+
 import numpy as np
 import xarray as xr
 
 
 _DIMENSIONS = ("time", "lat", "lon")
 _UNITS = {"precip": "mm/day", "pet": "mm/day", "temp": "degC"}
+_TIME_UNITS = re.compile(r"^\s*days\s+since\s+\S+", re.IGNORECASE)
+_CALENDARS = {
+    "standard",
+    "gregorian",
+    "proleptic_gregorian",
+    "noleap",
+    "365_day",
+    "all_leap",
+    "366_day",
+    "360_day",
+    "julian",
+    "utc",
+    "none",
+}
 
 
 def _base_report(forcing_path, staticmaps_path):
@@ -54,6 +70,43 @@ def _read_active_mask(staticmaps_path, spatial_shape, errors):
         return None
 
 
+def _raw_time_metadata(forcing_path, errors):
+    try:
+        with xr.open_dataset(forcing_path, decode_times=False) as forcing:
+            if "time" not in forcing.coords:
+                return
+            time = forcing.coords["time"]
+            units = time.attrs.get("units", time.encoding.get("units"))
+            calendar = time.attrs.get("calendar", time.encoding.get("calendar"))
+            if not isinstance(units, str) or not _TIME_UNITS.match(units):
+                errors.append("time units must contain days since a reference date")
+            if not isinstance(calendar, str) or calendar.casefold() not in _CALENDARS:
+                errors.append("time coordinate must have a supported calendar attribute")
+    except (FileNotFoundError, OSError, TypeError, ValueError, OverflowError) as exc:
+        errors.append(f"unable to read raw time metadata: {exc}")
+
+
+def _nodata_values(variable):
+    values = []
+    for source in (variable.attrs, variable.encoding):
+        for name in ("_FillValue", "missing_value"):
+            value = source.get(name)
+            if value is not None:
+                values.extend(np.asarray(value).reshape(-1).tolist())
+    return values
+
+
+def _inactive_values_are_nodata(values, variable, active):
+    inactive = values[:, ~active]
+    finite = np.isfinite(inactive)
+    if not np.any(finite):
+        return True
+    nodata = _nodata_values(variable)
+    if -9999 not in nodata:
+        nodata.append(-9999)
+    return np.all(~finite | np.isin(inactive, nodata))
+
+
 def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
     """Validate the structural and value contract of a Wflow forcing file."""
     report = _base_report(forcing_path, staticmaps_path)
@@ -61,6 +114,7 @@ def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
     summary = report["summary"]
 
     try:
+        _raw_time_metadata(forcing_path, errors)
         with xr.open_dataset(forcing_path, decode_times=True) as forcing:
             coordinates = {
                 name: _coordinate_values(forcing, name, errors)
@@ -147,6 +201,12 @@ def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
                                 f"got {list(values.shape)}"
                             )
                             continue
+                        if active is not None and not _inactive_values_are_nodata(
+                            values, variable, active
+                        ):
+                            errors.append(
+                                f"{name} contains finite non-nodata values in inactive cells"
+                            )
                         checked_values = values if active is None else values[:, active]
                         if not np.all(np.isfinite(checked_values)):
                             errors.append(

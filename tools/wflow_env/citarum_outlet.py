@@ -20,7 +20,8 @@ _REQUIRED_FIELDS = (
     "validation_state",
     "limitations",
 )
-_VALIDATION_STATES = {"provisional", "resolved"}
+_VALIDATION_STATES = {"provisional", "unvalidated", "resolved"}
+_NULLABLE_GRID_STATES = {"provisional", "unvalidated"}
 _STRING_FIELDS = (
     "schema_version",
     "outlet_id",
@@ -65,10 +66,29 @@ def _grid_index(value, name, limit, errors):
     if isinstance(value, bool) or not isinstance(value, int):
         errors.append(f"{name} must be an integer")
         return
-    if limit is None:
-        return
-    if value < 0 or value >= limit:
-        errors.append(f"{name} must fit grid bounds 0 <= {name} < {limit}")
+    if value < 0 or (limit is not None and value >= limit):
+        if limit is None:
+            errors.append(f"{name} must be non-negative")
+        else:
+            errors.append(f"{name} must fit grid bounds 0 <= {name} < {limit}")
+
+
+def _validate_extraction_rule(value, errors):
+    normalized = value.casefold()
+    ambiguous_terms = (
+        "ambiguous",
+        "maximum",
+        "max value",
+        "grid-wide",
+        "grid wide",
+        "over the grid",
+    )
+    if (
+        "explicit" not in normalized
+        or "cell" not in normalized
+        or any(term in normalized for term in ambiguous_terms)
+    ):
+        errors.append("extraction_rule must identify an explicit outlet cell")
 
 
 def _validate_required_fields(payload, errors):
@@ -119,14 +139,22 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
 
     validation_state = payload.get("validation_state")
     if not isinstance(validation_state, str) or validation_state not in _VALIDATION_STATES:
-        errors.append("validation_state must be provisional or resolved")
+        errors.append("validation_state must be provisional, unvalidated, or resolved")
+
+    extraction_rule = payload.get("extraction_rule")
+    if isinstance(extraction_rule, str) and extraction_rule.strip():
+        _validate_extraction_rule(extraction_rule, errors)
 
     row = payload.get("grid_row")
     col = payload.get("grid_col")
-    if validation_state == "provisional" and (row is None or col is None):
+    if isinstance(validation_state, str) and validation_state in _NULLABLE_GRID_STATES and (
+        row is None or col is None
+    ):
         warnings.append("grid_row and grid_col are unresolved for this provisional outlet")
     elif row is None or col is None:
-        errors.append("grid_row and grid_col may be null only for provisional metadata")
+        errors.append(
+            "grid_row and grid_col may be null only for provisional or unvalidated metadata"
+        )
 
     if row is not None:
         _grid_index(row, "grid_row", None, errors)
@@ -141,12 +169,8 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
         ):
             errors.append("grid_shape must contain two positive integers")
         elif row is not None and col is not None:
-            if isinstance(row, int) and not isinstance(row, bool):
-                if row < 0 or row >= grid_shape[0]:
-                    errors.append(f"grid_row must fit grid bounds 0 <= grid_row < {grid_shape[0]}")
-            if isinstance(col, int) and not isinstance(col, bool):
-                if col < 0 or col >= grid_shape[1]:
-                    errors.append(f"grid_col must fit grid bounds 0 <= grid_col < {grid_shape[1]}")
+            _grid_index(row, "grid_row", grid_shape[0], errors)
+            _grid_index(col, "grid_col", grid_shape[1], errors)
 
     if not errors:
         report["status"] = "valid"
