@@ -23,3 +23,17 @@ row. The fixture is an execution check only; it is not a Citarum calibration.
 Animation outputs are kept under `output_maps/hydrology_animation/`. The Wflow
 hydrograph and SWE depth examples are synthetic smoke demonstrations until a
 spatial Citarum Wflow model and declared flood boundary forcing are available.
+
+## Citarum Wflow Screening Validator
+
+Run the structural validation from the repository root:
+
+```bash
+python tools/wflow_env/validate_citarum_wflow.py \
+  --forcing data/benchmarks/citarum_hulu/wflow/forcing_2016-01-01_2016-03-16_chirps_warmup.nc \
+  --staticmaps data/benchmarks/citarum_hulu/wflow/staticmaps.nc \
+  --outlet data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json
+```
+
+A valid report is `screening_only`: it proves structural readiness only. It does not
+prove calibration, independent discharge validation, or flood-hazard accuracy.
