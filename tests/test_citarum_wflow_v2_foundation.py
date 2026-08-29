@@ -326,12 +326,26 @@ def test_provisional_partial_indices_reject_invalid_supplied_index(tmp_path):
     assert any("grid_row" in error and "integer" in error for error in report["errors"])
 
 
-def test_unvalidated_outlet_allows_null_grid_indices(tmp_path):
-    outlet = tmp_path / "unvalidated-outlet.json"
+def test_unvalidated_outlet_requires_grid_indices(tmp_path):
+    outlet = tmp_path / "unvalidated-without-indices.json"
     payload = json.loads(
         (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
     )
     payload["validation_state"] = "unvalidated"
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "invalid"
+    assert any("may be null" in error for error in report["errors"])
+
+
+def test_unvalidated_outlet_with_integer_indices_is_valid(tmp_path):
+    outlet = tmp_path / "unvalidated-outlet.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    payload.update({"validation_state": "unvalidated", "grid_row": 1, "grid_col": 1})
     outlet.write_text(json.dumps(payload))
 
     report = validate_outlet(outlet)
@@ -438,7 +452,15 @@ def test_list_validation_state_returns_invalid_report(tmp_path):
 
 @pytest.mark.parametrize(
     "extraction_rule",
-    ("maximum value over the grid", "ambiguous nearest outlet"),
+    (
+        "maximum value over the grid",
+        "ambiguous nearest outlet",
+        "not an explicit outlet cell",
+        "explicit outlet cell, or nearest gauge",
+        "explicit outlet cell when grid indices are not resolved",
+        "explicit outlet cells when grid indices are resolved",
+        "explicit outlet cell when grid indices are resolved and nearest gauge is used",
+    ),
 )
 def test_grid_wide_or_ambiguous_extraction_rules_are_invalid(tmp_path, extraction_rule):
     outlet = tmp_path / "ambiguous-rule-outlet.json"
@@ -451,7 +473,48 @@ def test_grid_wide_or_ambiguous_extraction_rules_are_invalid(tmp_path, extractio
     report = validate_outlet(outlet)
 
     assert report["status"] == "invalid"
-    assert any("explicit" in error for error in report["errors"])
+    assert any("exactly" in error for error in report["errors"])
+
+
+def test_checked_in_extraction_rule_is_valid(tmp_path):
+    outlet = tmp_path / "explicit-rule-outlet.json"
+    payload = json.loads(
+        (ROOT / "data/benchmarks/citarum_hulu/wflow/citarum_hulu_outlet.json").read_text()
+    )
+    outlet.write_text(json.dumps(payload))
+
+    report = validate_outlet(outlet)
+
+    assert report["status"] == "valid"
+
+
+@pytest.mark.parametrize("calendar", ("360_day", "noleap", "none", "utc"))
+def test_non_gregorian_calendar_is_rejected(tmp_path, calendar):
+    forcing = tmp_path / f"{calendar}.nc"
+    _write_forcing(forcing)
+    _rewrite_raw_time_metadata(forcing, calendar=calendar)
+
+    report = validate_forcing(forcing)
+
+    assert report["status"] == "invalid"
+    assert any("Gregorian" in error for error in report["errors"])
+
+
+def test_lat_and_lon_must_be_dimension_coordinates(tmp_path):
+    forcing = tmp_path / "auxiliary-coordinates.nc"
+    _write_forcing(forcing)
+    with xr.open_dataset(forcing) as ds:
+        updated = ds.load()
+    updated = updated.drop_indexes("lat").drop_indexes("lon")
+    updated["lat"] = ("other_lat", [-7.0, -6.995])
+    updated["lon"] = ("other_lon", [107.5, 107.505])
+    updated = updated.assign_coords(other_lat=[0, 1], other_lon=[0, 1])
+    updated.to_netcdf(forcing, mode="w")
+
+    report = validate_forcing(forcing)
+
+    assert report["status"] == "invalid"
+    assert any("dimension coordinate" in error for error in report["errors"])
 
 
 def test_extremely_large_integer_coordinates_return_invalid_report(tmp_path):

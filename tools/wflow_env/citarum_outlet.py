@@ -21,7 +21,7 @@ _REQUIRED_FIELDS = (
     "limitations",
 )
 _VALIDATION_STATES = {"provisional", "unvalidated", "resolved"}
-_NULLABLE_GRID_STATES = {"provisional", "unvalidated"}
+_EXTRACTION_RULE = "explicit outlet cell when grid indices are resolved"
 _STRING_FIELDS = (
     "schema_version",
     "outlet_id",
@@ -74,21 +74,11 @@ def _grid_index(value, name, limit, errors):
 
 
 def _validate_extraction_rule(value, errors):
-    normalized = value.casefold()
-    ambiguous_terms = (
-        "ambiguous",
-        "maximum",
-        "max value",
-        "grid-wide",
-        "grid wide",
-        "over the grid",
-    )
-    if (
-        "explicit" not in normalized
-        or "cell" not in normalized
-        or any(term in normalized for term in ambiguous_terms)
-    ):
-        errors.append("extraction_rule must identify an explicit outlet cell")
+    if value != _EXTRACTION_RULE:
+        errors.append(
+            "extraction_rule must be exactly "
+            f"{_EXTRACTION_RULE!r}"
+        )
 
 
 def _validate_required_fields(payload, errors):
@@ -147,13 +137,13 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
 
     row = payload.get("grid_row")
     col = payload.get("grid_col")
-    if isinstance(validation_state, str) and validation_state in _NULLABLE_GRID_STATES and (
+    if validation_state == "provisional" and (row is None or col is None):
+        warnings.append("grid_row and grid_col are unresolved for this provisional outlet")
+    elif isinstance(validation_state, str) and validation_state in _VALIDATION_STATES and (
         row is None or col is None
     ):
-        warnings.append("grid_row and grid_col are unresolved for this provisional outlet")
-    elif row is None or col is None:
         errors.append(
-            "grid_row and grid_col may be null only for provisional or unvalidated metadata"
+            "grid_row and grid_col may be null only for provisional metadata"
         )
 
     if row is not None:

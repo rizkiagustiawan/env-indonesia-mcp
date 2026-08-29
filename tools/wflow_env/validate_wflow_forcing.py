@@ -13,14 +13,6 @@ _CALENDARS = {
     "standard",
     "gregorian",
     "proleptic_gregorian",
-    "noleap",
-    "365_day",
-    "all_leap",
-    "366_day",
-    "360_day",
-    "julian",
-    "utc",
-    "none",
 }
 
 
@@ -39,6 +31,9 @@ def _base_report(forcing_path, staticmaps_path):
 def _coordinate_values(dataset, name, errors):
     if name not in dataset.coords:
         errors.append(f"missing required coordinate: {name}")
+        return None
+    if tuple(dataset.coords[name].dims) != (name,):
+        errors.append(f"{name} must be a dimension coordinate aligned to {name}")
         return None
     values = np.asarray(dataset.coords[name].values)
     if values.size == 0:
@@ -81,7 +76,10 @@ def _raw_time_metadata(forcing_path, errors):
             if not isinstance(units, str) or not _TIME_UNITS.match(units):
                 errors.append("time units must contain days since a reference date")
             if not isinstance(calendar, str) or calendar.casefold() not in _CALENDARS:
-                errors.append("time coordinate must have a supported calendar attribute")
+                errors.append(
+                    "time coordinate calendar must be one of the Gregorian calendars: "
+                    "standard, gregorian, or proleptic_gregorian"
+                )
     except (FileNotFoundError, OSError, TypeError, ValueError, OverflowError) as exc:
         errors.append(f"unable to read raw time metadata: {exc}")
 
