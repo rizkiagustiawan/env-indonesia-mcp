@@ -42,17 +42,33 @@ def _coordinate_values(dataset, name, errors):
     return values
 
 
-def _read_active_mask(staticmaps_path, spatial_shape, errors):
+def _read_active_mask(staticmaps_path, lat_values, lon_values, errors):
     try:
         with xr.open_dataset(staticmaps_path, decode_times=True) as static:
             if "wflow_subcatch" not in static:
                 errors.append("static maps missing required variable: wflow_subcatch")
                 return None
             subcatch = static["wflow_subcatch"].load()
+            if tuple(subcatch.dims) not in (("lat", "lon"), ("lon", "lat")):
+                errors.append(
+                    "static map wflow_subcatch dimensions must be exactly "
+                    "('lat', 'lon') or ('lon', 'lat')"
+                )
+                return None
+            for name, expected in (("lat", lat_values), ("lon", lon_values)):
+                if name not in static.coords or tuple(static.coords[name].dims) != (name,):
+                    errors.append(
+                        f"static map {name} must be a dimension coordinate aligned to {name}"
+                    )
+                    return None
+                if not np.array_equal(np.asarray(static.coords[name].values), expected):
+                    errors.append(f"static map {name} coordinates are not aligned to forcing grid")
+                    return None
             values = np.asarray(subcatch.values)
             active = ~np.isnan(values)
             if tuple(subcatch.dims) == ("lon", "lat"):
                 active = active.T
+            spatial_shape = (lat_values.size, lon_values.size)
             if active.shape != spatial_shape:
                 errors.append(
                     "static map active mask shape is incompatible with forcing "
@@ -180,7 +196,7 @@ def validate_forcing(forcing_path, staticmaps_path=None) -> dict[str, object]:
                 summary["grid_shape"] = [int(size) for size in spatial_shape]
                 active = None
                 if staticmaps_path:
-                    active = _read_active_mask(staticmaps_path, spatial_shape, errors)
+                    active = _read_active_mask(staticmaps_path, lat_values, lon_values, errors)
 
                 for name in _UNITS:
                     if name not in forcing:

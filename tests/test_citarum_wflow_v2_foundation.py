@@ -46,15 +46,18 @@ def _write_forcing(path, *, times=None, include_pet=True, dims=("time", "lat", "
     ds.to_netcdf(path)
 
 
-def _write_staticmaps(path, *, shape=(2, 2), active=None):
+def _write_staticmaps(path, *, shape=(2, 2), active=None, dims=("lat", "lon"), lat=None, lon=None):
     active = np.ones(shape, dtype=bool) if active is None else np.asarray(active)
     subcatch = np.where(active, 1.0, -9999.0).astype(np.float32)
+    lat = np.linspace(-7.0, -6.995, shape[dims.index("lat")]) if lat is None else lat
+    lon = np.linspace(107.5, 107.505, shape[dims.index("lon")]) if lon is None else lon
+    coordinates = {
+        "lat": lat,
+        "lon": lon,
+    }
     ds = xr.Dataset(
-        {"wflow_subcatch": (("lat", "lon"), subcatch)},
-        coords={
-            "lat": np.arange(shape[0], dtype=float),
-            "lon": np.arange(shape[1], dtype=float),
-        },
+        {"wflow_subcatch": (dims, subcatch)},
+        coords={name: coordinates[name] for name in ("lat", "lon")},
     )
     ds["wflow_subcatch"].encoding["_FillValue"] = -9999.0
     ds.to_netcdf(path)
@@ -251,7 +254,49 @@ def test_staticmap_incompatible_shape_is_invalid(tmp_path):
     report = validate_forcing(forcing, staticmaps)
 
     assert report["status"] == "invalid"
-    assert any("shape" in error for error in report["errors"])
+    assert any("shape" in error or "coordinate" in error for error in report["errors"])
+
+
+def test_staticmap_same_shape_with_misaligned_coordinates_is_invalid(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    staticmaps = tmp_path / "misaligned-staticmaps.nc"
+    _write_forcing(forcing)
+    _write_staticmaps(staticmaps, lat=[-8.0, -7.995])
+
+    report = validate_forcing(forcing, staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("lat coordinate" in error for error in report["errors"])
+
+
+def test_staticmap_with_unrelated_dimensions_is_invalid(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    staticmaps = tmp_path / "malformed-staticmaps.nc"
+    _write_forcing(forcing)
+    xr.Dataset(
+        {"wflow_subcatch": (("x", "y"), np.ones((2, 2), dtype=np.float32))},
+        coords={"x": [0, 1], "y": [0, 1]},
+    ).to_netcdf(staticmaps)
+
+    report = validate_forcing(forcing, staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("dimensions" in error for error in report["errors"])
+
+
+def test_staticmap_aligned_lon_lat_layout_remains_valid(tmp_path):
+    forcing = tmp_path / "forcing.nc"
+    staticmaps = tmp_path / "transposed-staticmaps.nc"
+    _write_forcing(forcing)
+    _write_staticmaps(
+        staticmaps,
+        dims=("lon", "lat"),
+        active=np.ones((2, 2), dtype=bool),
+    )
+
+    report = validate_forcing(forcing, staticmaps)
+
+    assert report["status"] == "valid"
 
 
 def test_validation_does_not_modify_forcing_or_staticmaps(tmp_path):
