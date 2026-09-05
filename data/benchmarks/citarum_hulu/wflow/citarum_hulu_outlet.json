@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0.0",
   "status": "screening_only",
-  "outlet_id": "citarum_hulu_provisional",
-  "name": "Citarum Hulu provisional outlet",
-  "description": "Provisional extraction target pending gauge confirmation.",
-  "longitude": 107.62025,
-  "latitude": -6.994727,
-  "grid_row": null,
-  "grid_col": null,
-  "source": "existing Citarum benchmark AOI target; not a gauge record",
+  "outlet_id": "citarum_hulu_nanjung",
+  "name": "Citarum Hulu (Nanjung) pit outlet",
+  "description": "Drainage pit outlet on the modeled river network, upstream of Saguling reservoir.",
+  "longitude": 107.36571,
+  "latitude": -6.90815,
+  "grid_row": 68,
+  "grid_col": 21,
+  "source": "Resolved from Wflow staticmaps LDD pit cell matching the western boundary.",
   "discharge_variable": "Q",
   "extraction_rule": "explicit outlet cell when grid indices are resolved",
-  "validation_state": "provisional",
+  "validation_state": "resolved",
   "limitations": [
-    "No independent discharge validation.",
-    "Coordinates are a provisional benchmark AOI target, not an independent gauge location."
+    "No independent discharge observation values are included.",
+    "The modeled river network closes exactly inside the polygon, but RBI lacks labeled lines for name confirmation."
   ]
 }

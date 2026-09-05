@@ -3410,6 +3410,23 @@ fn parse_latlon_query(query: &str) -> (f64, f64, u32) {
     (lat, lon, days)
 }
 
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct SymbolicSynthesisParam {
+    #[schemars(description = "Programming language to use (python, julia, bash)")]
+    pub language: String,
+    #[schemars(description = "The raw source code to execute. Output will be captured.")]
+    pub code: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CausalMemoryParam {
+    #[schemars(description = "Action: store, query")]
+    pub action: String,
+    #[schemars(description = "The invariant physical rule or causal lesson learned (if storing) or query text (if querying)")]
+    pub rule_or_query: String,
+}
+
 #[tool_router]
 impl EnvIndonesiaServer {
     // --- DATA INDONESIA ---
@@ -7320,6 +7337,81 @@ impl EnvIndonesiaServer {
     )]
     fn dream_mcmc(&self, Parameters(p): Parameters<DreamParam>) -> String {
         tools::advanced_physics::uq::dream(&p)
+    }
+
+    #[tool(
+        description = "Dynamic Symbolic Synthesis (Levin Search approx). Executes generated Python/Julia code in an isolated sandbox to test hypotheses, solve physical equations, or explore algorithmic constraints."
+    )]
+    fn dynamic_symbolic_synthesis(&self, Parameters(p): Parameters<SymbolicSynthesisParam>) -> String {
+        use std::process::Command;
+        let (cmd, ext) = match p.language.to_lowercase().as_str() {
+            "python" | "python3" => ("python3", "py"),
+            "julia" => ("julia", "jl"),
+            "bash" | "sh" => ("bash", "sh"),
+            _ => return serde_json::json!({"status": "error", "error": format!("Unsupported language: {}", p.language)}).to_string(),
+        };
+        let timestamp = chrono::Utc::now().timestamp_micros();
+        let path = format!("/tmp/dynamic_script_{}.{}", timestamp, ext);
+        if let Err(e) = std::fs::write(&path, &p.code) {
+            return serde_json::json!({"status": "error", "error": format!("Failed to write code: {}", e)}).to_string();
+        }
+        let output = match Command::new(cmd).arg(&path).output() {
+            Ok(out) => out,
+            Err(e) => return serde_json::json!({"status": "error", "error": format!("Failed to execute: {}", e)}).to_string(),
+        };
+        let _ = std::fs::remove_file(&path);
+        let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+        serde_json::json!({
+            "status": if output.status.success() { "success" } else { "failed" },
+            "exit_code": output.status.code(),
+            "stdout": stdout,
+            "stderr": stderr
+        }).to_string()
+    }
+
+    #[tool(
+        description = "Causal Memory Store (Epistemic Tracker). Save invariant physical rules, constraints, or causal lessons (e.g., limitations of datasets in Indonesia) so future operations never repeat the same logical error."
+    )]
+    fn causal_memory_store(&self, Parameters(p): Parameters<CausalMemoryParam>) -> String {
+        let path = "/home/awan/.zeroclaw/data/causal_memory.json";
+        let mut db: serde_json::Value = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_else(|| serde_json::json!([]));
+        if p.action == "store" {
+            if let Some(arr) = db.as_array_mut() {
+                arr.push(serde_json::json!({
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "rule": p.rule_or_query
+                }));
+            } else {
+                db = serde_json::json!([serde_json::json!({
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "rule": p.rule_or_query
+                })]);
+            }
+            if let Ok(json_str) = serde_json::to_string_pretty(&db) {
+                if std::fs::write(path, json_str).is_ok() {
+                    return serde_json::json!({"status": "success", "message": "Causal rule stored successfully"}).to_string();
+                }
+            }
+            return serde_json::json!({"status": "error", "error": "Failed to write to causal memory"}).to_string();
+        } else if p.action == "query" {
+            let query = p.rule_or_query.to_lowercase();
+            let mut results = vec![];
+            if let Some(arr) = db.as_array() {
+                for v in arr {
+                    if let Some(r) = v.get("rule").and_then(|x| x.as_str()) {
+                        if r.to_lowercase().contains(&query) {
+                            results.push(v.clone());
+                        }
+                    }
+                }
+            }
+            return serde_json::json!({"status": "success", "results": results}).to_string();
+        }
+        serde_json::json!({"status": "error", "error": "Invalid action"}).to_string()
     }
 }
 

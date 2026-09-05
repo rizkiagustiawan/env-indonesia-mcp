@@ -96,7 +96,7 @@ def _validate_required_fields(payload, errors):
         errors.append("limitations must be a non-empty list of non-empty strings")
 
 
-def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
+def validate_outlet(outlet_path, grid_shape=None, staticmaps_path=None) -> dict[str, object]:
     """Validate outlet metadata without modifying the source JSON file."""
     report = _report(outlet_path)
     errors = report["errors"]
@@ -161,6 +161,29 @@ def validate_outlet(outlet_path, grid_shape=None) -> dict[str, object]:
         elif row is not None and col is not None:
             _grid_index(row, "grid_row", grid_shape[0], errors)
             _grid_index(col, "grid_col", grid_shape[1], errors)
+
+    if staticmaps_path is not None and row is not None and col is not None:
+        try:
+            import numpy as np
+            import xarray as xr
+
+            with xr.open_dataset(staticmaps_path) as ds:
+                if "wflow_river" not in ds.variables or "wflow_subcatch" not in ds.variables:
+                    errors.append("staticmaps lacks wflow_river or wflow_subcatch")
+                else:
+                    river_shape = ds["wflow_river"].shape
+                    if len(river_shape) >= 2:
+                        s_rows, s_cols = river_shape[-2:]
+                        if row >= s_rows or col >= s_cols:
+                            errors.append(f"outlet grid indices outside staticmaps shape ({s_rows}, {s_cols})")
+                        else:
+                            active = ds["wflow_subcatch"].values[row, col]
+                            if not (np.isfinite(active) and active == 1.0):
+                                errors.append(f"outlet grid cell (row={row}, col={col}) is not active in staticmaps")
+                            if ds["wflow_river"].values[row, col] != 1.0:
+                                errors.append(f"outlet grid cell (row={row}, col={col}) is not on the river network")
+        except Exception as exc:
+            errors.append(f"unable to read staticmaps: {exc}")
 
     if not errors:
         report["status"] = "valid"

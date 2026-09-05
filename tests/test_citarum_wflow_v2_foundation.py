@@ -784,3 +784,244 @@ def test_cli_reports_nan_forcing_coordinate_as_strict_json(tmp_path, coordinate)
     assert report["status"] == "invalid"
     assert any(coordinate in error for error in report["errors"])
     assert result.stderr == ""
+
+
+def _write_staticmaps_with_river(path, *, shape=(3, 3), river=None, active=None):
+    active = np.ones(shape, dtype=bool) if active is None else np.asarray(active)
+    subcatch = np.where(active, 1.0, -9999.0).astype(np.float32)
+    river = np.zeros(shape, dtype=np.float32) if river is None else np.asarray(river, dtype=np.float32)
+    lat = np.linspace(-7.0, -6.99, shape[0])
+    lon = np.linspace(107.5, 107.51, shape[1])
+    ds = xr.Dataset(
+        {
+            "wflow_subcatch": (("lat", "lon"), subcatch),
+            "wflow_river": (("lat", "lon"), river),
+        },
+        coords={"lat": lat, "lon": lon},
+    )
+    ds["wflow_subcatch"].encoding["_FillValue"] = -9999.0
+    ds.to_netcdf(path)
+
+
+def test_outlet_on_river_active_cell_is_valid_with_staticmaps(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": 1,
+                "grid_col": 1,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "resolved",
+                "limitations": ["none"],
+            }
+        )
+    )
+    staticmaps = tmp_path / "staticmaps.nc"
+    river = np.zeros((3, 3), dtype=np.float32)
+    river[1, 1] = 1.0
+    _write_staticmaps_with_river(staticmaps, river=river)
+
+    report = validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert report["status"] == "valid"
+    assert report["errors"] == []
+
+
+def test_outlet_on_non_river_cell_is_invalid_with_staticmaps(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    payload = json.loads((outlet := tmp_path / "outlet.json").read_text()) if False else None
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": 0,
+                "grid_col": 2,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "resolved",
+                "limitations": ["none"],
+            }
+        )
+    )
+    staticmaps = tmp_path / "staticmaps.nc"
+    river = np.zeros((3, 3), dtype=np.float32)
+    river[1, 1] = 1.0
+    _write_staticmaps_with_river(staticmaps, river=river)
+
+    report = validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("river" in error for error in report["errors"])
+
+
+def test_outlet_on_inactive_cell_is_invalid_with_staticmaps(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": 2,
+                "grid_col": 2,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "resolved",
+                "limitations": ["none"],
+            }
+        )
+    )
+    staticmaps = tmp_path / "staticmaps.nc"
+    river = np.zeros((3, 3), dtype=np.float32)
+    river[2, 2] = 1.0
+    active = np.ones((3, 3), dtype=bool)
+    active[2, 2] = False
+    _write_staticmaps_with_river(staticmaps, river=river, active=active)
+
+    report = validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("active" in error for error in report["errors"])
+
+
+def test_outlet_indices_outside_staticmaps_shape_are_invalid(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": 9,
+                "grid_col": 9,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "resolved",
+                "limitations": ["none"],
+            }
+        )
+    )
+    staticmaps = tmp_path / "staticmaps.nc"
+    _write_staticmaps_with_river(staticmaps, shape=(3, 3))
+
+    report = validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert report["status"] == "invalid"
+    assert any("grid" in error or "staticmaps" in error for error in report["errors"])
+
+
+def test_outlet_provisional_with_null_indices_ignores_staticmaps(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": None,
+                "grid_col": None,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "provisional",
+                "limitations": ["none"],
+            }
+        )
+    )
+    staticmaps = tmp_path / "staticmaps.nc"
+    _write_staticmaps_with_river(staticmaps)
+
+    report = validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert report["status"] == "valid"
+
+
+def test_outlet_validation_with_staticmaps_is_read_only(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    payload = {
+        "schema_version": "1.0.0",
+        "status": "screening_only",
+        "outlet_id": "t",
+        "name": "n",
+        "description": "d",
+        "longitude": 107.5,
+        "latitude": -7.0,
+        "grid_row": 1,
+        "grid_col": 1,
+        "source": "s",
+        "discharge_variable": "Q",
+        "extraction_rule": "explicit outlet cell when grid indices are resolved",
+        "validation_state": "resolved",
+        "limitations": ["none"],
+    }
+    outlet.write_text(json.dumps(payload))
+    staticmaps = tmp_path / "staticmaps.nc"
+    river = np.zeros((3, 3), dtype=np.float32)
+    river[1, 1] = 1.0
+    _write_staticmaps_with_river(staticmaps, river=river)
+    before = staticmaps.read_bytes()
+
+    validate_outlet(outlet, staticmaps_path=staticmaps)
+
+    assert staticmaps.read_bytes() == before
+
+
+def test_outlet_staticmaps_read_failure_is_invalid(tmp_path):
+    outlet = tmp_path / "outlet.json"
+    outlet.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "status": "screening_only",
+                "outlet_id": "t",
+                "name": "n",
+                "description": "d",
+                "longitude": 107.5,
+                "latitude": -7.0,
+                "grid_row": 1,
+                "grid_col": 1,
+                "source": "s",
+                "discharge_variable": "Q",
+                "extraction_rule": "explicit outlet cell when grid indices are resolved",
+                "validation_state": "resolved",
+                "limitations": ["none"],
+            }
+        )
+    )
+    broken = tmp_path / "staticmaps.nc"
+    broken.write_bytes(b"not a netcdf file")
+
+    report = validate_outlet(outlet, staticmaps_path=broken)
+
+    assert report["status"] == "invalid"
+    assert any("staticmaps" in error for error in report["errors"])

@@ -65,6 +65,7 @@ def _report(forcing_path: Path, staticmaps_path: Path | None, outlet_path: Path 
         outlet = validate_outlet(
             outlet_path,
             grid_shape=tuple(grid_shape) if grid_shape is not None else None,
+            staticmaps_path=staticmaps_path,
         )
         report["outlet"] = outlet
         reports.append(outlet)
