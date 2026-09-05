@@ -3433,6 +3433,25 @@ pub struct CausalMemoryParam {
     pub rule_or_query: String,
 }
 
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct CadGeneratorParam {
+    #[schemars(description = "Type of CAD model: spillway or wwtp_tank")]
+    pub model_type: String,
+    #[schemars(description = "Length in millimeters (e.g. 10000.0 for 10m)")]
+    pub length: f64,
+    #[schemars(description = "Width in millimeters (e.g. 2000.0 for 2m)")]
+    pub width: f64,
+    #[schemars(description = "Depth/Height in millimeters")]
+    pub depth: f64,
+    #[schemars(description = "Wall thickness in millimeters (e.g. 200.0)")]
+    pub thickness: f64,
+    #[schemars(description = "Number of flow baffles (for wwtp_tank only)")]
+    pub baffles: i32,
+    #[schemars(description = "Output file path (e.g., /tmp/tank.step)")]
+    pub output_file: String,
+}
+
 #[tool_router]
 impl EnvIndonesiaServer {
     // --- DATA INDONESIA ---
@@ -7440,7 +7459,35 @@ impl EnvIndonesiaServer {
     fn fetch_soilgrids(&self, Parameters(p): Parameters<SoilGridsParam>) -> String {
         fetch_soilgrids(&p)
     }
+
+    #[tool(
+        description = "Alien Technology: Parametric 3D CAD/BIM Blueprint Generator. Generates industry-standard 3D solid STEP files for civil/environmental engineering structures (e.g., Spillways for Wflow floods, MBR/WWTP Tanks for Chemical operations) automatically without GUI. Uses OpenCASCADE/CadQuery backend."
+    )]
+    fn cad_generator(&self, Parameters(p): Parameters<CadGeneratorParam>) -> String {
+        use std::process::Command;
+        let script = "/home/awan/Documents/env-indonesia-mcp/src/tools/gis/cadquery_engine.py";
+        let venv_python = "/home/awan/Documents/env-indonesia-mcp/venv_cad/bin/python3";
+        let out = Command::new(venv_python)
+            .arg(script)
+            .arg("--type").arg(&p.model_type)
+            .arg("--length").arg(p.length.to_string())
+            .arg("--width").arg(p.width.to_string())
+            .arg("--depth").arg(p.depth.to_string())
+            .arg("--thickness").arg(p.thickness.to_string())
+            .arg("--baffles").arg(p.baffles.to_string())
+            .arg("--output").arg(&p.output_file)
+            .output();
+            
+        match out {
+            Ok(output) => {
+                let out_str = String::from_utf8_lossy(&output.stdout).to_string();
+                if output.status.success() { out_str } else { format!("Error: {} {}", out_str, String::from_utf8_lossy(&output.stderr)) }
+            },
+            Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
+        }
+    }
 }
+
 
 
 
