@@ -8,6 +8,12 @@ use rmcp::{
 };
 
 use crate::tools;
+
+use crate::tools::datasources::soilgrids::{fetch as fetch_soilgrids, SoilGridsParam};
+
+
+use crate::tools::advanced_physics::alien_sbas_sdb::{invert_peat_thickness, invert_bathymetry, SbasPeatParam, SdbParam};
+
 pub use crate::tools::physics_validator::ValidatorParam;
 use crate::tools::advanced_physics::peatland_subsidence::{calculate_peatland_subsidence, PeatlandSubsidenceParam};
 use crate::tools::advanced_physics::groundwater_pde::RichardsParam;
@@ -7413,7 +7419,30 @@ impl EnvIndonesiaServer {
         }
         serde_json::json!({"status": "error", "error": "Invalid action"}).to_string()
     }
+
+    #[tool(
+        description = "Alien Technology: Tropical Peatland 3D Volume Inversion via Sentinel-1 SBAS. Solves the subsidence-oxidation relationship to estimate peat thickness (meters) and carbon stock (tons) from surface deformation velocity (mm/yr) and water table depth, overcoming C-band backscatter penetration limits."
+    )]
+    fn sbas_peat_inversion(&self, Parameters(p): Parameters<SbasPeatParam>) -> String {
+        invert_peat_thickness(&p)
+    }
+
+    #[tool(
+        description = "Alien Technology: Physics-Based Satellite Derived Bathymetry (SDB). Uses Sentinel-2 multispectral reflectance and Radiative Transfer Equation inversion to calculate shallow water depth (Z), constrained by turbidity attenuation (Kd), outperforming empirical log-ratios in muddy Indonesian estuaries."
+    )]
+    fn radiative_bathymetry(&self, Parameters(p): Parameters<SdbParam>) -> String {
+        invert_bathymetry(&p)
+    }
+
+    #[tool(
+        description = "Fetch Subsurface Soil Horizons from SoilGrids 250m (ISRIC) and run Pedotransfer Functions (PTF). Resolves the 3D Soil Gap in Indonesia by extracting Sand, Silt, Clay, and Bulk Density, and converting them to Ksat (mm/day), thetaS (Porosity), and thetaR. Replaces uniform static maps in hydrological models with true spatial pedology."
+    )]
+    fn fetch_soilgrids(&self, Parameters(p): Parameters<SoilGridsParam>) -> String {
+        fetch_soilgrids(&p)
+    }
 }
+
+
 
 #[rmcp::tool_handler]
 impl ServerHandler for EnvIndonesiaServer {

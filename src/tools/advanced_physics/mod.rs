@@ -16,3 +16,4 @@ pub mod fire_danger_rating;
 pub mod peatland_subsidence;
 pub mod uq;
 pub mod coupled_swe_richards;
+pub mod alien_sbas_sdb;
